@@ -8,10 +8,10 @@ declare global {
   interface Window {
     electronAPI?: IElectronAPI
     ipcRenderer: {
-      on: (channel: string, listener: (event: any, ...args: any[]) => void) => void
-      off: (channel: string, ...args: any[]) => void
-      send: (channel: string, ...args: any[]) => void
-      invoke: (channel: string, ...args: any[]) => Promise<any>
+      on: (channel: string, listener: (event: Electron.IpcRendererEvent, ...args: unknown[]) => void) => void
+      off: (channel: string, listener?: (...args: unknown[]) => void) => void
+      send: (channel: string, ...args: unknown[]) => void
+      invoke: (channel: string, ...args: unknown[]) => Promise<unknown>
     }
   }
 }

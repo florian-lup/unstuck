@@ -13,6 +13,7 @@ function App() {
           <a 
             href="https://electron-vite.github.io" 
             target="_blank"
+            rel="noreferrer"
             className="transition-opacity hover:opacity-80"
           >
             <img src={viteLogo} className="h-16 w-16" alt="Vite logo" />
@@ -20,6 +21,7 @@ function App() {
           <a 
             href="https://react.dev" 
             target="_blank"
+            rel="noreferrer"
             className="transition-opacity hover:opacity-80"
           >
             <img src={reactLogo} className="h-16 w-16 animate-spin" alt="React logo" />
@@ -31,7 +33,9 @@ function App() {
         <div className="flex flex-col items-center gap-6">
           <div className="bg-card border border-border rounded-lg p-6 shadow-sm">
             <button 
-              onClick={() => setCount((count) => count + 1)}
+              onClick={() => {
+                setCount((count) => count + 1)
+              }}
               className="bg-primary text-primary-foreground hover:bg-primary/90 px-6 py-3 rounded-md font-medium transition-colors"
             >
               count is {count}

@@ -3,19 +3,22 @@ const electron = require("electron");
 electron.contextBridge.exposeInMainWorld("ipcRenderer", {
   on(...args) {
     const [channel, listener] = args;
-    return electron.ipcRenderer.on(channel, (event, ...args2) => listener(event, ...args2));
+    electron.ipcRenderer.on(channel, (event, ...eventArgs) => {
+      listener(event, ...eventArgs);
+    });
   },
-  off(...args) {
-    const [channel, ...omit] = args;
-    return electron.ipcRenderer.off(channel, ...omit);
+  off(channel, listener) {
+    if (listener) {
+      electron.ipcRenderer.off(channel, listener);
+    } else {
+      electron.ipcRenderer.removeAllListeners(channel);
+    }
   },
-  send(...args) {
-    const [channel, ...omit] = args;
-    return electron.ipcRenderer.send(channel, ...omit);
+  send(channel, ...args) {
+    electron.ipcRenderer.send(channel, ...args);
   },
-  invoke(...args) {
-    const [channel, ...omit] = args;
-    return electron.ipcRenderer.invoke(channel, ...omit);
+  invoke(channel, ...args) {
+    return electron.ipcRenderer.invoke(channel, ...args);
   }
   // You can expose other APTs you need here.
   // ...
@@ -23,7 +26,9 @@ electron.contextBridge.exposeInMainWorld("ipcRenderer", {
 electron.contextBridge.exposeInMainWorld("electronAPI", {
   getSystemTheme: () => electron.ipcRenderer.invoke("get-system-theme"),
   onThemeChanged: (callback) => {
-    const listener = (_event, theme) => callback(theme);
+    const listener = (_event, theme) => {
+      callback(theme);
+    };
     electron.ipcRenderer.on("theme-changed", listener);
     return listener;
   },

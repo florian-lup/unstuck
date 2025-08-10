@@ -4,19 +4,22 @@ import { ipcRenderer, contextBridge } from 'electron'
 contextBridge.exposeInMainWorld('ipcRenderer', {
   on(...args: Parameters<typeof ipcRenderer.on>) {
     const [channel, listener] = args
-    return ipcRenderer.on(channel, (event, ...args) => listener(event, ...args))
+    ipcRenderer.on(channel, (event, ...eventArgs: unknown[]) => {
+      listener(event, ...eventArgs)
+    })
   },
-  off(...args: Parameters<typeof ipcRenderer.off>) {
-    const [channel, ...omit] = args
-    return ipcRenderer.off(channel, ...omit)
+  off(channel: string, listener?: (...args: unknown[]) => void) {
+    if (listener) {
+      ipcRenderer.off(channel, listener)
+    } else {
+      ipcRenderer.removeAllListeners(channel)
+    }
   },
-  send(...args: Parameters<typeof ipcRenderer.send>) {
-    const [channel, ...omit] = args
-    return ipcRenderer.send(channel, ...omit)
+  send(channel: string, ...args: unknown[]) {
+    ipcRenderer.send(channel, ...args)
   },
-  invoke(...args: Parameters<typeof ipcRenderer.invoke>) {
-    const [channel, ...omit] = args
-    return ipcRenderer.invoke(channel, ...omit)
+  invoke(channel: string, ...args: unknown[]) {
+    return ipcRenderer.invoke(channel, ...args)
   },
 
   // You can expose other APTs you need here.
@@ -27,7 +30,9 @@ contextBridge.exposeInMainWorld('ipcRenderer', {
 contextBridge.exposeInMainWorld('electronAPI', {
   getSystemTheme: () => ipcRenderer.invoke('get-system-theme'),
   onThemeChanged: (callback: (theme: string) => void) => {
-    const listener = (_event: Electron.IpcRendererEvent, theme: string) => callback(theme)
+    const listener = (_event: Electron.IpcRendererEvent, theme: string) => {
+      callback(theme)
+    }
     ipcRenderer.on('theme-changed', listener)
     return listener
   },

@@ -1,18 +1,13 @@
-import { createContext, useContext, useEffect } from "react"
+import { useEffect } from "react"
+import { ThemeProviderContext } from "@/hooks/use-theme"
 
-type ThemeProviderProps = {
-  children: React.ReactNode
-}
-
-type ThemeProviderState = {
+interface ThemeProviderState {
   systemTheme: "dark" | "light"
 }
 
-const initialState: ThemeProviderState = {
-  systemTheme: "light",
+interface ThemeProviderProps {
+  children: React.ReactNode
 }
-
-const ThemeProviderContext = createContext<ThemeProviderState>(initialState)
 
 export function ThemeProvider({ children }: ThemeProviderProps) {
   useEffect(() => {
@@ -26,7 +21,7 @@ export function ThemeProvider({ children }: ThemeProviderProps) {
     // Check if we're in Electron environment
     if (window.electronAPI?.getSystemTheme) {
       // Get initial system theme from Electron
-      window.electronAPI.getSystemTheme().then((systemTheme: string) => {
+      void window.electronAPI.getSystemTheme().then((systemTheme: string) => {
         applyTheme(systemTheme)
       })
       
@@ -63,8 +58,8 @@ export function ThemeProvider({ children }: ThemeProviderProps) {
 
   // Since we're only detecting system theme, we don't need to expose any values
   // But keeping the context for potential future use
-  const value = {
-    systemTheme: "light" as const, // This is just a placeholder since we don't track state
+  const value: ThemeProviderState = {
+    systemTheme: "light", // This is just a placeholder since we don't track state
   }
 
   return (
@@ -72,13 +67,4 @@ export function ThemeProvider({ children }: ThemeProviderProps) {
       {children}
     </ThemeProviderContext.Provider>
   )
-}
-
-export const useTheme = () => {
-  const context = useContext(ThemeProviderContext)
-
-  if (context === undefined)
-    throw new Error("useTheme must be used within a ThemeProvider")
-
-  return context
 }
