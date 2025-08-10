@@ -1,4 +1,4 @@
-import { app, BrowserWindow } from 'electron'
+import { app, BrowserWindow, Menu, nativeTheme, ipcMain } from 'electron'
 import { fileURLToPath } from 'node:url'
 import path from 'node:path'
 
@@ -29,6 +29,9 @@ let win: BrowserWindow | null
 function createWindow() {
   win = new BrowserWindow({
     icon: path.join(process.env.VITE_PUBLIC, 'electron-vite.svg'),
+    autoHideMenuBar: true,
+    minWidth: 500,
+    minHeight: 500,
     webPreferences: {
       preload: path.join(__dirname, 'preload.mjs'),
     },
@@ -65,4 +68,20 @@ app.on('activate', () => {
   }
 })
 
-app.whenReady().then(createWindow)
+app.whenReady().then(() => {
+  // Remove the default menu bar
+  Menu.setApplicationMenu(null)
+  createWindow()
+
+  // Handle theme detection
+  ipcMain.handle('get-system-theme', () => {
+    return nativeTheme.shouldUseDarkColors ? 'dark' : 'light'
+  })
+
+  // Watch for theme changes
+  nativeTheme.on('updated', () => {
+    if (win && !win.isDestroyed()) {
+      win.webContents.send('theme-changed', nativeTheme.shouldUseDarkColors ? 'dark' : 'light')
+    }
+  })
+})

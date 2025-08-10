@@ -1,8 +1,6 @@
-import { app, BrowserWindow } from "electron";
-import { createRequire } from "node:module";
+import { app, BrowserWindow, Menu, ipcMain, nativeTheme } from "electron";
 import { fileURLToPath } from "node:url";
 import path from "node:path";
-createRequire(import.meta.url);
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 process.env.APP_ROOT = path.join(__dirname, "..");
 const VITE_DEV_SERVER_URL = process.env["VITE_DEV_SERVER_URL"];
@@ -13,6 +11,9 @@ let win;
 function createWindow() {
   win = new BrowserWindow({
     icon: path.join(process.env.VITE_PUBLIC, "electron-vite.svg"),
+    autoHideMenuBar: true,
+    minWidth: 500,
+    minHeight: 500,
     webPreferences: {
       preload: path.join(__dirname, "preload.mjs")
     }
@@ -37,7 +38,18 @@ app.on("activate", () => {
     createWindow();
   }
 });
-app.whenReady().then(createWindow);
+app.whenReady().then(() => {
+  Menu.setApplicationMenu(null);
+  createWindow();
+  ipcMain.handle("get-system-theme", () => {
+    return nativeTheme.shouldUseDarkColors ? "dark" : "light";
+  });
+  nativeTheme.on("updated", () => {
+    if (win && !win.isDestroyed()) {
+      win.webContents.send("theme-changed", nativeTheme.shouldUseDarkColors ? "dark" : "light");
+    }
+  });
+});
 export {
   MAIN_DIST,
   RENDERER_DIST,

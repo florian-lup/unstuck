@@ -20,3 +20,14 @@ electron.contextBridge.exposeInMainWorld("ipcRenderer", {
   // You can expose other APTs you need here.
   // ...
 });
+electron.contextBridge.exposeInMainWorld("electronAPI", {
+  getSystemTheme: () => electron.ipcRenderer.invoke("get-system-theme"),
+  onThemeChanged: (callback) => {
+    const listener = (_event, theme) => callback(theme);
+    electron.ipcRenderer.on("theme-changed", listener);
+    return listener;
+  },
+  removeThemeListener: () => {
+    electron.ipcRenderer.removeAllListeners("theme-changed");
+  }
+});
