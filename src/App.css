@@ -1,42 +1,103 @@
-#root {
-  max-width: 1280px;
-  margin: 0 auto;
-  padding: 2rem;
-  text-align: center;
+/* Gaming AI Chatbot Overlay Theme */
+/* Designed to be subtle and non-intrusive during gameplay */
+
+:root {
+  /* Gaming Overlay Color Palette */
+  --gaming-bg-primary: rgba(5, 5, 8, 0.75);
+  --gaming-bg-secondary: rgba(8, 8, 12, 0.75);
+  --gaming-bg-tertiary: rgba(12, 12, 16, 0.65);
+
+  /* Gaming Accent Colors */
+  --gaming-accent-primary: rgba(0, 255, 255, 0.8); /* Cyan */
+  --gaming-accent-secondary: rgba(138, 43, 226, 0.8); /* Purple */
+  --gaming-accent-success: rgba(50, 205, 50, 0.8); /* Lime Green */
+
+  /* Gaming Text Colors */
+  --gaming-text-primary: rgba(255, 255, 255, 0.95);
+  --gaming-text-secondary: rgba(255, 255, 255, 0.75);
+  --gaming-text-muted: rgba(255, 255, 255, 0.5);
+
+  /* Gaming Border Colors */
+  --gaming-border-primary: rgba(255, 255, 255, 0.15);
+  --gaming-border-accent: rgba(0, 255, 255, 0.3);
+
+  /* Gaming Effects */
+  --gaming-blur: blur(12px);
+
+  /* Gaming Transitions - removed for minimal UI */
 }
 
-.logo {
-  height: 6em;
-  padding: 1.5em;
-  will-change: filter;
-  transition: filter 300ms;
-}
-.logo:hover {
-  filter: drop-shadow(0 0 2em #646cffaa);
-}
-.logo.react:hover {
-  filter: drop-shadow(0 0 2em #61dafbaa);
+/* Gaming Overlay Components */
+.gaming-nav-container {
+  backdrop-filter: var(--gaming-blur);
+  -webkit-backdrop-filter: var(--gaming-blur);
+  background: var(--gaming-bg-primary);
+  border: 1px solid var(--gaming-border-primary);
+  border-radius: 2rem;
 }
 
-@keyframes logo-spin {
-  from {
-    transform: rotate(0deg);
+.gaming-logo-container {
+  background: linear-gradient(
+    135deg,
+    var(--gaming-accent-primary),
+    var(--gaming-accent-secondary)
+  );
+  padding: 0.375rem;
+  border-radius: 50%;
+}
+
+.gaming-button {
+  background: transparent;
+  color: var(--gaming-text-primary);
+  border: 1px solid transparent;
+  border-radius: 1.5rem;
+}
+
+.gaming-button:hover {
+  background: transparent;
+  border-color: var(--gaming-accent-primary);
+  color: var(--gaming-text-primary);
+}
+
+.gaming-button-primary {
+  background: transparent;
+  border-color: transparent;
+}
+
+.gaming-button-primary:hover {
+  background: transparent;
+  border-color: var(--gaming-accent-primary);
+}
+
+.gaming-text-primary {
+  color: var(--gaming-text-primary);
+  font-weight: 500;
+}
+
+.gaming-text-secondary {
+  color: var(--gaming-text-secondary);
+  font-weight: 400;
+}
+
+/* Responsive adjustments for different screen sizes */
+@media (max-width: 768px) {
+  .gaming-nav-container {
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
   }
-  to {
-    transform: rotate(360deg);
-  }
 }
 
-@media (prefers-reduced-motion: no-preference) {
-  a:nth-of-type(2) .logo {
-    animation: logo-spin infinite 20s linear;
-  }
+/* Gaming overlay specific utilities */
+.gaming-draggable {
+  cursor: grab;
 }
 
-.card {
-  padding: 2em;
+.gaming-draggable:active {
+  cursor: grabbing;
 }
 
-.read-the-docs {
-  color: #888;
+.gaming-no-drag {
+  cursor: default;
 }
+
+/* Clean logo styling without animation */

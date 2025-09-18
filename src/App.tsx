@@ -15,13 +15,11 @@ function App() {
   }
 
   return (
-    <div className="w-full h-full flex items-center justify-center p-2 bg-transparent">
       <NavigationBar
         onSpeakClick={handleSpeakClick}
         onTextClick={handleTextClick}
         onSettingsClick={handleSettingsClick}
       />
-    </div>
   )
 }
 
