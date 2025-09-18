@@ -1,6 +1,7 @@
 import React from 'react'
-import { Mic, Type, Settings, Gamepad2, Move } from 'lucide-react'
+import { Mic, Type, Settings, Move } from 'lucide-react'
 import '../App.css'
+import unstuckLogo from '../assets/unstuck-logo-round.svg'
 
 interface NavigationBarProps {
   onSpeakClick?: () => void
@@ -22,9 +23,7 @@ export function NavigationBar({
         <div className="flex items-center justify-between gap-2">
           {/* Logo */}
           <div className="flex items-center">
-            <div className="gaming-logo-container">
-              <Gamepad2 className="w-3.5 h-3.5 text-white gaming-icon" />
-            </div>
+            <img src={unstuckLogo} alt="Unstuck Logo" className="w-6 h-6" />
           </div>
 
           {/* Right side container */}
