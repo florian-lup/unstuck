@@ -1,5 +1,5 @@
 import React from 'react'
-import { Mic, Type, Settings, Gamepad2 } from 'lucide-react'
+import { Mic, Type, Settings, Gamepad2, Move } from 'lucide-react'
 import '../App.css'
 
 interface NavigationBarProps {
@@ -27,33 +27,42 @@ export function NavigationBar({
             </div>
           </div>
 
-          {/* Action Buttons */}
-          <div className="flex items-center gap-1 gaming-no-drag" style={{ WebkitAppRegion: 'no-drag' } as React.CSSProperties}>
-            {/* Speak Button */}
-            <button
-              onClick={onSpeakClick}
-              className="gaming-button gaming-button-primary flex items-center gap-1 px-2 py-1"
-            >
-              <Mic className="w-3 h-3 gaming-icon" />
-              <span className="text-xs gaming-text-primary">Listen</span>
-            </button>
+          {/* Right side container */}
+          <div className="flex items-center gap-1">
+            {/* Action Buttons */}
+            <div className="flex items-center gap-1 gaming-no-drag" style={{ WebkitAppRegion: 'no-drag' } as React.CSSProperties}>
+              {/* Speak Button */}
+              <button
+                onClick={onSpeakClick}
+                className="gaming-button gaming-button-primary flex items-center gap-1 px-2 py-1"
+              >
+                <Mic className="w-3 h-3 gaming-icon" />
+                <span className="text-xs gaming-text-primary">Listen</span>
+              </button>
 
-            {/* Text Button */}
-            <button
-              onClick={onTextClick}
-              className="gaming-button gaming-button-primary flex items-center gap-1 px-2 py-1"
-            >
-              <Type className="w-3 h-3 gaming-icon" />
-              <span className="text-xs gaming-text-primary">Ask</span>
-            </button>
+              {/* Text Button */}
+              <button
+                onClick={onTextClick}
+                className="gaming-button gaming-button-primary flex items-center gap-1 px-2 py-1"
+              >
+                <Type className="w-3 h-3 gaming-icon" />
+                <span className="text-xs gaming-text-primary">Ask</span>
+              </button>
 
-            {/* Settings Button */}
-            <button
-              onClick={onSettingsClick}
-              className="gaming-button p-1"
-            >
-              <Settings className="w-3 h-3 gaming-icon" />
-            </button>
+              {/* Settings Button */}
+              <button
+                onClick={onSettingsClick}
+                className="gaming-button p-1"
+              >
+                <Settings className="w-3 h-3 gaming-icon" />
+              </button>
+            </div>
+
+            {/* Divider */}
+            <div className="w-px h-4 bg-gray-600 mx-1"></div>
+
+            {/* Move indicator */}
+            <Move className="w-3 h-3 text-gray-400 gaming-icon" />
           </div>
         </div>
       </div>
