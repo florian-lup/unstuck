@@ -1,4 +1,4 @@
-import { app, BrowserWindow, Menu, ipcMain, nativeTheme, screen } from "electron";
+import { app, BrowserWindow, Menu, ipcMain, nativeTheme, globalShortcut, screen } from "electron";
 import { fileURLToPath } from "node:url";
 import path from "node:path";
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -67,6 +67,14 @@ void app.whenReady().then(() => {
       win.webContents.send("theme-changed", nativeTheme.shouldUseDarkColors ? "dark" : "light");
     }
   });
+  globalShortcut.register("Shift+\\", () => {
+    if (win && !win.isDestroyed()) {
+      win.webContents.send("toggle-navigation-bar");
+    }
+  });
+});
+app.on("will-quit", () => {
+  globalShortcut.unregisterAll();
 });
 export {
   MAIN_DIST,

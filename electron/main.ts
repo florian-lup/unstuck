@@ -1,4 +1,4 @@
-import { app, BrowserWindow, Menu, nativeTheme, ipcMain, screen } from 'electron'
+import { app, BrowserWindow, Menu, nativeTheme, ipcMain, screen, globalShortcut } from 'electron'
 import { fileURLToPath } from 'node:url'
 import path from 'node:path'
 
@@ -95,4 +95,16 @@ void app.whenReady().then(() => {
       win.webContents.send('theme-changed', nativeTheme.shouldUseDarkColors ? 'dark' : 'light')
     }
   })
+
+  // Register global shortcut for navigation bar toggle
+       globalShortcut.register('Shift+\\', () => {
+    if (win && !win.isDestroyed()) {
+      win.webContents.send('toggle-navigation-bar')
+    }
+  })
+})
+
+// Unregister all global shortcuts when app is quitting
+app.on('will-quit', () => {
+  globalShortcut.unregisterAll()
 })

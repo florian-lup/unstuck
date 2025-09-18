@@ -34,5 +34,15 @@ electron.contextBridge.exposeInMainWorld("electronAPI", {
   },
   removeThemeListener: () => {
     electron.ipcRenderer.removeAllListeners("theme-changed");
+  },
+  onNavigationBarToggle: (callback) => {
+    const listener = () => {
+      callback();
+    };
+    electron.ipcRenderer.on("toggle-navigation-bar", listener);
+    return listener;
+  },
+  removeNavigationBarToggleListener: () => {
+    electron.ipcRenderer.removeAllListeners("toggle-navigation-bar");
   }
 });

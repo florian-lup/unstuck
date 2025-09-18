@@ -38,5 +38,15 @@ contextBridge.exposeInMainWorld('electronAPI', {
   },
   removeThemeListener: () => {
     ipcRenderer.removeAllListeners('theme-changed')
+  },
+  onNavigationBarToggle: (callback: () => void) => {
+    const listener = () => {
+      callback()
+    }
+    ipcRenderer.on('toggle-navigation-bar', listener)
+    return listener
+  },
+  removeNavigationBarToggleListener: () => {
+    ipcRenderer.removeAllListeners('toggle-navigation-bar')
   }
 })
