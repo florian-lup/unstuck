@@ -1,4 +1,4 @@
-import { app, BrowserWindow, Menu, ipcMain, nativeTheme } from "electron";
+import { app, BrowserWindow, Menu, ipcMain, nativeTheme, screen } from "electron";
 import { fileURLToPath } from "node:url";
 import path from "node:path";
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -9,13 +9,31 @@ const RENDERER_DIST = path.join(process.env.APP_ROOT, "dist");
 process.env.VITE_PUBLIC = VITE_DEV_SERVER_URL ? path.join(process.env.APP_ROOT, "public") : RENDERER_DIST;
 let win;
 function createWindow() {
+  const { width: screenWidth } = screen.getPrimaryDisplay().workAreaSize;
+  const windowWidth = 350;
+  const windowHeight = 60;
   win = new BrowserWindow({
     icon: path.join(process.env.VITE_PUBLIC, "electron-vite.svg"),
-    autoHideMenuBar: true,
-    minWidth: 500,
-    minHeight: 500,
+    frame: false,
+    // Remove window frame (title bar, borders)
+    transparent: true,
+    // Make window background transparent
+    alwaysOnTop: true,
+    // Keep on top of other windows
+    resizable: false,
+    // Prevent resizing
+    width: windowWidth,
+    // Fixed width for navigation bar
+    height: windowHeight,
+    // Fixed height for navigation bar
+    x: Math.round((screenWidth - windowWidth) / 2),
+    // Center horizontally
+    y: 20,
+    // Position at top of screen
     webPreferences: {
-      preload: path.join(__dirname, "preload.mjs")
+      preload: path.join(__dirname, "preload.mjs"),
+      nodeIntegration: false,
+      contextIsolation: true
     }
   });
   win.webContents.on("did-finish-load", () => {
