@@ -1,5 +1,6 @@
-import React, { useState, useRef, useEffect } from 'react'
+import React, { useState } from 'react'
 import { ChevronDown, Gamepad2 } from 'lucide-react'
+import { useDropdown } from '../hooks/use-dropdown'
 import '../App.css'
 
 interface Game {
@@ -22,43 +23,12 @@ interface SelectGameProps {
 }
 
 export function SelectGame({ onGameSelect, className = '' }: SelectGameProps) {
-  const [isOpen, setIsOpen] = useState(false)
   const [selectedGame, setSelectedGame] = useState<Game | null>(null)
-  const dropdownRef = useRef<HTMLDivElement>(null)
-
-  // Close dropdown when clicking outside
-  useEffect(() => {
-    function handleClickOutside(event: MouseEvent) {
-      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
-        setIsOpen(false)
-      }
-    }
-
-    document.addEventListener('mousedown', handleClickOutside)
-    return () => {
-      document.removeEventListener('mousedown', handleClickOutside)
-    }
-  }, [])
-
-  // Close dropdown on Escape key
-  useEffect(() => {
-    function handleKeyDown(event: KeyboardEvent) {
-      if (event.key === 'Escape') {
-        setIsOpen(false)
-      }
-    }
-
-    if (isOpen) {
-      document.addEventListener('keydown', handleKeyDown)
-      return () => {
-        document.removeEventListener('keydown', handleKeyDown)
-      }
-    }
-  }, [isOpen])
+  const { isOpen, toggle, close, dropdownRef } = useDropdown<HTMLDivElement>()
 
   const handleGameSelect = (game: Game) => {
     setSelectedGame(game)
-    setIsOpen(false)
+    close()
     onGameSelect?.(game)
   }
 
@@ -66,7 +36,7 @@ export function SelectGame({ onGameSelect, className = '' }: SelectGameProps) {
     <div className={`relative ${className}`} ref={dropdownRef}>
       {/* Dropdown Trigger */}
       <button
-        onClick={() => setIsOpen(!isOpen)}
+        onClick={toggle}
         className="border border-gaming-border-primary rounded-3xl px-3 py-1.5 flex items-center gap-2 text-sm font-medium text-gaming-text-primary hover:border-gaming-accent-primary transition-all duration-200 w-full justify-between"
         aria-haspopup="listbox"
         aria-expanded={isOpen}
