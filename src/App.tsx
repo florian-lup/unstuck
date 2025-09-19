@@ -1,4 +1,4 @@
-import { NavigationBar } from './components/NavigationBar'
+import { NavigationBar } from './components/navigation-bar'
 import { useKeyboardToggle } from './hooks/use-keyboard-toggle'
 import './index.css'
 

@@ -6,6 +6,7 @@
   --gaming-bg-primary: rgba(5, 5, 8, 0.75);
   --gaming-bg-secondary: rgba(8, 8, 12, 0.75);
   --gaming-bg-tertiary: rgba(12, 12, 16, 0.65);
+  --gaming-bg-hover: rgba(255, 255, 255, 0.08);
 
   /* Gaming Accent Colors */
   --gaming-accent-primary: rgba(0, 255, 255, 0.8); /* Cyan */
@@ -44,4 +45,16 @@
 .gaming-text-secondary {
   color: var(--gaming-text-secondary);
   font-weight: 400;
+}
+
+/* Prevent text selection on interactive elements */
+.gaming-nav-container,
+.gaming-nav-container *,
+button,
+button *,
+.gaming-draggable {
+  user-select: none;
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
 }

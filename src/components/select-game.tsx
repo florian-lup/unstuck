@@ -92,13 +92,13 @@ export function SelectGame({ onGameSelect, className = '' }: SelectGameProps) {
       {/* Dropdown Menu */}
       {isOpen && (
         <div className="absolute top-full left-0 mt-1 w-full max-w-[200px] z-50">
-          <div className=" bg-[var(--gaming-bg-primary)] border border-[var(--gaming-border-primary)] rounded-3xl p-1">
+          <div className=" bg-[var(--gaming-bg-primary)] border border-[var(--gaming-border-primary)] rounded-2xl p-1">
             <div className="py-1" role="listbox">
               {games.map((game) => (
                 <button
                   key={game.id}
                   onClick={() => handleGameSelect(game)}
-                  className="w-full px-3 py-2 text-left flex items-center gap-2 text-xs text-[var(--gaming-text-primary)] hover:bg-[var(--gaming-bg-secondary)] hover:text-[var(--gaming-accent-primary)] transition-all duration-150 focus:outline-none focus:bg-[var(--gaming-bg-secondary)] focus:text-[var(--gaming-accent-primary)] rounded-3xl"
+                  className="w-full px-3 py-2 text-left flex items-center gap-2 text-xs text-[var(--gaming-text-primary)] hover:bg-[var(--gaming-bg-hover)] hover:text-[var(--gaming-accent-primary)] transition-all duration-150 focus:outline-none focus:bg-[var(--gaming-bg-hover)] focus:text-[var(--gaming-accent-primary)] rounded-3xl"
                   role="option"
                   aria-selected={selectedGame?.id === game.id}
                 >
