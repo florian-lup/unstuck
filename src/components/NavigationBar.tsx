@@ -1,5 +1,6 @@
 import React from 'react'
 import { Mic, Type, Settings, Move } from 'lucide-react'
+import { Button } from './ui/button'
 import '../App.css'
 import unstuckLogo from '../assets/unstuck-logo-round.svg'
 
@@ -31,30 +32,36 @@ export function NavigationBar({
             {/* Action Buttons */}
             <div className="flex items-center gap-1 gaming-no-drag" style={{ WebkitAppRegion: 'no-drag' } as React.CSSProperties}>
               {/* Speak Button */}
-              <button
+              <Button
                 onClick={onSpeakClick}
-                className="gaming-button gaming-button-primary flex items-center gap-1 px-2 py-1"
+                variant="gaming"
+                size="sm"
+                className="gap-1 px-2 py-1 h-auto rounded-3xl"
               >
-                <Mic className="w-3 h-3 gaming-icon" />
-                <span className="text-xs gaming-text-primary">Listen</span>
-              </button>
+                <Mic className="w-3 h-3" />
+                <span className="text-xs">Listen</span>
+              </Button>
 
               {/* Text Button */}
-              <button
+              <Button
                 onClick={onTextClick}
-                className="gaming-button gaming-button-primary flex items-center gap-1 px-2 py-1"
+                variant="gaming"
+                size="sm"
+                className="gap-1 px-2 py-1 h-auto rounded-3xl"
               >
-                <Type className="w-3 h-3 gaming-icon" />
-                <span className="text-xs gaming-text-primary">Ask</span>
-              </button>
+                <Type className="w-3 h-3" />
+                <span className="text-xs">Ask</span>
+              </Button>
 
               {/* Settings Button */}
-              <button
+              <Button
                 onClick={onSettingsClick}
-                className="gaming-button p-1"
+                variant="gaming"
+                size="icon"
+                className="p-1 h-auto w-auto rounded-3xl"
               >
-                <Settings className="w-3 h-3 gaming-icon" />
-              </button>
+                <Settings className="w-3 h-3" />
+              </Button>
             </div>
 
             {/* Divider */}

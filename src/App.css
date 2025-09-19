@@ -36,39 +36,6 @@
   border-radius: 2rem;
 }
 
-.gaming-logo-container {
-  background: linear-gradient(
-    135deg,
-    var(--gaming-accent-primary),
-    var(--gaming-accent-secondary)
-  );
-  padding: 0.375rem;
-  border-radius: 50%;
-}
-
-.gaming-button {
-  background: transparent;
-  color: var(--gaming-text-primary);
-  border: 1px solid transparent;
-  border-radius: 1.5rem;
-}
-
-.gaming-button:hover {
-  background: transparent;
-  border-color: var(--gaming-accent-primary);
-  color: var(--gaming-text-primary);
-}
-
-.gaming-button-primary {
-  background: transparent;
-  border-color: transparent;
-}
-
-.gaming-button-primary:hover {
-  background: transparent;
-  border-color: var(--gaming-accent-primary);
-}
-
 .gaming-text-primary {
   color: var(--gaming-text-primary);
   font-weight: 500;
@@ -78,26 +45,3 @@
   color: var(--gaming-text-secondary);
   font-weight: 400;
 }
-
-/* Responsive adjustments for different screen sizes */
-@media (max-width: 768px) {
-  .gaming-nav-container {
-    backdrop-filter: blur(8px);
-    -webkit-backdrop-filter: blur(8px);
-  }
-}
-
-/* Gaming overlay specific utilities */
-.gaming-draggable {
-  cursor: grab;
-}
-
-.gaming-draggable:active {
-  cursor: grabbing;
-}
-
-.gaming-no-drag {
-  cursor: default;
-}
-
-/* Clean logo styling without animation */
