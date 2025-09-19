@@ -1,6 +1,7 @@
 import React, { useState } from 'react'
 import { ChevronDown, Gamepad2 } from 'lucide-react'
 import { useDropdown } from '../hooks/use-dropdown'
+import { InteractiveArea } from './interactive-area'
 import '../App.css'
 
 interface Game {
@@ -62,7 +63,7 @@ export function SelectGame({ onGameSelect, className = '' }: SelectGameProps) {
       {/* Dropdown Menu */}
       {isOpen && (
         <div className="absolute top-full left-0 mt-1 w-full max-w-[200px] z-50">
-          <div className="bg-gaming-bg-primary border border-gaming-border-primary rounded-2xl p-1">
+          <InteractiveArea className="bg-gaming-bg-primary border border-gaming-border-primary rounded-2xl p-1">
             <div className="py-1" role="listbox">
               {games.map((game) => (
                 <button
@@ -81,7 +82,7 @@ export function SelectGame({ onGameSelect, className = '' }: SelectGameProps) {
                 </button>
               ))}
             </div>
-          </div>
+          </InteractiveArea>
         </div>
       )}
     </div>

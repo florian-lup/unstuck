@@ -1,5 +1,6 @@
 import { NavigationBar } from './components/navigation-bar'
 import { useKeyboardToggle } from './hooks/use-keyboard-toggle'
+import { useClickThrough } from './hooks/use-click-through'
 import './index.css'
 
 interface Game {
@@ -12,6 +13,13 @@ function App() {
   const { isVisible: isNavigationBarVisible } = useKeyboardToggle({
     key: 'Backslash',
     modifiers: { shift: true }
+  })
+
+  // Global click-through management - only when navbar is visible
+  useClickThrough({
+    interactiveSelectors: isNavigationBarVisible ? [
+      '[data-interactive-area]', // navbar, dropdowns, and any other interactive areas
+    ] : []
   })
 
   const handleSpeakClick = () => {

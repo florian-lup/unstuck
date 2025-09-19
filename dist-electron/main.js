@@ -33,6 +33,7 @@ function createWindow() {
       contextIsolation: true
     }
   });
+  win.setIgnoreMouseEvents(true, { forward: true });
   win.webContents.on("did-finish-load", () => {
     win?.webContents.send("main-process-message", (/* @__PURE__ */ new Date()).toLocaleString());
   });
@@ -67,6 +68,11 @@ void app.whenReady().then(() => {
   globalShortcut.register("Shift+\\", () => {
     if (win && !win.isDestroyed()) {
       win.webContents.send("toggle-navigation-bar");
+    }
+  });
+  ipcMain.on("set-ignore-mouse-events", (_event, ignore, options) => {
+    if (win && !win.isDestroyed()) {
+      win.setIgnoreMouseEvents(ignore, options || { forward: true });
     }
   });
 });

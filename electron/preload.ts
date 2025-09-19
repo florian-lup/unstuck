@@ -48,5 +48,8 @@ contextBridge.exposeInMainWorld('electronAPI', {
   },
   removeNavigationBarToggleListener: () => {
     ipcRenderer.removeAllListeners('toggle-navigation-bar')
+  },
+  setIgnoreMouseEvents: (ignore: boolean, options?: { forward?: boolean }) => {
+    ipcRenderer.send('set-ignore-mouse-events', ignore, options)
   }
 })

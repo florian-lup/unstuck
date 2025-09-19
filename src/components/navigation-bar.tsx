@@ -2,6 +2,7 @@ import React from 'react'
 import { Mic, Type, Settings, Move } from 'lucide-react'
 import { Button } from './ui/button'
 import { SelectGame } from './select-game'
+import { InteractiveArea } from './interactive-area'
 import '../App.css'
 
 interface Game {
@@ -23,9 +24,12 @@ export function NavigationBar({
   onSettingsClick,
   onGameSelect
 }: NavigationBarProps) {
+
   return (
     <div className="w-full mx-auto">
-      <div className="px-2 py-1.5 rounded-[2rem] border border-gaming-border-primary bg-gaming-bg-primary backdrop-blur-[12px]">
+      <InteractiveArea 
+        className="px-2 py-1.5 rounded-[2rem] border border-gaming-border-primary bg-gaming-bg-primary backdrop-blur-[12px]"
+      >
         <div className="flex items-center justify-between gap-2">
           {/* Game Selection Dropdown */}
           <div className="flex-1">
@@ -71,16 +75,16 @@ export function NavigationBar({
             {/* Divider */}
             <div className="w-px h-4 mx-1 bg-gaming-border-primary"></div>
 
-            {/* Move indicator - draggable */}
-            <div
-              className="gaming-draggable cursor-move"
-              style={{ WebkitAppRegion: 'drag' } as React.CSSProperties}
-            >
-              <Move className="w-3 h-3 text-gaming-text-muted" />
-            </div>
+             {/* Move indicator - draggable */}
+             <div
+               className="gaming-draggable"
+               style={{ WebkitAppRegion: 'drag' } as React.CSSProperties}
+             >
+               <Move className="w-3 h-3 text-gaming-text-muted" />
+             </div>
           </div>
         </div>
-      </div>
+      </InteractiveArea>
     </div>
   )
 }

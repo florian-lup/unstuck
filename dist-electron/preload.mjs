@@ -44,5 +44,8 @@ electron.contextBridge.exposeInMainWorld("electronAPI", {
   },
   removeNavigationBarToggleListener: () => {
     electron.ipcRenderer.removeAllListeners("toggle-navigation-bar");
+  },
+  setIgnoreMouseEvents: (ignore, options) => {
+    electron.ipcRenderer.send("set-ignore-mouse-events", ignore, options);
   }
 });

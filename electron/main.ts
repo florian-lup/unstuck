@@ -46,6 +46,9 @@ function createWindow() {
     },
   })
 
+  // Make window click-through by default (ignores mouse events on empty space)
+  win.setIgnoreMouseEvents(true, { forward: true })
+
   // Test active push message to Renderer-process.
   win.webContents.on('did-finish-load', () => {
     win?.webContents.send('main-process-message', new Date().toLocaleString())
@@ -98,6 +101,13 @@ void app.whenReady().then(() => {
        globalShortcut.register('Shift+\\', () => {
     if (win && !win.isDestroyed()) {
       win.webContents.send('toggle-navigation-bar')
+    }
+  })
+
+  // Handle mouse event control for click-through functionality
+  ipcMain.on('set-ignore-mouse-events', (_event, ignore: boolean, options?: { forward?: boolean }) => {
+    if (win && !win.isDestroyed()) {
+      win.setIgnoreMouseEvents(ignore, options || { forward: true })
     }
   })
 })

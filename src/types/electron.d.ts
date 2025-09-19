@@ -4,6 +4,7 @@ export interface IElectronAPI {
   removeThemeListener: () => void
   onNavigationBarToggle: (callback: () => void) => void
   removeNavigationBarToggleListener: () => void
+  setIgnoreMouseEvents: (ignore: boolean, options?: { forward?: boolean }) => void
 }
 
 declare global {
