@@ -2,6 +2,12 @@ import { NavigationBar } from './components/NavigationBar'
 import { useKeyboardToggle } from './hooks/use-keyboard-toggle'
 import './index.css'
 
+interface Game {
+  id: string
+  name: string
+  icon?: React.ReactNode
+}
+
 function App() {
   const { isVisible: isNavigationBarVisible } = useKeyboardToggle({
     key: 'Backslash',
@@ -20,6 +26,11 @@ function App() {
     // Handle settings functionality here
   }
 
+  const handleGameSelect = (game: Game) => {
+    console.log('Selected game:', game)
+    // Handle game selection functionality here
+  }
+
   return (
     <>
       {isNavigationBarVisible && (
@@ -27,6 +38,7 @@ function App() {
           onSpeakClick={handleSpeakClick}
           onTextClick={handleTextClick}
           onSettingsClick={handleSettingsClick}
+          onGameSelect={handleGameSelect}
         />
       )}
     </>

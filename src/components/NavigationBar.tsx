@@ -1,25 +1,40 @@
 import React from 'react'
 import { Mic, Type, Settings, Move } from 'lucide-react'
 import { Button } from './ui/button'
+import { SelectGame } from './select-game'
 import '../App.css'
+
+interface Game {
+  id: string
+  name: string
+  icon?: React.ReactNode
+}
 
 interface NavigationBarProps {
   onSpeakClick?: () => void
   onTextClick?: () => void
   onSettingsClick?: () => void
+  onGameSelect?: (game: Game) => void
 }
 
 export function NavigationBar({ 
   onSpeakClick, 
   onTextClick, 
-  onSettingsClick 
+  onSettingsClick,
+  onGameSelect
 }: NavigationBarProps) {
   return (
     <div className="w-full mx-auto">
       <div className="gaming-nav-container px-2 py-1.5">
-        <div className="flex items-center justify-end gap-1">
-          {/* Action Buttons */}
+        <div className="flex items-center justify-between gap-2">
+          {/* Game Selection Dropdown */}
+          <div className="flex-1">
+            <SelectGame onGameSelect={onGameSelect} />
+          </div>
+          
           <div className="flex items-center gap-1">
+            {/* Action Buttons */}
+            <div className="flex items-center gap-1">
             {/* Speak Button */}
             <Button
               onClick={onSpeakClick}
@@ -51,17 +66,18 @@ export function NavigationBar({
             >
               <Settings className="w-3 h-3" />
             </Button>
-          </div>
+            </div>
 
-          {/* Divider */}
-          <div className="w-px h-4 bg-gray-600 mx-1"></div>
+            {/* Divider */}
+            <div className="w-px h-4 bg-gray-600 mx-1"></div>
 
-          {/* Move indicator - draggable */}
-          <div
-            className="gaming-draggable cursor-move"
-            style={{ WebkitAppRegion: 'drag' } as React.CSSProperties}
-          >
-            <Move className="w-3 h-3 text-gray-400 gaming-icon" />
+            {/* Move indicator - draggable */}
+            <div
+              className="gaming-draggable cursor-move"
+              style={{ WebkitAppRegion: 'drag' } as React.CSSProperties}
+            >
+              <Move className="w-3 h-3 text-gray-400 gaming-icon" />
+            </div>
           </div>
         </div>
       </div>
