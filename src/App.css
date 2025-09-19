@@ -1,26 +1,29 @@
 /* Gaming AI Chatbot Overlay Theme */
 /* Designed to be subtle and non-intrusive during gameplay */
 
+@import 'tailwindcss';
+@import 'tw-animate-css';
+
 :root {
   /* Gaming Overlay Color Palette */
-  --gaming-bg-primary: rgba(5, 5, 8, 0.75);
-  --gaming-bg-secondary: rgba(8, 8, 12, 0.75);
-  --gaming-bg-tertiary: rgba(12, 12, 16, 0.65);
-  --gaming-bg-hover: rgba(255, 255, 255, 0.08);
+  --gaming-bg-primary: rgba(5, 5, 8, 0.55);
+  --gaming-bg-secondary: rgba(8, 8, 12, 0.5);
+  --gaming-bg-tertiary: rgba(12, 12, 16, 0.45);
+  --gaming-bg-hover: rgba(255, 255, 255, 0.05);
 
   /* Gaming Accent Colors */
-  --gaming-accent-primary: rgba(0, 255, 255, 0.8); /* Cyan */
-  --gaming-accent-secondary: rgba(138, 43, 226, 0.8); /* Purple */
-  --gaming-accent-success: rgba(50, 205, 50, 0.8); /* Lime Green */
+  --gaming-accent-primary: rgba(0, 255, 255, 0.65); /* Cyan */
+  --gaming-accent-secondary: rgba(138, 43, 226, 0.65); /* Purple */
+  --gaming-accent-success: rgba(50, 205, 50, 0.65); /* Lime Green */
 
   /* Gaming Text Colors */
-  --gaming-text-primary: rgba(255, 255, 255, 0.95);
-  --gaming-text-secondary: rgba(255, 255, 255, 0.75);
-  --gaming-text-muted: rgba(255, 255, 255, 0.5);
+  --gaming-text-primary: rgba(255, 255, 255, 0.85);
+  --gaming-text-secondary: rgba(255, 255, 255, 0.65);
+  --gaming-text-muted: rgba(255, 255, 255, 0.4);
 
   /* Gaming Border Colors */
-  --gaming-border-primary: rgba(255, 255, 255, 0.15);
-  --gaming-border-accent: rgba(0, 255, 255, 0.3);
+  --gaming-border-primary: rgba(255, 255, 255, 0.12);
+  --gaming-border-accent: rgba(0, 255, 255, 0.25);
 
   /* Gaming Effects */
   --gaming-blur: blur(12px);
@@ -28,28 +31,22 @@
   /* Gaming Transitions - removed for minimal UI */
 }
 
-/* Gaming Overlay Components */
-.gaming-nav-container {
-  backdrop-filter: var(--gaming-blur);
-  -webkit-backdrop-filter: var(--gaming-blur);
-  background: var(--gaming-bg-primary);
-  border: 1px solid var(--gaming-border-primary);
-  border-radius: 2rem;
-}
-
-.gaming-text-primary {
-  color: var(--gaming-text-primary);
-  font-weight: 500;
-}
-
-.gaming-text-secondary {
-  color: var(--gaming-text-secondary);
-  font-weight: 400;
+@theme {
+  --color-gaming-bg-primary: var(--gaming-bg-primary);
+  --color-gaming-bg-secondary: var(--gaming-bg-secondary);
+  --color-gaming-bg-tertiary: var(--gaming-bg-tertiary);
+  --color-gaming-bg-hover: var(--gaming-bg-hover);
+  --color-gaming-accent-primary: var(--gaming-accent-primary);
+  --color-gaming-accent-secondary: var(--gaming-accent-secondary);
+  --color-gaming-accent-success: var(--gaming-accent-success);
+  --color-gaming-text-primary: var(--gaming-text-primary);
+  --color-gaming-text-secondary: var(--gaming-text-secondary);
+  --color-gaming-text-muted: var(--gaming-text-muted);
+  --color-gaming-border-primary: var(--gaming-border-primary);
+  --color-gaming-border-accent: var(--gaming-border-accent);
 }
 
 /* Prevent text selection on interactive elements */
-.gaming-nav-container,
-.gaming-nav-container *,
 button,
 button *,
 .gaming-draggable {

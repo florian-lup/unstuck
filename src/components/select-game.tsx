@@ -67,7 +67,7 @@ export function SelectGame({ onGameSelect, className = '' }: SelectGameProps) {
       {/* Dropdown Trigger */}
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className="border border-[var(--gaming-border-primary)] rounded-3xl px-3 py-1.5 flex items-center gap-2 text-sm font-medium text-[var(--gaming-text-primary)] hover:border-[var(--gaming-accent-primary)] transition-all duration-200 w-full justify-between"
+        className="border border-gaming-border-primary rounded-3xl px-3 py-1.5 flex items-center gap-2 text-sm font-medium text-gaming-text-primary hover:border-gaming-accent-primary transition-all duration-200 w-full justify-between"
         aria-haspopup="listbox"
         aria-expanded={isOpen}
       >
@@ -92,20 +92,20 @@ export function SelectGame({ onGameSelect, className = '' }: SelectGameProps) {
       {/* Dropdown Menu */}
       {isOpen && (
         <div className="absolute top-full left-0 mt-1 w-full max-w-[200px] z-50">
-          <div className=" bg-[var(--gaming-bg-primary)] border border-[var(--gaming-border-primary)] rounded-2xl p-1">
+          <div className="bg-gaming-bg-primary border border-gaming-border-primary rounded-2xl p-1">
             <div className="py-1" role="listbox">
               {games.map((game) => (
                 <button
                   key={game.id}
                   onClick={() => handleGameSelect(game)}
-                  className="w-full px-3 py-2 text-left flex items-center gap-2 text-xs text-[var(--gaming-text-primary)] hover:bg-[var(--gaming-bg-hover)] hover:text-[var(--gaming-accent-primary)] transition-all duration-150 focus:outline-none focus:bg-[var(--gaming-bg-hover)] focus:text-[var(--gaming-accent-primary)] rounded-3xl"
+                  className="w-full px-3 py-2 text-left flex items-center gap-2 text-xs text-gaming-text-primary hover:bg-gaming-bg-hover hover:text-gaming-accent-primary transition-all duration-150 focus:outline-none focus:bg-gaming-bg-hover focus:text-gaming-accent-primary rounded-3xl"
                   role="option"
                   aria-selected={selectedGame?.id === game.id}
                 >
                   <div className={`w-1.5 h-1.5 rounded-full transition-all duration-150 ${
                     selectedGame?.id === game.id 
-                      ? 'bg-[var(--gaming-accent-primary)]' 
-                      : 'bg-[var(--gaming-text-muted)]'
+                      ? 'bg-gaming-accent-primary' 
+                      : 'bg-gaming-text-muted'
                   }`} />
                   <span>{game.name}</span>
                 </button>
