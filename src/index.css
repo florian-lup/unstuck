@@ -132,4 +132,26 @@
     height: 100%;
     background: transparent;
   }
+
+  /* Make all clickable elements show pointer cursor */
+  button,
+  [role='button'],
+  [data-slot='button'],
+  a,
+  input[type='button'],
+  input[type='submit'],
+  input[type='reset'],
+  select,
+  .clickable {
+    cursor: pointer !important;
+  }
+
+  /* Ensure disabled elements show default cursor */
+  button:disabled,
+  [role='button']:disabled,
+  input:disabled,
+  select:disabled,
+  [aria-disabled='true'] {
+    cursor: not-allowed !important;
+  }
 }

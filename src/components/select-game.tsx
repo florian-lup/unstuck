@@ -1,6 +1,10 @@
 import { Gamepad2 } from 'lucide-react'
 import { Dropdown } from './ui/dropdown'
-import { Game, getActiveGames, getGameDisplayNameWithVersion } from '../lib/games'
+import {
+  Game,
+  getActiveGames,
+  getGameDisplayNameWithVersion,
+} from '../lib/games'
 import '../App.css'
 
 interface SelectGameProps {
@@ -17,7 +21,7 @@ export function SelectGame({
   onDropdownOpenChange,
 }: SelectGameProps) {
   const games = getActiveGames()
-  
+
   const handleGameSelect = (game: Game) => {
     onGameSelect?.(game)
   }

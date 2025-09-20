@@ -3,13 +3,8 @@ import { Mic, Type, Settings, Move } from 'lucide-react'
 import { Button } from './ui/button'
 import { SelectGame } from './select-game'
 import { InteractiveArea } from './interactive-area'
+import { Game } from '../lib/games'
 import '../App.css'
-
-interface Game {
-  id: string
-  name: string
-  icon?: React.ReactNode
-}
 
 interface NavigationBarProps {
   onSpeakClick?: () => void

@@ -55,30 +55,32 @@ export const GAMES: Game[] = [
 
 // Utility functions for game management
 export const getActiveGames = (): Game[] => {
-  return GAMES.filter(game => game.isActive)
+  return GAMES.filter((game) => game.isActive)
 }
 
 export const getGameById = (id: string): Game | undefined => {
-  return GAMES.find(game => game.id === id)
+  return GAMES.find((game) => game.id === id)
 }
 
 export const getGamesByCategory = (category: Game['category']): Game[] => {
-  return GAMES.filter(game => game.category === category && game.isActive)
+  return GAMES.filter((game) => game.category === category && game.isActive)
 }
 
 export const searchGames = (query: string): Game[] => {
   const lowercaseQuery = query.toLowerCase()
-  return GAMES.filter(game => 
-    game.isActive && (
-      game.name.toLowerCase().includes(lowercaseQuery) ||
-      game.displayName.toLowerCase().includes(lowercaseQuery) ||
-      game.version?.toLowerCase().includes(lowercaseQuery)
-    )
+  return GAMES.filter(
+    (game) =>
+      game.isActive &&
+      (game.name.toLowerCase().includes(lowercaseQuery) ||
+        game.displayName.toLowerCase().includes(lowercaseQuery) ||
+        game.version?.toLowerCase().includes(lowercaseQuery))
   )
 }
 
 export const getGameDisplayNameWithVersion = (game: Game): string => {
-  return game.version ? `${game.displayName} (${game.version})` : game.displayName
+  return game.version
+    ? `${game.displayName} (${game.version})`
+    : game.displayName
 }
 
 // Default export for convenience
