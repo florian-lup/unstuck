@@ -44,7 +44,7 @@ export function NavigationBar({
                 onClick={onSpeakClick}
                 variant="gaming"
                 size="sm"
-                className="gap-1 px-2 py-1 h-auto rounded-3xl"
+                className="gap-1 p-1 h-auto rounded-3xl"
               >
                 <Mic className="w-3 h-3" />
                 <span className="text-xs">Listen</span>
@@ -55,7 +55,7 @@ export function NavigationBar({
                 onClick={onTextClick}
                 variant="gaming"
                 size="sm"
-                className="gap-1 px-2 py-1 h-auto rounded-3xl"
+                className="gap-1 p-1 h-auto rounded-3xl"
               >
                 <Type className="w-3 h-3" />
                 <span className="text-xs">Ask</span>

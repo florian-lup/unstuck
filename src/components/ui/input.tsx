@@ -9,8 +9,8 @@ function Input({ className, type, ...props }: React.ComponentProps<'input'>) {
       data-slot="input"
       className={cn(
         // Base gaming input styling
-        'h-9 w-full min-w-0 rounded-3xl px-3 py-1 text-sm outline-none',
-        'text-gaming-text-primary placeholder:text-gaming-text-secondary',
+        'h-9 w-full min-w-0 rounded-3xl px-3 py-1 text-xs outline-none',
+        'text-gaming-text-primary placeholder:text-gaming-text-secondary placeholder:text-xs',
 
         // Gaming selection styling
         'selection:bg-gaming-accent-primary selection:text-gaming-bg-primary',
