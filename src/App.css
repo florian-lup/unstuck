@@ -25,9 +25,6 @@
   --gaming-border-primary: rgba(255, 255, 255, 0.12);
   --gaming-border-accent: rgba(0, 255, 255, 0.25);
 
-  /* Gaming Effects */
-  --gaming-blur: blur(12px);
-
   /* Gaming Transitions - removed for minimal UI */
 }
 

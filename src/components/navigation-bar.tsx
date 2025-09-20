@@ -17,6 +17,7 @@ interface NavigationBarProps {
   onSettingsClick?: () => void
   onGameSelect?: (game: Game) => void
   selectedGame?: Game | null
+  onDropdownOpenChange?: (open: boolean) => void
 }
 
 export function NavigationBar({
@@ -25,14 +26,19 @@ export function NavigationBar({
   onSettingsClick,
   onGameSelect,
   selectedGame,
+  onDropdownOpenChange,
 }: NavigationBarProps) {
   return (
     <div className="w-full mx-auto">
-      <InteractiveArea className="px-2 py-1.5 rounded-[2rem] border border-gaming-border-primary bg-gaming-bg-primary backdrop-blur-[12px]">
+      <InteractiveArea className="px-2 py-1.5 rounded-3xl border border-gaming-border-primary bg-gaming-bg-primary">
         <div className="flex items-center justify-between gap-2">
           {/* Game Selection Dropdown */}
           <div className="flex-1">
-            <SelectGame onGameSelect={onGameSelect} selectedGame={selectedGame} />
+            <SelectGame 
+              onGameSelect={onGameSelect} 
+              selectedGame={selectedGame}
+              onDropdownOpenChange={onDropdownOpenChange}
+            />
           </div>
 
           <div className="flex items-center gap-1">
