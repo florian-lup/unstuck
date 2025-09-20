@@ -156,6 +156,10 @@
   }
 
   /* Gaming-themed scrollbar styles for Electron/Chromium */
+  .gaming-scrollbar {
+    scroll-behavior: smooth;
+  }
+
   .gaming-scrollbar::-webkit-scrollbar {
     width: 6px;
   }

@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React, { useState, useRef, useEffect } from 'react'
 import { Input } from './ui/input'
 import { InteractiveArea } from './interactive-area'
 import { CornerDownLeft, X } from 'lucide-react'
@@ -19,6 +19,8 @@ interface TextChatProps {
 
 export function TextChat({ onClose, onSendMessage, messages = [] }: TextChatProps) {
   const [message, setMessage] = useState('')
+  const messagesEndRef = useRef<HTMLDivElement>(null)
+  const messagesContainerRef = useRef<HTMLDivElement>(null)
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
@@ -34,12 +36,26 @@ export function TextChat({ onClose, onSendMessage, messages = [] }: TextChatProp
     }
   }
 
+  const scrollToBottom = () => {
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
+  }
+
+  // Auto-scroll to bottom when new messages arrive
+  useEffect(() => {
+    if (messages.length > 0) {
+      scrollToBottom()
+    }
+  }, [messages])
+
   return (
     <div className="w-full mx-auto mt-2">
       {/* Messages Area */}
       {messages.length > 0 && (
-        <InteractiveArea className="mb-4 p-3 rounded-3xl border border-gaming-border-primary bg-gaming-bg-primary">
-          <div className="max-h-120 overflow-y-auto space-y-2 gaming-scrollbar">
+        <InteractiveArea className="mb-2 p-3 rounded-3xl border border-gaming-border-primary bg-gaming-bg-primary">
+          <div 
+            ref={messagesContainerRef}
+            className="max-h-120 overflow-y-auto space-y-2 gaming-scrollbar"
+          >
             {messages.map((msg) => (
               <div
                 key={msg.id}
@@ -56,6 +72,7 @@ export function TextChat({ onClose, onSendMessage, messages = [] }: TextChatProp
                 </div>
               </div>
             ))}
+            <div ref={messagesEndRef} />
           </div>
         </InteractiveArea>
       )}
