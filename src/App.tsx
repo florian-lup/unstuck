@@ -14,7 +14,7 @@ interface Game {
 function App() {
   const [selectedGame, setSelectedGame] = useState<Game | null>(null)
   const [isTextChatVisible, setIsTextChatVisible] = useState(false)
-  
+
   const { isVisible: isNavigationBarVisible } = useKeyboardToggle({
     key: 'Backslash',
     modifiers: { shift: true },
@@ -22,11 +22,12 @@ function App() {
 
   // Global click-through management - when navbar or text chat is visible
   useClickThrough({
-    interactiveSelectors: (isNavigationBarVisible || isTextChatVisible)
-      ? [
-          '[data-interactive-area]', // navbar, text chat, dropdowns, and any other interactive areas
-        ]
-      : [],
+    interactiveSelectors:
+      isNavigationBarVisible || isTextChatVisible
+        ? [
+            '[data-interactive-area]', // navbar, text chat, dropdowns, and any other interactive areas
+          ]
+        : [],
   })
 
   const handleSpeakClick = () => {
@@ -42,13 +43,11 @@ function App() {
   }
 
   const handleGameSelect = (game: Game) => {
-    console.log('Selected game:', game)
     setSelectedGame(game)
     // Handle game selection functionality here
   }
 
-  const handleSendMessage = (message: string) => {
-    console.log('Message sent:', message)
+  const handleSendMessage = (_message: string) => {
     // Handle message sending functionality here
     // You can integrate with your chat backend/AI here
   }

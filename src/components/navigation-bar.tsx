@@ -34,8 +34,8 @@ export function NavigationBar({
         <div className="flex items-center justify-between gap-2">
           {/* Game Selection Dropdown */}
           <div className="flex-1">
-            <SelectGame 
-              onGameSelect={onGameSelect} 
+            <SelectGame
+              onGameSelect={onGameSelect}
               selectedGame={selectedGame}
               onDropdownOpenChange={onDropdownOpenChange}
             />

@@ -127,7 +127,7 @@ void app.whenReady().then(() => {
     'set-ignore-mouse-events',
     (_event, ignore: boolean, options?: { forward?: boolean }) => {
       if (win && !win.isDestroyed()) {
-        win.setIgnoreMouseEvents(ignore, options || { forward: true })
+        win.setIgnoreMouseEvents(ignore, options ?? { forward: true })
       }
     }
   )

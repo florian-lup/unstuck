@@ -23,32 +23,25 @@ export function useClickThrough({
         return
       }
 
-      let isInInteractiveArea = false
-
       // Check if mouse is over any interactive element
-      for (const selector of interactiveSelectors) {
+      const isInInteractiveArea = interactiveSelectors.some((selector) => {
         const elements = document.querySelectorAll(selector)
-        elements.forEach((element) => {
+        return Array.from(elements).some((element) => {
           const rect = element.getBoundingClientRect()
-          if (
+          return (
             e.clientX >= rect.left &&
             e.clientX <= rect.right &&
             e.clientY >= rect.top &&
             e.clientY <= rect.bottom
-          ) {
-            isInInteractiveArea = true
-          }
+          )
         })
-
-        if (isInInteractiveArea) break // Early exit if found
-      }
+      })
 
       // Enable/disable mouse events based on mouse position
-      if (isInInteractiveArea) {
-        window.electronAPI?.setIgnoreMouseEvents(false)
-      } else {
-        window.electronAPI?.setIgnoreMouseEvents(true, { forward: true })
-      }
+      window.electronAPI?.setIgnoreMouseEvents(
+        !isInInteractiveArea,
+        isInInteractiveArea ? undefined : { forward: true }
+      )
     }
 
     // Set initial state
@@ -59,8 +52,9 @@ export function useClickThrough({
     document.addEventListener('mousemove', handleGlobalMouseMove, {
       passive: true,
     })
-    return () =>
+    return () => {
       document.removeEventListener('mousemove', handleGlobalMouseMove)
+    }
   }, [interactiveSelectors])
 
   /**

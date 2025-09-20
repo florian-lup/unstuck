@@ -24,7 +24,12 @@ interface SelectGameProps {
   onDropdownOpenChange?: (open: boolean) => void
 }
 
-export function SelectGame({ onGameSelect, selectedGame, className = '', onDropdownOpenChange }: SelectGameProps) {
+export function SelectGame({
+  onGameSelect,
+  selectedGame,
+  className = '',
+  onDropdownOpenChange,
+}: SelectGameProps) {
   const handleGameSelect = (game: Game) => {
     onGameSelect?.(game)
   }

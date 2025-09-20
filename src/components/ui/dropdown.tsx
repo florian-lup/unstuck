@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from 'react'
+import React, { useState, useRef, useEffect, useCallback } from 'react'
 import { ChevronDown } from 'lucide-react'
 import { InteractiveArea } from '../interactive-area'
 import '../../App.css'
@@ -16,14 +16,23 @@ function useDropdown<T extends HTMLElement = HTMLDivElement>({
   const [isOpen, setIsOpen] = useState(initialOpen)
   const dropdownRef = useRef<T>(null)
 
-  const setOpen = (open: boolean) => {
-    setIsOpen(open)
-    onOpenChange?.(open)
-  }
+  const setOpen = useCallback(
+    (open: boolean) => {
+      setIsOpen(open)
+      onOpenChange?.(open)
+    },
+    [onOpenChange]
+  )
 
-  const toggle = () => setOpen(!isOpen)
-  const open = () => setOpen(true)
-  const close = () => setOpen(false)
+  const toggle = () => {
+    setOpen(!isOpen)
+  }
+  const open = () => {
+    setOpen(true)
+  }
+  const close = () => {
+    setOpen(false)
+  }
 
   // Close dropdown when clicking outside
   useEffect(() => {
@@ -42,7 +51,7 @@ function useDropdown<T extends HTMLElement = HTMLDivElement>({
         document.removeEventListener('mousedown', handleClickOutside)
       }
     }
-  }, [isOpen])
+  }, [isOpen, setOpen])
 
   // Close dropdown on Escape key
   useEffect(() => {
@@ -58,7 +67,7 @@ function useDropdown<T extends HTMLElement = HTMLDivElement>({
         document.removeEventListener('keydown', handleKeyDown)
       }
     }
-  }, [isOpen])
+  }, [isOpen, setOpen])
 
   return {
     isOpen,
@@ -102,7 +111,7 @@ export function Dropdown({
   className = '',
   onOpenChange,
 }: DropdownProps) {
-  const { isOpen, toggle, close, dropdownRef } = useDropdown<HTMLDivElement>({
+  const { isOpen, toggle, close, dropdownRef } = useDropdown({
     onOpenChange,
   })
 
@@ -116,7 +125,7 @@ export function Dropdown({
     <div className={`relative ${className}`} ref={dropdownRef}>
       {React.Children.map(children, (child) =>
         React.isValidElement(child)
-          ? React.cloneElement(child as React.ReactElement<any>, {
+          ? React.cloneElement(child as React.ReactElement, {
               ...contextValue,
             })
           : child
@@ -171,7 +180,7 @@ export function DropdownContent({
         <div className="py-1" role="listbox">
           {React.Children.map(children, (child) =>
             React.isValidElement(child)
-              ? React.cloneElement(child as React.ReactElement<any>, { close })
+              ? React.cloneElement(child as React.ReactElement, { close })
               : child
           )}
         </div>

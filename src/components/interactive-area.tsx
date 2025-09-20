@@ -3,8 +3,8 @@ import React from 'react'
 interface InteractiveAreaProps {
   children: React.ReactNode
   className?: string
-  as?: keyof JSX.IntrinsicElements
-  [key: string]: any // Allow any other props to be passed through
+  as?: keyof React.JSX.IntrinsicElements
+  [key: string]: unknown // Allow any other props to be passed through
 }
 
 /**

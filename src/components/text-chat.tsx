@@ -32,7 +32,9 @@ export function TextChat({ onClose, onSendMessage }: TextChatProps) {
         <form onSubmit={handleSubmit} className="relative">
           <Input
             value={message}
-            onChange={(e) => setMessage(e.target.value)}
+            onChange={(e) => {
+              setMessage(e.target.value)
+            }}
             onKeyDown={handleKeyDown}
             placeholder="Ask about your game..."
             className="w-full pr-20" // Add right padding for buttons
@@ -52,7 +54,7 @@ export function TextChat({ onClose, onSendMessage }: TextChatProps) {
               type="button"
               onClick={onClose}
               variant="gaming"
-              size="icon" 
+              size="icon"
               className="size-6 p-0 rounded-full"
             >
               <X className="w-3 h-3" />

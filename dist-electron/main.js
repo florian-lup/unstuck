@@ -80,7 +80,7 @@ void app.whenReady().then(() => {
     "set-ignore-mouse-events",
     (_event, ignore, options) => {
       if (win && !win.isDestroyed()) {
-        win.setIgnoreMouseEvents(ignore, options || { forward: true });
+        win.setIgnoreMouseEvents(ignore, options ?? { forward: true });
       }
     }
   );

@@ -60,7 +60,9 @@ export function useKeyboardToggle({
 
   return {
     isVisible,
-    toggle: () => setIsVisible((prev) => !prev),
+    toggle: () => {
+      setIsVisible((prev) => !prev)
+    },
     setVisible: setIsVisible,
   }
 }
