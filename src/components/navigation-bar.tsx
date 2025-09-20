@@ -1,5 +1,5 @@
 import React from 'react'
-import { Mic, Type, Settings, Move } from 'lucide-react'
+import { Mic, Type, Settings, Grip } from 'lucide-react'
 import { Button } from './ui/button'
 import { SelectGame } from './select-game'
 import { InteractiveArea } from './interactive-area'
@@ -77,10 +77,10 @@ export function NavigationBar({
 
             {/* Move indicator - draggable */}
             <div
-              className="gaming-draggable"
+              className="gaming-draggable px-2 py-2 -mx-1 -my-1"
               style={{ WebkitAppRegion: 'drag' } as React.CSSProperties}
             >
-              <Move className="w-3 h-3 text-gaming-text-muted" />
+              <Grip className="w-3 h-3 text-gaming-text-muted" />
             </div>
           </div>
         </div>
