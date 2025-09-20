@@ -39,7 +39,7 @@ export function TextChat({ onClose, onSendMessage, messages = [] }: TextChatProp
       {/* Messages Area */}
       {messages.length > 0 && (
         <InteractiveArea className="mb-4 p-3 rounded-3xl border border-gaming-border-primary bg-gaming-bg-primary">
-          <div className="max-h-120 overflow-y-auto space-y-2">
+          <div className="max-h-120 overflow-y-auto space-y-2 gaming-scrollbar">
             {messages.map((msg) => (
               <div
                 key={msg.id}
