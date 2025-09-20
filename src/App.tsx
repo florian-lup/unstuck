@@ -1,19 +1,15 @@
 import { useState } from 'react'
 import { NavigationBar } from './components/navigation-bar'
-import { TextChat } from './components/text-chat'
+import { TextChat, type Message } from './components/text-chat'
 import { useKeyboardToggle } from './hooks/use-keyboard-toggle'
 import { useClickThrough } from './hooks/use-click-through'
+import { type Game } from './lib/games'
 import './index.css'
-
-interface Game {
-  id: string
-  name: string
-  icon?: React.ReactNode
-}
 
 function App() {
   const [selectedGame, setSelectedGame] = useState<Game | null>(null)
   const [isTextChatVisible, setIsTextChatVisible] = useState(false)
+  const [messages, setMessages] = useState<Message[]>([])
 
   const { isVisible: isNavigationBarVisible } = useKeyboardToggle({
     key: 'Backslash',
@@ -47,13 +43,33 @@ function App() {
     // Handle game selection functionality here
   }
 
-  const handleSendMessage = (_message: string) => {
-    // Handle message sending functionality here
-    // You can integrate with your chat backend/AI here
+  const handleSendMessage = (messageContent: string) => {
+    // Add user message
+    const userMessage: Message = {
+      id: Date.now().toString() + '-user',
+      content: messageContent,
+      role: 'user',
+      timestamp: new Date()
+    }
+    
+    setMessages(prev => [...prev, userMessage])
+    
+    // Simulate assistant response (replace with actual AI integration later)
+    setTimeout(() => {
+      const assistantMessage: Message = {
+        id: Date.now().toString() + '-assistant',
+        content: `I received your message: "${messageContent}". How can I help you with your game?`,
+        role: 'assistant',
+        timestamp: new Date()
+      }
+      setMessages(prev => [...prev, assistantMessage])
+    }, 1000)
   }
 
   const handleTextChatClose = () => {
     setIsTextChatVisible(false)
+    // Optionally clear messages when closing chat
+    // setMessages([])
   }
 
   const handleDropdownOpenChange = (open: boolean) => {
@@ -78,6 +94,7 @@ function App() {
         <TextChat
           onClose={handleTextChatClose}
           onSendMessage={handleSendMessage}
+          messages={messages}
         />
       )}
     </>
