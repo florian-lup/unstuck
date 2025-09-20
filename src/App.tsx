@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import { NavigationBar } from './components/navigation-bar'
 import { useKeyboardToggle } from './hooks/use-keyboard-toggle'
 import { useClickThrough } from './hooks/use-click-through'
@@ -10,6 +11,8 @@ interface Game {
 }
 
 function App() {
+  const [selectedGame, setSelectedGame] = useState<Game | null>(null)
+  
   const { isVisible: isNavigationBarVisible } = useKeyboardToggle({
     key: 'Backslash',
     modifiers: { shift: true },
@@ -38,6 +41,7 @@ function App() {
 
   const handleGameSelect = (game: Game) => {
     console.log('Selected game:', game)
+    setSelectedGame(game)
     // Handle game selection functionality here
   }
 
@@ -49,6 +53,7 @@ function App() {
           onTextClick={handleTextClick}
           onSettingsClick={handleSettingsClick}
           onGameSelect={handleGameSelect}
+          selectedGame={selectedGame}
         />
       )}
     </>

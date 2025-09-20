@@ -16,6 +16,7 @@ interface NavigationBarProps {
   onTextClick?: () => void
   onSettingsClick?: () => void
   onGameSelect?: (game: Game) => void
+  selectedGame?: Game | null
 }
 
 export function NavigationBar({
@@ -23,6 +24,7 @@ export function NavigationBar({
   onTextClick,
   onSettingsClick,
   onGameSelect,
+  selectedGame,
 }: NavigationBarProps) {
   return (
     <div className="w-full mx-auto">
@@ -30,7 +32,7 @@ export function NavigationBar({
         <div className="flex items-center justify-between gap-2">
           {/* Game Selection Dropdown */}
           <div className="flex-1">
-            <SelectGame onGameSelect={onGameSelect} />
+            <SelectGame onGameSelect={onGameSelect} selectedGame={selectedGame} />
           </div>
 
           <div className="flex items-center gap-1">

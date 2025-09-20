@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React from 'react'
 import { Gamepad2 } from 'lucide-react'
 import { Dropdown } from './ui/dropdown'
 import '../App.css'
@@ -19,14 +19,12 @@ const games: Game[] = [
 
 interface SelectGameProps {
   onGameSelect?: (game: Game) => void
+  selectedGame?: Game | null
   className?: string
 }
 
-export function SelectGame({ onGameSelect, className = '' }: SelectGameProps) {
-  const [selectedGame, setSelectedGame] = useState<Game | null>(null)
-
+export function SelectGame({ onGameSelect, selectedGame, className = '' }: SelectGameProps) {
   const handleGameSelect = (game: Game) => {
-    setSelectedGame(game)
     onGameSelect?.(game)
   }
 
@@ -51,7 +49,9 @@ export function SelectGame({ onGameSelect, className = '' }: SelectGameProps) {
           <Dropdown.Item
             key={game.id}
             selected={selectedGame?.id === game.id}
-            onSelect={() => handleGameSelect(game)}
+            onSelect={() => {
+              handleGameSelect(game)
+            }}
           >
             {game.name}
           </Dropdown.Item>
