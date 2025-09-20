@@ -39,7 +39,8 @@ let win: BrowserWindow | null
 
 function createWindow() {
   const { width: screenWidth } = screen.getPrimaryDisplay().workAreaSize
-  const windowWidth = 420
+  const windowWidth = 450
+  const windowHeight = 650
 
   win = new BrowserWindow({
     title: 'Unstuck',
@@ -49,6 +50,7 @@ function createWindow() {
     alwaysOnTop: true, // Keep on top of other windows
     resizable: false, // Prevent resizing
     width: windowWidth, // Fixed width for navigation bar
+    height: windowHeight, // Fixed height for chat window
     x: Math.round((screenWidth - windowWidth) / 2), // Center horizontally
     y: 20, // Position at top of screen
     webPreferences: {

@@ -11,7 +11,8 @@ process.env.VITE_PUBLIC = VITE_DEV_SERVER_URL ? path.join(process.env.APP_ROOT, 
 let win;
 function createWindow() {
   const { width: screenWidth } = screen.getPrimaryDisplay().workAreaSize;
-  const windowWidth = 420;
+  const windowWidth = 450;
+  const windowHeight = 650;
   win = new BrowserWindow({
     title: "Unstuck",
     icon: path.join(process.env.VITE_PUBLIC, "unstuck-logo.ico"),
@@ -25,6 +26,8 @@ function createWindow() {
     // Prevent resizing
     width: windowWidth,
     // Fixed width for navigation bar
+    height: windowHeight,
+    // Fixed height for chat window
     x: Math.round((screenWidth - windowWidth) / 2),
     // Center horizontally
     y: 20,

@@ -39,14 +39,14 @@ export function TextChat({ onClose, onSendMessage, messages = [] }: TextChatProp
       {/* Messages Area */}
       {messages.length > 0 && (
         <InteractiveArea className="mb-4 p-3 rounded-3xl border border-gaming-border-primary bg-gaming-bg-primary">
-          <div className="max-h-80 overflow-y-auto space-y-2">
+          <div className="max-h-120 overflow-y-auto space-y-2">
             {messages.map((msg) => (
               <div
                 key={msg.id}
                 className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}
               >
                 <div
-                  className={`px-3 py-2 text-sm ${
+                  className={`px-3 py-2 text-sm break-words whitespace-pre-wrap ${
                     msg.role === 'user'
                       ? 'max-w-[70%] text-gaming-text-primary'
                       : 'w-full text-gaming-text-secondary font-bold'
