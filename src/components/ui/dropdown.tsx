@@ -11,7 +11,7 @@ interface UseDropdownOptions {
 
 function useDropdown<T extends HTMLElement = HTMLDivElement>({
   initialOpen = false,
-  onOpenChange
+  onOpenChange,
 }: UseDropdownOptions = {}) {
   const [isOpen, setIsOpen] = useState(initialOpen)
   const dropdownRef = useRef<T>(null)
@@ -28,7 +28,10 @@ function useDropdown<T extends HTMLElement = HTMLDivElement>({
   // Close dropdown when clicking outside
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
-      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+      if (
+        dropdownRef.current &&
+        !dropdownRef.current.contains(event.target as Node)
+      ) {
         setOpen(false)
       }
     }
@@ -63,7 +66,7 @@ function useDropdown<T extends HTMLElement = HTMLDivElement>({
     toggle,
     open,
     close,
-    dropdownRef
+    dropdownRef,
   }
 }
 
@@ -94,22 +97,28 @@ interface DropdownContentProps {
 }
 
 // Main Dropdown Container
-export function Dropdown({ children, className = '', onOpenChange }: DropdownProps) {
+export function Dropdown({
+  children,
+  className = '',
+  onOpenChange,
+}: DropdownProps) {
   const { isOpen, toggle, close, dropdownRef } = useDropdown<HTMLDivElement>({
-    onOpenChange
+    onOpenChange,
   })
 
   const contextValue = {
     isOpen,
     toggle,
-    close
+    close,
   }
 
   return (
     <div className={`relative ${className}`} ref={dropdownRef}>
-      {React.Children.map(children, child =>
+      {React.Children.map(children, (child) =>
         React.isValidElement(child)
-          ? React.cloneElement(child as React.ReactElement<any>, { ...contextValue })
+          ? React.cloneElement(child as React.ReactElement<any>, {
+              ...contextValue,
+            })
           : child
       )}
     </div>
@@ -117,11 +126,11 @@ export function Dropdown({ children, className = '', onOpenChange }: DropdownPro
 }
 
 // Dropdown Trigger Button
-export function DropdownTrigger({ 
-  children, 
-  isOpen, 
+export function DropdownTrigger({
+  children,
+  isOpen,
   className = '',
-  ...contextProps 
+  ...contextProps
 }: DropdownTriggerProps & { toggle?: () => void }) {
   const { toggle } = contextProps
 
@@ -132,31 +141,35 @@ export function DropdownTrigger({
       aria-haspopup="listbox"
       aria-expanded={isOpen}
     >
-      <div className="flex items-center gap-2">
-        {children}
-      </div>
-      <ChevronDown 
-        className={`w-3 h-3 transition-transform duration-200 ${isOpen ? 'rotate-180' : ''}`} 
+      <div className="flex items-center gap-2">{children}</div>
+      <ChevronDown
+        className={`w-3 h-3 transition-transform duration-200 ${isOpen ? 'rotate-180' : ''}`}
       />
     </button>
   )
 }
 
 // Dropdown Content Wrapper
-export function DropdownContent({ 
-  children, 
+export function DropdownContent({
+  children,
   className = '',
   isOpen,
   close,
-  maxWidth = 'max-w-[200px]'
-}: DropdownContentProps & { isOpen?: boolean; close?: () => void; maxWidth?: string }) {
+  maxWidth = 'max-w-[200px]',
+}: DropdownContentProps & {
+  isOpen?: boolean
+  close?: () => void
+  maxWidth?: string
+}) {
   if (!isOpen) return null
 
   return (
     <div className={`absolute top-full left-0 mt-1 w-full ${maxWidth} z-50`}>
-      <InteractiveArea className={`bg-gaming-bg-primary border border-gaming-border-primary rounded-2xl p-1 ${className}`}>
+      <InteractiveArea
+        className={`bg-gaming-bg-primary border border-gaming-border-primary rounded-2xl p-1 ${className}`}
+      >
         <div className="py-1" role="listbox">
-          {React.Children.map(children, child =>
+          {React.Children.map(children, (child) =>
             React.isValidElement(child)
               ? React.cloneElement(child as React.ReactElement<any>, { close })
               : child
@@ -168,12 +181,12 @@ export function DropdownContent({
 }
 
 // Individual Dropdown Item
-export function DropdownItem({ 
-  children, 
-  onSelect, 
-  selected = false, 
+export function DropdownItem({
+  children,
+  onSelect,
+  selected = false,
   className = '',
-  close
+  close,
 }: DropdownItemProps) {
   const handleClick = () => {
     onSelect?.()
@@ -187,11 +200,11 @@ export function DropdownItem({
       role="option"
       aria-selected={selected}
     >
-      <div className={`w-1.5 h-1.5 rounded-full transition-all duration-150 ${
-        selected 
-          ? 'bg-gaming-accent-primary' 
-          : 'bg-gaming-text-muted'
-      }`} />
+      <div
+        className={`w-1.5 h-1.5 rounded-full transition-all duration-150 ${
+          selected ? 'bg-gaming-accent-primary' : 'bg-gaming-text-muted'
+        }`}
+      />
       <span>{children}</span>
     </button>
   )

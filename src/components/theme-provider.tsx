@@ -1,8 +1,8 @@
-import { useEffect } from "react"
-import { ThemeProviderContext } from "@/hooks/use-theme"
+import { useEffect } from 'react'
+import { ThemeProviderContext } from '@/hooks/use-theme'
 
 interface ThemeProviderState {
-  systemTheme: "dark" | "light"
+  systemTheme: 'dark' | 'light'
 }
 
 interface ThemeProviderProps {
@@ -14,7 +14,7 @@ export function ThemeProvider({ children }: ThemeProviderProps) {
     const root = window.document.documentElement
 
     const applyTheme = (theme: string) => {
-      root.classList.remove("light", "dark")
+      root.classList.remove('light', 'dark')
       root.classList.add(theme)
     }
 
@@ -24,30 +24,30 @@ export function ThemeProvider({ children }: ThemeProviderProps) {
       void window.electronAPI.getSystemTheme().then((systemTheme: string) => {
         applyTheme(systemTheme)
       })
-      
+
       // Listen for system theme changes
       window.electronAPI.onThemeChanged((newTheme: string) => {
         applyTheme(newTheme)
       })
     } else {
       // Fallback to browser API if not in Electron or during development
-      const systemTheme = window.matchMedia("(prefers-color-scheme: dark)")
+      const systemTheme = window.matchMedia('(prefers-color-scheme: dark)')
         .matches
-        ? "dark"
-        : "light"
+        ? 'dark'
+        : 'light'
 
       applyTheme(systemTheme)
 
       // Listen for system theme changes in browser
-      const mediaQuery = window.matchMedia("(prefers-color-scheme: dark)")
+      const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)')
       const handleChange = (e: MediaQueryListEvent) => {
-        applyTheme(e.matches ? "dark" : "light")
+        applyTheme(e.matches ? 'dark' : 'light')
       }
-      
-      mediaQuery.addEventListener("change", handleChange)
-      
+
+      mediaQuery.addEventListener('change', handleChange)
+
       return () => {
-        mediaQuery.removeEventListener("change", handleChange)
+        mediaQuery.removeEventListener('change', handleChange)
         // Clean up Electron listener if it exists
         if (window.electronAPI?.removeThemeListener) {
           window.electronAPI.removeThemeListener()
@@ -59,7 +59,7 @@ export function ThemeProvider({ children }: ThemeProviderProps) {
   // Since we're only detecting system theme, we don't need to expose any values
   // But keeping the context for potential future use
   const value: ThemeProviderState = {
-    systemTheme: "light", // This is just a placeholder since we don't track state
+    systemTheme: 'light', // This is just a placeholder since we don't track state
   }
 
   return (

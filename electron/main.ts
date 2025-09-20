@@ -1,8 +1,19 @@
-import { app, BrowserWindow, Menu, nativeTheme, ipcMain, screen, globalShortcut } from 'electron'
+import {
+  app,
+  BrowserWindow,
+  Menu,
+  nativeTheme,
+  ipcMain,
+  screen,
+  globalShortcut,
+} from 'electron'
 import { fileURLToPath } from 'node:url'
 import path from 'node:path'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
+
+// Set the app name as early as possible
+app.setName('Unstuck')
 
 // The built directory structure
 //
@@ -29,9 +40,10 @@ let win: BrowserWindow | null
 function createWindow() {
   const { width: screenWidth } = screen.getPrimaryDisplay().workAreaSize
   const windowWidth = 420
-  
+
   win = new BrowserWindow({
-    icon: path.join(process.env.VITE_PUBLIC, 'electron-vite.svg'),
+    title: 'Unstuck',
+    icon: path.join(process.env.VITE_PUBLIC, 'unstuck-logo.ico'),
     frame: false, // Remove window frame (title bar, borders)
     transparent: true, // Make window background transparent
     alwaysOnTop: true, // Keep on top of other windows
@@ -81,6 +93,9 @@ app.on('activate', () => {
 })
 
 void app.whenReady().then(() => {
+  // Set the app name
+  app.setName('Unstuck')
+
   // Remove the default menu bar
   Menu.setApplicationMenu(null)
   createWindow()
@@ -93,23 +108,29 @@ void app.whenReady().then(() => {
   // Watch for theme changes
   nativeTheme.on('updated', () => {
     if (win && !win.isDestroyed()) {
-      win.webContents.send('theme-changed', nativeTheme.shouldUseDarkColors ? 'dark' : 'light')
+      win.webContents.send(
+        'theme-changed',
+        nativeTheme.shouldUseDarkColors ? 'dark' : 'light'
+      )
     }
   })
 
   // Register global shortcut for navigation bar toggle
-       globalShortcut.register('Shift+\\', () => {
+  globalShortcut.register('Shift+\\', () => {
     if (win && !win.isDestroyed()) {
       win.webContents.send('toggle-navigation-bar')
     }
   })
 
   // Handle mouse event control for click-through functionality
-  ipcMain.on('set-ignore-mouse-events', (_event, ignore: boolean, options?: { forward?: boolean }) => {
-    if (win && !win.isDestroyed()) {
-      win.setIgnoreMouseEvents(ignore, options || { forward: true })
+  ipcMain.on(
+    'set-ignore-mouse-events',
+    (_event, ignore: boolean, options?: { forward?: boolean }) => {
+      if (win && !win.isDestroyed()) {
+        win.setIgnoreMouseEvents(ignore, options || { forward: true })
+      }
     }
-  })
+  )
 })
 
 // Unregister all global shortcuts when app is quitting

@@ -1,9 +1,9 @@
 // @see - https://www.electron.build/configuration/configuration
 {
   $schema: 'https://raw.githubusercontent.com/electron-userland/electron-builder/master/packages/app-builder-lib/scheme.json',
-  appId: 'YourAppID',
+  appId: 'com.unstuck.app',
   asar: true,
-  productName: 'YourAppName',
+  productName: 'Unstuck',
   directories: {
     output: 'release/${version}',
   },
@@ -19,6 +19,7 @@
         arch: ['x64'],
       },
     ],
+    icon: 'public/unstuck-logo.ico',
     artifactName: '${productName}-Windows-${version}-Setup.${ext}',
   },
   nsis: {

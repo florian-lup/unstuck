@@ -11,18 +11,14 @@ interface InteractiveAreaProps {
  * Wrapper component that marks an area as interactive for click-through functionality
  * Any element wrapped in this component will remain clickable when the window has click-through enabled
  */
-export function InteractiveArea({ 
-  children, 
-  className = '', 
-  as: Component = 'div', 
-  ...props 
+export function InteractiveArea({
+  children,
+  className = '',
+  as: Component = 'div',
+  ...props
 }: InteractiveAreaProps) {
   return (
-    <Component 
-      className={className}
-      data-interactive-area
-      {...props}
-    >
+    <Component className={className} data-interactive-area {...props}>
       {children}
     </Component>
   )

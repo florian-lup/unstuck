@@ -14,7 +14,7 @@ interface UseKeyboardToggleOptions {
 export function useKeyboardToggle({
   initialValue = true,
   key,
-  modifiers = {}
+  modifiers = {},
 }: UseKeyboardToggleOptions) {
   const [isVisible, setIsVisible] = useState(initialValue)
 
@@ -24,18 +24,21 @@ export function useKeyboardToggle({
       if (event.code !== key) return
 
       // Check modifiers
-      if (modifiers.shift !== undefined && event.shiftKey !== modifiers.shift) return
-      if (modifiers.ctrl !== undefined && event.ctrlKey !== modifiers.ctrl) return
+      if (modifiers.shift !== undefined && event.shiftKey !== modifiers.shift)
+        return
+      if (modifiers.ctrl !== undefined && event.ctrlKey !== modifiers.ctrl)
+        return
       if (modifiers.alt !== undefined && event.altKey !== modifiers.alt) return
-      if (modifiers.meta !== undefined && event.metaKey !== modifiers.meta) return
+      if (modifiers.meta !== undefined && event.metaKey !== modifiers.meta)
+        return
 
       // Prevent default behavior and toggle visibility
       event.preventDefault()
-      setIsVisible(prev => !prev)
+      setIsVisible((prev) => !prev)
     }
 
     const handleElectronToggle = () => {
-      setIsVisible(prev => !prev)
+      setIsVisible((prev) => !prev)
     }
 
     // Add event listener with capture: true to intercept before input elements
@@ -57,7 +60,7 @@ export function useKeyboardToggle({
 
   return {
     isVisible,
-    toggle: () => setIsVisible(prev => !prev),
-    setVisible: setIsVisible
+    toggle: () => setIsVisible((prev) => !prev),
+    setVisible: setIsVisible,
   }
 }

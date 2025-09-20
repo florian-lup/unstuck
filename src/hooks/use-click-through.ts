@@ -12,7 +12,9 @@ interface UseClickThroughOptions {
  * Hook to manage click-through behavior for Electron windows
  * Automatically enables/disables mouse events based on mouse position
  */
-export function useClickThrough({ interactiveSelectors }: UseClickThroughOptions) {
+export function useClickThrough({
+  interactiveSelectors,
+}: UseClickThroughOptions) {
   useEffect(() => {
     const handleGlobalMouseMove = (e: MouseEvent) => {
       // If no interactive selectors, always enable click-through
@@ -22,21 +24,25 @@ export function useClickThrough({ interactiveSelectors }: UseClickThroughOptions
       }
 
       let isInInteractiveArea = false
-      
+
       // Check if mouse is over any interactive element
       for (const selector of interactiveSelectors) {
         const elements = document.querySelectorAll(selector)
-        elements.forEach(element => {
+        elements.forEach((element) => {
           const rect = element.getBoundingClientRect()
-          if (e.clientX >= rect.left && e.clientX <= rect.right && 
-              e.clientY >= rect.top && e.clientY <= rect.bottom) {
+          if (
+            e.clientX >= rect.left &&
+            e.clientX <= rect.right &&
+            e.clientY >= rect.top &&
+            e.clientY <= rect.bottom
+          ) {
             isInInteractiveArea = true
           }
         })
-        
+
         if (isInInteractiveArea) break // Early exit if found
       }
-      
+
       // Enable/disable mouse events based on mouse position
       if (isInInteractiveArea) {
         window.electronAPI?.setIgnoreMouseEvents(false)
@@ -50,8 +56,11 @@ export function useClickThrough({ interactiveSelectors }: UseClickThroughOptions
       window.electronAPI?.setIgnoreMouseEvents(true, { forward: true })
     }
 
-    document.addEventListener('mousemove', handleGlobalMouseMove, { passive: true })
-    return () => document.removeEventListener('mousemove', handleGlobalMouseMove)
+    document.addEventListener('mousemove', handleGlobalMouseMove, {
+      passive: true,
+    })
+    return () =>
+      document.removeEventListener('mousemove', handleGlobalMouseMove)
   }, [interactiveSelectors])
 
   /**
@@ -70,6 +79,6 @@ export function useClickThrough({ interactiveSelectors }: UseClickThroughOptions
 
   return {
     enableMouseEvents,
-    enableClickThrough
+    enableClickThrough,
   }
 }

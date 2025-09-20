@@ -12,14 +12,16 @@ interface Game {
 function App() {
   const { isVisible: isNavigationBarVisible } = useKeyboardToggle({
     key: 'Backslash',
-    modifiers: { shift: true }
+    modifiers: { shift: true },
   })
 
   // Global click-through management - only when navbar is visible
   useClickThrough({
-    interactiveSelectors: isNavigationBarVisible ? [
-      '[data-interactive-area]', // navbar, dropdowns, and any other interactive areas
-    ] : []
+    interactiveSelectors: isNavigationBarVisible
+      ? [
+          '[data-interactive-area]', // navbar, dropdowns, and any other interactive areas
+        ]
+      : [],
   })
 
   const handleSpeakClick = () => {

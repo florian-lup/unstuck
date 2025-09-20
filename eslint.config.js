@@ -39,7 +39,11 @@ export default tseslint.config(
   // Apply type-checked rules only to TypeScript files
   {
     files: ['**/*.{ts,tsx}'],
-    ignores: ['*.config.{js,ts,mjs}', '*.config.*.{js,ts,mjs}', 'vite.config.ts'],
+    ignores: [
+      '*.config.{js,ts,mjs}',
+      '*.config.*.{js,ts,mjs}',
+      'vite.config.ts',
+    ],
     extends: [
       ...tseslint.configs.strictTypeChecked,
       ...tseslint.configs.stylisticTypeChecked,
@@ -58,7 +62,7 @@ export default tseslint.config(
       },
     },
     plugins: {
-      'react': react,
+      react: react,
     },
     rules: {
       ...react.configs.recommended.rules,
@@ -68,29 +72,41 @@ export default tseslint.config(
       'react/require-default-props': 'off',
       // TypeScript specific rules
       '@typescript-eslint/no-explicit-any': 'error',
-      '@typescript-eslint/no-unused-vars': ['error', { 
-        argsIgnorePattern: '^_',
-        varsIgnorePattern: '^_',
-      }],
+      '@typescript-eslint/no-unused-vars': [
+        'error',
+        {
+          argsIgnorePattern: '^_',
+          varsIgnorePattern: '^_',
+        },
+      ],
       '@typescript-eslint/consistent-type-definitions': ['error', 'interface'],
       '@typescript-eslint/explicit-function-return-type': 'off',
       '@typescript-eslint/explicit-module-boundary-types': 'off',
       '@typescript-eslint/no-non-null-assertion': 'warn',
-      '@typescript-eslint/no-use-before-define': ['error', { 
-        functions: false,
-        classes: true,
-        variables: true,
-      }],
-      // Relax some overly strict rules
-      '@typescript-eslint/restrict-template-expressions': ['error', {
-        allowNumber: true,
-        allowBoolean: true,
-      }],
-      '@typescript-eslint/no-misused-promises': ['error', {
-        checksVoidReturn: {
-          attributes: false,
+      '@typescript-eslint/no-use-before-define': [
+        'error',
+        {
+          functions: false,
+          classes: true,
+          variables: true,
         },
-      }],
+      ],
+      // Relax some overly strict rules
+      '@typescript-eslint/restrict-template-expressions': [
+        'error',
+        {
+          allowNumber: true,
+          allowBoolean: true,
+        },
+      ],
+      '@typescript-eslint/no-misused-promises': [
+        'error',
+        {
+          checksVoidReturn: {
+            attributes: false,
+          },
+        },
+      ],
     },
   },
 

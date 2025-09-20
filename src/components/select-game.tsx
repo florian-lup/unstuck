@@ -14,7 +14,7 @@ const games: Game[] = [
   { id: 'csgo', name: 'CS2' },
   { id: 'lol', name: 'League of Legends 11.2' },
   { id: 'apex', name: 'Apex Legends' },
-  { id: 'overwatch', name: 'Overwatch 2' }
+  { id: 'overwatch', name: 'Overwatch 2' },
 ]
 
 interface SelectGameProps {
@@ -45,7 +45,7 @@ export function SelectGame({ onGameSelect, className = '' }: SelectGameProps) {
           </>
         )}
       </Dropdown.Trigger>
-      
+
       <Dropdown.Content>
         {games.map((game) => (
           <Dropdown.Item
