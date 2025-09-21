@@ -39,10 +39,10 @@ export function TextChat({ onClose, onSendMessage, messages = [] }: TextChatProp
     <div className="w-full mx-auto mt-2">
       {/* Messages Area */}
       {hasMessages && (
-        <InteractiveArea className="mb-2 p-3 rounded-3xl border border-gaming-border-primary bg-gaming-bg-primary">
+        <InteractiveArea className="mb-2 p-3 rounded-3xl border border-overlay-border-primary bg-overlay-bg-primary">
           <div 
             ref={messagesContainerRef}
-            className="max-h-120 overflow-y-auto space-y-2 gaming-scrollbar"
+            className="max-h-120 overflow-y-auto space-y-2 overlay-scrollbar"
           >
             {messages.map((msg) => (
               <div
@@ -52,8 +52,8 @@ export function TextChat({ onClose, onSendMessage, messages = [] }: TextChatProp
                 <div
                   className={`px-3 py-2 text-sm break-words whitespace-pre-wrap ${
                     msg.role === 'user'
-                      ? 'max-w-[70%] text-gaming-text-primary'
-                      : 'w-full text-gaming-text-secondary font-bold'
+                      ? 'max-w-[70%] text-overlay-text-primary'
+                      : 'w-full text-overlay-text-secondary font-bold'
                   }`}
                 >
                   {msg.content}
@@ -66,7 +66,7 @@ export function TextChat({ onClose, onSendMessage, messages = [] }: TextChatProp
       )}
 
       {/* Input Area */}
-      <InteractiveArea className="p-0 rounded-3xl border border-gaming-border-primary bg-gaming-bg-primary">
+      <InteractiveArea className="p-0 rounded-3xl border border-overlay-border-primary bg-overlay-bg-primary">
         <form onSubmit={handleSubmit} className="relative">
           <Input
             value={message}

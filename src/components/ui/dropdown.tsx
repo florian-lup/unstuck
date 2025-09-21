@@ -146,7 +146,7 @@ export function DropdownTrigger({
   return (
     <button
       onClick={toggle}
-      className={`border border-gaming-border-primary rounded-3xl px-3 py-1.5 flex items-center gap-2 text-sm font-medium text-gaming-text-primary hover:border-gaming-accent-primary transition-all duration-200 w-full justify-between ${className}`}
+      className={`border border-overlay-border-primary rounded-3xl px-3 py-1.5 flex items-center gap-2 text-sm font-medium text-overlay-text-primary hover:border-overlay-accent-primary transition-all duration-200 w-full justify-between ${className}`}
       aria-haspopup="listbox"
       aria-expanded={isOpen}
     >
@@ -175,7 +175,7 @@ export function DropdownContent({
   return (
     <div className={`absolute top-full left-0 mt-1 w-full ${maxWidth} z-50`}>
       <InteractiveArea
-        className={`bg-gaming-bg-primary border border-gaming-border-primary rounded-2xl p-1 ${className}`}
+        className={`bg-overlay-bg-primary border border-overlay-border-primary rounded-2xl p-1 ${className}`}
       >
         <div className="py-1" role="listbox">
           {React.Children.map(children, (child) =>
@@ -205,13 +205,13 @@ export function DropdownItem({
   return (
     <button
       onClick={handleClick}
-      className={`w-full px-3 py-2 text-left flex items-center gap-2 text-xs text-gaming-text-primary hover:bg-gaming-bg-hover hover:text-gaming-accent-primary transition-all duration-150 focus:outline-none focus:bg-gaming-bg-hover focus:text-gaming-accent-primary rounded-3xl ${className}`}
+      className={`w-full px-3 py-2 text-left flex items-center gap-2 text-xs text-overlay-text-primary hover:bg-overlay-bg-hover hover:text-overlay-accent-primary transition-all duration-150 focus:outline-none focus:bg-overlay-bg-hover focus:text-overlay-accent-primary rounded-3xl ${className}`}
       role="option"
       aria-selected={selected}
     >
       <div
         className={`w-1.5 h-1.5 rounded-full transition-all duration-150 ${
-          selected ? 'bg-gaming-accent-primary' : 'bg-gaming-text-muted'
+          selected ? 'bg-overlay-accent-primary' : 'bg-overlay-text-muted'
         }`}
       />
       <span>{children}</span>

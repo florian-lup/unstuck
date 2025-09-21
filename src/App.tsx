@@ -2,6 +2,7 @@ import { NavigationBar } from './components/navigation-bar'
 import { TextChat } from './components/text-chat'
 import { useAppLogic } from './hooks/use-app-logic'
 import './index.css'
+import './App.css'
 
 function App() {
   const {

@@ -6,49 +6,70 @@
 
 :root {
   /* Gaming Overlay Color Palette */
-  --gaming-bg-primary: rgba(5, 5, 8, 0.55);
-  --gaming-bg-secondary: rgba(8, 8, 12, 0.5);
-  --gaming-bg-tertiary: rgba(12, 12, 16, 0.45);
-  --gaming-bg-hover: rgba(255, 255, 255, 0.05);
+  --overlay-bg-primary: rgba(5, 5, 8, 0.55);
+  --overlay-bg-secondary: rgba(8, 8, 12, 0.5);
+  --overlay-bg-hover: rgba(255, 255, 255, 0.05);
 
   /* Gaming Accent Colors */
-  --gaming-accent-primary: rgba(0, 255, 255, 0.65); /* Cyan */
-  --gaming-accent-secondary: rgba(138, 43, 226, 0.65); /* Purple */
-  --gaming-accent-success: rgba(50, 205, 50, 0.65); /* Lime Green */
+  --overlay-accent-primary: rgba(0, 255, 255, 0.65); /* Cyan */
+  --overlay-accent-secondary: rgba(138, 43, 226, 0.65); /* Purple */
+  --overlay-accent-successs: rgba(50, 205, 50, 0.65); /* Lime Green */
 
   /* Gaming Text Colors */
-  --gaming-text-primary: rgba(255, 255, 255, 0.85);
-  --gaming-text-secondary: rgba(255, 255, 255, 0.65);
-  --gaming-text-muted: rgba(255, 255, 255, 0.4);
+  --overlay-text-primary: rgba(255, 255, 255, 0.85);
+  --overlay-text-secondary: rgba(255, 255, 255, 0.65);
+  --overlay-text-muted: rgba(255, 255, 255, 0.4);
 
   /* Gaming Border Colors */
-  --gaming-border-primary: rgba(255, 255, 255, 0.12);
-  --gaming-border-accent: rgba(0, 255, 255, 0.25);
+  --overlay-border-primary: rgba(255, 255, 255, 0.12);
+  --overlay-border-accent: rgba(0, 255, 255, 0.25);
 
   /* Gaming Transitions - removed for minimal UI */
 }
 
 @theme {
-  --color-gaming-bg-primary: var(--gaming-bg-primary);
-  --color-gaming-bg-secondary: var(--gaming-bg-secondary);
-  --color-gaming-bg-tertiary: var(--gaming-bg-tertiary);
-  --color-gaming-bg-hover: var(--gaming-bg-hover);
-  --color-gaming-accent-primary: var(--gaming-accent-primary);
-  --color-gaming-accent-secondary: var(--gaming-accent-secondary);
-  --color-gaming-accent-success: var(--gaming-accent-success);
-  --color-gaming-text-primary: var(--gaming-text-primary);
-  --color-gaming-text-secondary: var(--gaming-text-secondary);
-  --color-gaming-text-muted: var(--gaming-text-muted);
-  --color-gaming-border-primary: var(--gaming-border-primary);
-  --color-gaming-border-accent: var(--gaming-border-accent);
+  --color-overlay-bg-primary: var(--overlay-bg-primary);
+  --color-overlay-bg-secondary: var(--overlay-bg-secondary);
+  --color-overlay-bg-hover: var(--overlay-bg-hover);
+  --color-overlay-accent-primary: var(--overlay-accent-primary);
+  --color-overlay-accent-secondary: var(--overlay-accent-secondary);
+  --color-overlay-accent-successs: var(--overlay-accent-successs);
+  --color-overlay-text-primary: var(--overlay-text-primary);
+  --color-overlay-text-secondary: var(--overlay-text-secondary);
+  --color-overlay-text-muted: var(--overlay-text-muted);
+  --color-overlay-border-primary: var(--overlay-border-primary);
+  --color-overlay-border-accent: var(--overlay-border-accent);
 }
 
 /* Prevent text selection on interactive elements */
 button,
 button *,
-.gaming-draggable {
+.overlay-draggable {
   user-select: none;
   -webkit-user-select: none;
   -moz-user-select: none;
   -ms-user-select: none;
+}
+/* Gaming-themed scrollbar styles for overlay components */
+.overlay-scrollbar {
+  scroll-behavior: smooth;
+}
+
+.overlay-scrollbar::-webkit-scrollbar {
+  width: 6px;
+}
+
+.overlay-scrollbar::-webkit-scrollbar-track {
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 6px;
+}
+
+.overlay-scrollbar::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.15);
+  border-radius: 6px;
+  transition: background-color 0.2s ease;
+}
+
+.overlay-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: rgba(0, 255, 255, 0.25);
 }

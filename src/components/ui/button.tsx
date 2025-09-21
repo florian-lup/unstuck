@@ -19,7 +19,7 @@ const buttonVariants = cva(
         ghost:
           'hover:bg-accent hover:text-accent-foreground dark:hover:bg-accent/50',
         gaming:
-          'bg-transparent border border-transparent text-gaming-text-primary hover:border-gaming-accent-primary hover:bg-transparent font-medium',
+          'bg-transparent border border-transparent text-overlay-text-primary hover:border-overlay-accent-primary hover:bg-transparent font-medium',
         link: 'text-primary underline-offset-4 hover:underline',
       },
       size: {
