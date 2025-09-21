@@ -11069,6 +11069,10 @@ function createAuthWindow() {
     // Normal opaque window
     alwaysOnTop: false,
     // Normal window behavior
+    show: false,
+    // Don't show immediately to prevent blank page flash
+    backgroundColor: "#0a0a0a",
+    // Set background color to match loading screen
     webPreferences: {
       preload: path$1.join(__dirname, "preload.mjs"),
       nodeIntegration: false,
@@ -11080,6 +11084,11 @@ function createAuthWindow() {
     }
   });
   authWindow.setMenuBarVisibility(false);
+  authWindow.once("ready-to-show", () => {
+    if (authWindow && !authWindow.isDestroyed()) {
+      authWindow.show();
+    }
+  });
   authWindow.webContents.on("will-navigate", (event, navigationUrl) => {
     const parsedUrl = new URL(navigationUrl);
     if (parsedUrl.origin !== "http://localhost:5173" && parsedUrl.origin !== "file://" && !navigationUrl.includes("auth.html")) {

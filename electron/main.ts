@@ -69,6 +69,8 @@ function createAuthWindow() {
     frame: true, // Normal window with title bar
     transparent: false, // Normal opaque window
     alwaysOnTop: false, // Normal window behavior
+    show: false, // Don't show immediately to prevent blank page flash
+    backgroundColor: '#0a0a0a', // Set background color to match loading screen
     webPreferences: {
       preload: path.join(__dirname, 'preload.mjs'),
       nodeIntegration: false,
@@ -82,6 +84,13 @@ function createAuthWindow() {
 
   // Remove menu bar for cleaner look
   authWindow.setMenuBarVisibility(false)
+
+  // Show window only when content is ready to prevent blank page flash
+  authWindow.once('ready-to-show', () => {
+    if (authWindow && !authWindow.isDestroyed()) {
+      authWindow.show()
+    }
+  })
 
   // Security: Block external navigation
   authWindow.webContents.on('will-navigate', (event, navigationUrl) => {
