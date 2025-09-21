@@ -1,8 +1,8 @@
-import React, { useState, useRef, useEffect } from 'react'
 import { Input } from './ui/input'
 import { InteractiveArea } from './interactive-area'
 import { CornerDownLeft, X } from 'lucide-react'
 import { Button } from './ui/button'
+import { useTextChat } from '../hooks/use-text-chat'
 
 export interface Message {
   id: string
@@ -18,47 +18,27 @@ interface TextChatProps {
 }
 
 export function TextChat({ onClose, onSendMessage, messages = [] }: TextChatProps) {
-  const [message, setMessage] = useState('')
-  const messagesEndRef = useRef<HTMLDivElement>(null)
-  const messagesContainerRef = useRef<HTMLDivElement>(null)
-
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault()
-    if (message.trim()) {
-      // Ensure window stays on top when sending a message
-      window.electronAPI?.windowInteraction()
-      onSendMessage?.(message.trim())
-      setMessage('') // Clear input after sending
-    }
-  }
-
-  const handleClose = () => {
-    // Ensure window stays on top when closing chat
-    window.electronAPI?.windowInteraction()
-    onClose?.()
-  }
-
-  const handleKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === 'Escape') {
-      handleClose()
-    }
-  }
-
-  const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
-  }
-
-  // Auto-scroll to bottom when new messages arrive
-  useEffect(() => {
-    if (messages.length > 0) {
-      scrollToBottom()
-    }
-  }, [messages])
+  const {
+    // State
+    message,
+    messagesEndRef,
+    messagesContainerRef,
+    
+    // Actions
+    handleSubmit,
+    handleClose,
+    handleKeyDown,
+    handleMessageChange,
+    
+    // Computed
+    hasMessages,
+    canSubmit,
+  } = useTextChat({ onClose, onSendMessage, messages })
 
   return (
     <div className="w-full mx-auto mt-2">
       {/* Messages Area */}
-      {messages.length > 0 && (
+      {hasMessages && (
         <InteractiveArea className="mb-2 p-3 rounded-3xl border border-gaming-border-primary bg-gaming-bg-primary">
           <div 
             ref={messagesContainerRef}
@@ -90,9 +70,7 @@ export function TextChat({ onClose, onSendMessage, messages = [] }: TextChatProp
         <form onSubmit={handleSubmit} className="relative">
           <Input
             value={message}
-            onChange={(e) => {
-              setMessage(e.target.value)
-            }}
+            onChange={handleMessageChange}
             onKeyDown={handleKeyDown}
             placeholder="Ask about your game..."
             className="w-full pr-20" // Add right padding for buttons
@@ -104,7 +82,7 @@ export function TextChat({ onClose, onSendMessage, messages = [] }: TextChatProp
               variant="gaming"
               size="icon"
               className="size-6 p-0 rounded-full"
-              disabled={!message.trim()}
+              disabled={!canSubmit}
             >
               <CornerDownLeft className="w-3 h-3" />
             </Button>
