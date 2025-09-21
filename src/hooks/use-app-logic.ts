@@ -1,14 +1,19 @@
 import { useState } from 'react'
 import { useKeyboardToggle } from './use-keyboard-toggle'
 import { useClickThrough } from './use-click-through'
+import { useAuth } from './use-auth'
 import { type Game } from '../lib/games'
 import { type Message } from '../components/text-chat'
 
 export function useAppLogic() {
+  // Authentication state
+  const { user, signOut, isSecureStorage } = useAuth()
+  
   // Core application state
   const [selectedGame, setSelectedGame] = useState<Game | null>(null)
   const [isTextChatVisible, setIsTextChatVisible] = useState(false)
   const [messages, setMessages] = useState<Message[]>([])
+  const [showSettingsMenu, setShowSettingsMenu] = useState(false)
 
   // Navigation bar visibility toggle
   const { isVisible: isNavigationBarVisible } = useKeyboardToggle({
@@ -35,8 +40,19 @@ export function useAppLogic() {
   }
 
   const handleSettingsClick = () => {
-    // Handle settings functionality here
-    // TODO: Implement settings modal/panel
+    setShowSettingsMenu(!showSettingsMenu)
+  }
+
+  const handleLogout = async () => {
+    try {
+      await signOut()
+      // Send message to main process to show auth window again
+      if (window.ipcRenderer) {
+        window.ipcRenderer.send('user-logout')
+      }
+    } catch (error) {
+      console.error('Logout error:', error)
+    }
   }
 
   const handleGameSelect = (game: Game) => {
@@ -86,6 +102,9 @@ export function useAppLogic() {
     isTextChatVisible,
     messages,
     isNavigationBarVisible,
+    showSettingsMenu,
+    user,
+    isSecureStorage,
     
     // Actions
     handleSpeakClick,
@@ -95,5 +114,7 @@ export function useAppLogic() {
     handleSendMessage,
     handleTextChatClose,
     handleDropdownOpenChange,
+    handleLogout,
+    setShowSettingsMenu,
   }
 }

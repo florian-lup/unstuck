@@ -10,6 +10,15 @@ export interface IElectronAPI {
   ) => void
   ensureAlwaysOnTop: () => void
   windowInteraction: () => void
+  auth: {
+    getOAuthUrl: (provider: 'google' | 'github' | 'discord') => Promise<{ success: boolean; url?: string; error?: string }>
+    getSession: () => Promise<{ success: boolean; user?: any; session?: any; error?: string }>
+    signOut: () => Promise<{ success: boolean; error?: string }>
+    isSecureStorage: () => Promise<boolean>
+    onAuthSuccess: (callback: (user: any) => void) => any
+    onAuthError: (callback: (error: string) => void) => any
+    removeAuthListeners: () => void
+  }
 }
 
 declare global {

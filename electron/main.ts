@@ -6,9 +6,14 @@ import {
   ipcMain,
   screen,
   globalShortcut,
+  shell,
+  safeStorage,
 } from 'electron'
 import { fileURLToPath } from 'node:url'
 import path from 'node:path'
+import { authService } from './auth-service'
+import { loadEnvironmentConfig, validateConfig } from './env-loader'
+import { SecurityValidator } from './security-validators'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 
@@ -36,8 +41,88 @@ process.env.VITE_PUBLIC = VITE_DEV_SERVER_URL
   : RENDERER_DIST
 
 let overlayWindow: BrowserWindow | null
+let authWindow: BrowserWindow | null
 
-function createWindow() {
+// Handle OAuth callback URLs
+async function handleOAuthCallback(url: string) {
+  try {
+    const user = await authService.handleOAuthCallback(url)
+    if (user && authWindow && !authWindow.isDestroyed()) {
+      // Notify renderer of successful authentication
+      authWindow.webContents.send('auth-success', user)
+    }
+  } catch (error) {
+    console.error('OAuth callback error:', error)
+    if (authWindow && !authWindow.isDestroyed()) {
+      authWindow.webContents.send('auth-error', (error as Error).message)
+    }
+  }
+}
+
+function createAuthWindow() {
+  authWindow = new BrowserWindow({
+    title: 'Get Unstuck - Authentication',
+    icon: path.join(process.env.VITE_PUBLIC, 'unstuck-logo.ico'),
+    width: 500,
+    height: 700,
+    center: true,
+    resizable: false,
+    frame: true, // Normal window with title bar
+    transparent: false, // Normal opaque window
+    alwaysOnTop: false, // Normal window behavior
+    webPreferences: {
+      preload: path.join(__dirname, 'preload.mjs'),
+      nodeIntegration: false,
+      contextIsolation: true,
+      allowRunningInsecureContent: false,
+      experimentalFeatures: false,
+      devTools: process.env.NODE_ENV === 'development',
+      webSecurity: true,
+    },
+  })
+
+  // Remove menu bar for cleaner look
+  authWindow.setMenuBarVisibility(false)
+
+  // Security: Block external navigation
+  authWindow.webContents.on('will-navigate', (event, navigationUrl) => {
+    const parsedUrl = new URL(navigationUrl)
+    
+    // Allow navigation to same origin or localhost
+    if (parsedUrl.origin !== 'http://localhost:5173' && 
+        parsedUrl.origin !== 'file://' &&
+        !navigationUrl.includes('auth.html')) {
+      console.log('Blocked navigation to:', navigationUrl)
+      event.preventDefault()
+    }
+  })
+
+  // Security: Block new window creation
+  authWindow.webContents.setWindowOpenHandler(({ url }) => {
+    console.log('Blocked new window creation for:', url)
+    shell.openExternal(url) // Open in system browser instead
+    return { action: 'deny' }
+  })
+
+  if (VITE_DEV_SERVER_URL) {
+    void authWindow.loadURL(`${VITE_DEV_SERVER_URL}/auth.html`)
+  } else {
+    void authWindow.loadFile(path.join(RENDERER_DIST, 'auth.html'))
+  }
+
+  // Handle auth window events
+  authWindow.on('closed', () => {
+    authWindow = null
+    // If auth window is closed without authentication, quit the app
+    if (!overlayWindow) {
+      app.quit()
+    }
+  })
+
+  return authWindow
+}
+
+function createOverlayWindow() {
   const { width: screenWidth } = screen.getPrimaryDisplay().workAreaSize
   const overlayWindowdowWidth = 450
   const overlayWindowdowHeight = 650
@@ -57,11 +142,35 @@ function createWindow() {
       preload: path.join(__dirname, 'preload.mjs'),
       nodeIntegration: false,
       contextIsolation: true,
+      allowRunningInsecureContent: false,
+      experimentalFeatures: false,
+      devTools: process.env.NODE_ENV === 'development',
+      webSecurity: true,
     },
   })
 
   // Make overlayWindowdow click-through by default (ignores mouse events on empty space)
   overlayWindow.setIgnoreMouseEvents(true, { forward: true })
+
+  // Security: Block external navigation
+  overlayWindow.webContents.on('will-navigate', (event, navigationUrl) => {
+    const parsedUrl = new URL(navigationUrl)
+    
+    // Allow navigation to same origin or localhost only
+    if (parsedUrl.origin !== 'http://localhost:5173' && 
+        parsedUrl.origin !== 'file://' &&
+        !navigationUrl.includes('index.html')) {
+      console.log('Blocked navigation to:', navigationUrl)
+      event.preventDefault()
+    }
+  })
+
+  // Security: Block new window creation
+  overlayWindow.webContents.setWindowOpenHandler(({ url }) => {
+    console.log('Blocked new window creation for:', url)
+    shell.openExternal(url) // Open in system browser instead
+    return { action: 'deny' }
+  })
 
   // Handle overlayWindowdow events to maintain always-on-top behavior
   overlayWindow.on('blur', () => {
@@ -110,20 +219,57 @@ app.on('window-all-closed', () => {
 })
 
 app.on('activate', () => {
-  // On OS X it's common to re-create a overlayWindowdow in the app when the
-  // dock icon is clicked and there are no other overlayWindowdows open.
+  // On OS X it's common to re-create a window in the app when the
+  // dock icon is clicked and there are no other windows open.
   if (BrowserWindow.getAllWindows().length === 0) {
-    createWindow()
+    createAuthWindow()
   }
 })
 
-void app.whenReady().then(() => {
+void app.whenReady().then(async () => {
   // Set the app name
   app.setName('Unstuck')
 
   // Remove the default menu bar
   Menu.setApplicationMenu(null)
-  createWindow()
+  
+  // Load and validate environment configuration securely
+  try {
+    const config = loadEnvironmentConfig()
+    validateConfig(config)
+    
+    // Initialize auth service in main process
+    await authService.initialize(config.supabaseUrl, config.supabaseAnonKey)
+    
+    // Listen for auth state changes
+    authService.onAuthStateChange((event, session) => {
+      console.log('Auth state changed:', event)
+      if (event === 'SIGNED_IN' && session?.user) {
+        // Close auth window and open overlay
+        if (authWindow && !authWindow.isDestroyed()) {
+          authWindow.close()
+          authWindow = null
+        }
+        createOverlayWindow()
+      } else if (event === 'SIGNED_OUT') {
+        // Close overlay and show auth window
+        if (overlayWindow && !overlayWindow.isDestroyed()) {
+          overlayWindow.close()
+          overlayWindow = null
+        }
+        if (!authWindow || authWindow.isDestroyed()) {
+          createAuthWindow()
+        }
+      }
+    })
+  } catch (error) {
+    console.error('Failed to initialize auth service:', error)
+    app.quit()
+    return
+  }
+  
+  // Start with authentication window
+  createAuthWindow()
 
   // Handle theme detection
   ipcMain.handle('get-system-theme', () => {
@@ -148,14 +294,20 @@ void app.whenReady().then(() => {
   })
 
   // Handle mouse event control for click-through functionality
-  ipcMain.on(
-    'set-ignore-mouse-events',
-    (_event, ignore: boolean, options?: { forward?: boolean }) => {
+  ipcMain.on('set-ignore-mouse-events', (_event, ignore: unknown, options?: unknown) => {
+    try {
+      SecurityValidator.checkRateLimit('set-ignore-mouse-events', 20, 60000)
+      
+      const validIgnore = SecurityValidator.validateBoolean(ignore, 'ignore')
+      const validOptions = SecurityValidator.validateMouseEventOptions(options)
+      
       if (overlayWindow && !overlayWindow.isDestroyed()) {
-        overlayWindow.setIgnoreMouseEvents(ignore, options ?? { forward: true })
+        overlayWindow.setIgnoreMouseEvents(validIgnore, validOptions ?? { forward: true })
       }
+    } catch (error) {
+      console.error('Mouse events error:', error)
     }
-  )
+  })
 
   // Handle overlayWindowdow always-on-top control
   ipcMain.on('ensure-always-on-top', () => {
@@ -178,6 +330,136 @@ void app.whenReady().then(() => {
           overlayWindow.setAlwaysOnTop(true, 'screen-saver', 1)
         }
       }, 100)
+    }
+  })
+
+  // Handle authentication success
+  ipcMain.on('auth-success', (_event, user) => {
+    console.log('Authentication successful for user:', user.email)
+    
+    // Close auth window
+    if (authWindow && !authWindow.isDestroyed()) {
+      authWindow.close()
+      authWindow = null
+    }
+    
+    // Create overlay window
+    createOverlayWindow()
+  })
+
+  // Handle opening external URLs (for OAuth)
+  ipcMain.handle('open-external-url', async (_event, url: unknown) => {
+    try {
+      SecurityValidator.checkRateLimit('open-external-url', 5, 60000)
+      const validUrl = SecurityValidator.validateUrl(url)
+      
+      await shell.openExternal(validUrl)
+      return { success: true }
+    } catch (error) {
+      console.error('Failed to open external URL:', error)
+      return { success: false, error: (error as Error).message }
+    }
+  })
+
+  // Handle deep links for OAuth callbacks
+  app.setAsDefaultProtocolClient('unstuck')
+  
+  const gotTheLock = app.requestSingleInstanceLock()
+  
+  if (!gotTheLock) {
+    app.quit()
+  } else {
+    app.on('second-instance', (_event, commandLine, _workingDirectory) => {
+      // Someone tried to run a second instance, focus our auth window instead
+      if (authWindow) {
+        if (authWindow.isMinimized()) authWindow.restore()
+        authWindow.focus()
+      }
+      
+      // Handle deep link from command line
+      const url = commandLine.find(arg => arg.startsWith('unstuck://'))
+      if (url) {
+        handleOAuthCallback(url)
+      }
+    })
+  }
+
+  // Handle deep links on macOS
+  app.on('open-url', (event, url) => {
+    event.preventDefault()
+    handleOAuthCallback(url)
+  })
+
+  // Handle user logout
+  ipcMain.on('user-logout', () => {
+    console.log('User logging out...')
+    
+    // Close overlay window
+    if (overlayWindow && !overlayWindow.isDestroyed()) {
+      overlayWindow.close()
+      overlayWindow = null
+    }
+    
+    // Create auth window
+    createAuthWindow()
+  })
+
+  // Secure authentication IPC handlers with validation
+  ipcMain.handle('auth-get-oauth-url', async (_event, provider: unknown) => {
+    try {
+      SecurityValidator.checkRateLimit('auth-get-oauth-url', 5, 60000)
+      const validProvider = SecurityValidator.validateOAuthProvider(provider)
+      
+      const url = await authService.getOAuthUrl(validProvider)
+      return { success: true, url }
+    } catch (error) {
+      console.error('Get OAuth URL error:', SecurityValidator.sanitizeUserForLogging(error))
+      return { success: false, error: (error as Error).message }
+    }
+  })
+
+  ipcMain.handle('auth-get-session', async () => {
+    try {
+      SecurityValidator.checkRateLimit('auth-get-session', 10, 60000)
+      
+      const { user, session } = await authService.getSession()
+      const sanitizedUser = user ? SecurityValidator.sanitizeUserForLogging(user) : null
+      
+      return { 
+        success: true, 
+        user: sanitizedUser, 
+        session: session ? {
+          access_token: session.access_token,
+          refresh_token: session.refresh_token,
+          expires_at: session.expires_at,
+          user: sanitizedUser,
+        } : null 
+      }
+    } catch (error) {
+      console.error('Get session error:', SecurityValidator.sanitizeUserForLogging(error))
+      return { success: false, error: (error as Error).message }
+    }
+  })
+
+  ipcMain.handle('auth-sign-out', async () => {
+    try {
+      SecurityValidator.checkRateLimit('auth-sign-out', 3, 60000)
+      
+      await authService.signOut()
+      return { success: true }
+    } catch (error) {
+      console.error('Sign out error:', SecurityValidator.sanitizeUserForLogging(error))
+      return { success: false, error: (error as Error).message }
+    }
+  })
+
+  ipcMain.handle('auth-is-secure-storage', () => {
+    try {
+      SecurityValidator.checkRateLimit('auth-is-secure-storage', 10, 60000)
+      return safeStorage.isEncryptionAvailable()
+    } catch (error) {
+      console.error('Secure storage check error:', error)
+      return false
     }
   })
 })

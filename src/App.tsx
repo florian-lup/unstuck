@@ -1,5 +1,6 @@
 import { NavigationBar } from './components/navigation-bar'
 import { TextChat } from './components/text-chat'
+import { SettingsMenu } from './components/settings-menu'
 import { useAppLogic } from './hooks/use-app-logic'
 import './index.css'
 import './App.css'
@@ -11,6 +12,9 @@ function App() {
     isTextChatVisible,
     messages,
     isNavigationBarVisible,
+    showSettingsMenu,
+    user,
+    isSecureStorage,
     
     // Actions
     handleSpeakClick,
@@ -20,19 +24,31 @@ function App() {
     handleSendMessage,
     handleTextChatClose,
     handleDropdownOpenChange,
+    handleLogout,
+    setShowSettingsMenu,
   } = useAppLogic()
 
   return (
     <>
       {isNavigationBarVisible && (
-        <NavigationBar
-          onSpeakClick={handleSpeakClick}
-          onTextClick={handleTextClick}
-          onSettingsClick={handleSettingsClick}
-          onGameSelect={handleGameSelect}
-          selectedGame={selectedGame}
-          onDropdownOpenChange={handleDropdownOpenChange}
-        />
+        <div className="relative">
+          <NavigationBar
+            onSpeakClick={handleSpeakClick}
+            onTextClick={handleTextClick}
+            onSettingsClick={handleSettingsClick}
+            onGameSelect={handleGameSelect}
+            selectedGame={selectedGame}
+            onDropdownOpenChange={handleDropdownOpenChange}
+          />
+          {showSettingsMenu && (
+            <SettingsMenu
+              user={user}
+              isSecureStorage={isSecureStorage}
+              onLogout={handleLogout}
+              onClose={() => setShowSettingsMenu(false)}
+            />
+          )}
+        </div>
       )}
       {isNavigationBarVisible && isTextChatVisible && (
         <TextChat

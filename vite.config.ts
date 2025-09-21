@@ -29,6 +29,14 @@ export default defineConfig({
           : {},
     }),
   ],
+  build: {
+    rollupOptions: {
+      input: {
+        main: path.resolve(__dirname, 'index.html'),
+        auth: path.resolve(__dirname, 'auth.html'),
+      },
+    },
+  },
   resolve: {
     alias: {
       '@': path.resolve(__dirname, './src'),
