@@ -9,7 +9,6 @@ const ALLOWED_SEND_CHANNELS = [
 ] as const
 
 const ALLOWED_INVOKE_CHANNELS = [
-  'get-system-theme',
   'open-external-url',
   'auth-get-oauth-url',
   'auth-get-session', 
@@ -18,7 +17,6 @@ const ALLOWED_INVOKE_CHANNELS = [
 ] as const
 
 const ALLOWED_LISTEN_CHANNELS = [
-  'theme-changed',
   'toggle-navigation-bar',
   'auth-success',
   'auth-error'
@@ -67,19 +65,8 @@ contextBridge.exposeInMainWorld('ipcRenderer', {
   }
 })
 
-// Expose theme API
+// Expose Electron API
 contextBridge.exposeInMainWorld('electronAPI', {
-  getSystemTheme: () => ipcRenderer.invoke('get-system-theme'),
-  onThemeChanged: (callback: (theme: string) => void) => {
-    const listener = (_event: Electron.IpcRendererEvent, theme: string) => {
-      callback(theme)
-    }
-    ipcRenderer.on('theme-changed', listener)
-    return listener
-  },
-  removeThemeListener: () => {
-    ipcRenderer.removeAllListeners('theme-changed')
-  },
   onNavigationBarToggle: (callback: () => void) => {
     const listener = () => {
       callback()

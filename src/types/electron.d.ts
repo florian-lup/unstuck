@@ -1,7 +1,4 @@
 export interface IElectronAPI {
-  getSystemTheme: () => Promise<string>
-  onThemeChanged: (callback: (theme: string) => void) => void
-  removeThemeListener: () => void
   onNavigationBarToggle: (callback: () => void) => void
   removeNavigationBarToggleListener: () => void
   setIgnoreMouseEvents: (

@@ -1,4 +1,4 @@
-import { app, BrowserWindow, Menu, ipcMain, nativeTheme, globalShortcut, shell, safeStorage, screen } from "electron";
+import { app, BrowserWindow, Menu, globalShortcut, ipcMain, shell, safeStorage, screen } from "electron";
 import { fileURLToPath } from "node:url";
 import path$1 from "node:path";
 import require$$0$1 from "stream";
@@ -11218,17 +11218,6 @@ void app.whenReady().then(async () => {
     return;
   }
   createAuthWindow();
-  ipcMain.handle("get-system-theme", () => {
-    return nativeTheme.shouldUseDarkColors ? "dark" : "light";
-  });
-  nativeTheme.on("updated", () => {
-    if (overlayWindow && !overlayWindow.isDestroyed()) {
-      overlayWindow.webContents.send(
-        "theme-changed",
-        nativeTheme.shouldUseDarkColors ? "dark" : "light"
-      );
-    }
-  });
   globalShortcut.register("Shift+\\", () => {
     if (overlayWindow && !overlayWindow.isDestroyed()) {
       overlayWindow.webContents.send("toggle-navigation-bar");

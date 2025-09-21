@@ -2,7 +2,6 @@ import {
   app,
   BrowserWindow,
   Menu,
-  nativeTheme,
   ipcMain,
   screen,
   globalShortcut,
@@ -271,20 +270,6 @@ void app.whenReady().then(async () => {
   // Start with authentication window
   createAuthWindow()
 
-  // Handle theme detection
-  ipcMain.handle('get-system-theme', () => {
-    return nativeTheme.shouldUseDarkColors ? 'dark' : 'light'
-  })
-
-  // Watch for theme changes
-  nativeTheme.on('updated', () => {
-    if (overlayWindow && !overlayWindow.isDestroyed()) {
-      overlayWindow.webContents.send(
-        'theme-changed',
-        nativeTheme.shouldUseDarkColors ? 'dark' : 'light'
-      )
-    }
-  })
 
   // Register global shortcut for navigation bar toggle
   globalShortcut.register('Shift+\\', () => {

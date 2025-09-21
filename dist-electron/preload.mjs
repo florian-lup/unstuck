@@ -7,7 +7,6 @@ const ALLOWED_SEND_CHANNELS = [
   "user-logout"
 ];
 const ALLOWED_INVOKE_CHANNELS = [
-  "get-system-theme",
   "open-external-url",
   "auth-get-oauth-url",
   "auth-get-session",
@@ -15,7 +14,6 @@ const ALLOWED_INVOKE_CHANNELS = [
   "auth-is-secure-storage"
 ];
 const ALLOWED_LISTEN_CHANNELS = [
-  "theme-changed",
   "toggle-navigation-bar",
   "auth-success",
   "auth-error"
@@ -55,17 +53,6 @@ electron.contextBridge.exposeInMainWorld("ipcRenderer", {
   }
 });
 electron.contextBridge.exposeInMainWorld("electronAPI", {
-  getSystemTheme: () => electron.ipcRenderer.invoke("get-system-theme"),
-  onThemeChanged: (callback) => {
-    const listener = (_event, theme) => {
-      callback(theme);
-    };
-    electron.ipcRenderer.on("theme-changed", listener);
-    return listener;
-  },
-  removeThemeListener: () => {
-    electron.ipcRenderer.removeAllListeners("theme-changed");
-  },
   onNavigationBarToggle: (callback) => {
     const listener = () => {
       callback();
