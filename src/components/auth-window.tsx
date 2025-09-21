@@ -1,5 +1,7 @@
-import { useState, useEffect } from 'react'
-import { secureAuth, AuthUser } from '../lib/secure-auth-client'
+import { useEffect } from 'react'
+import { AuthUser } from '../lib/secure-auth-client'
+import { useAuth } from '../hooks/use-auth'
+import { useAuthFlow } from '../hooks/use-auth-flow'
 import { Button } from './ui/button'
 
 interface AuthWindowProps {
@@ -7,64 +9,14 @@ interface AuthWindowProps {
 }
 
 export function AuthWindow({ onAuthSuccess }: AuthWindowProps) {
-  const [isLoading, setIsLoading] = useState(false)
-  const [_user, setUser] = useState<AuthUser | null>(null)
+  const { user } = useAuth()
+  const { isLoading, handleLogin, handleSignUp } = useAuthFlow()
 
   useEffect(() => {
-    // Check for existing session
-    secureAuth.getSession().then(({ user }) => {
-      setUser(user)
-      if (user) {
-        onAuthSuccess(user)
-      }
-    })
-
-    // Listen for auth changes via secure IPC
-    const { unsubscribe } = secureAuth.onAuthStateChange(async (event, session) => {
-      const user = session?.user ?? null
-      setUser(user)
-      if (user && event === 'SIGNED_IN') {
-        onAuthSuccess(user)
-      }
-    })
-
-    return () => {
-      unsubscribe()
-      secureAuth.cleanup()
+    if (user) {
+      onAuthSuccess(user)
     }
-  }, [onAuthSuccess])
-
-  const handleLogin = async () => {
-    setIsLoading(true)
-    try {
-      // Get OAuth URL from secure main process
-      const oauthUrl = await secureAuth.getOAuthUrl('google')
-      
-      // Open the auth URL in system browser
-      window.electronAPI?.windowInteraction()
-      await window.ipcRenderer.invoke('open-external-url', oauthUrl)
-    } catch (error) {
-      console.error('Login failed:', error)
-    } finally {
-      setIsLoading(false)
-    }
-  }
-
-  const handleSignUp = async () => {
-    setIsLoading(true)
-    try {
-      // Get OAuth URL from secure main process
-      const oauthUrl = await secureAuth.getOAuthUrl('google')
-      
-      // Open the auth URL in system browser
-      window.electronAPI?.windowInteraction()
-      await window.ipcRenderer.invoke('open-external-url', oauthUrl)
-    } catch (error) {
-      console.error('Signup failed:', error)
-    } finally {
-      setIsLoading(false)
-    }
-  }
+  }, [user, onAuthSuccess])
 
   return (
     <div className="min-h-screen bg-background flex items-center justify-center p-8">
