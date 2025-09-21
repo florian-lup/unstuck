@@ -23,6 +23,30 @@ export function NavigationBar({
   selectedGame,
   onDropdownOpenChange,
 }: NavigationBarProps) {
+  const handleSpeakClick = () => {
+    // Ensure window stays on top when button is clicked
+    window.electronAPI?.windowInteraction()
+    onSpeakClick?.()
+  }
+
+  const handleTextClick = () => {
+    // Ensure window stays on top when button is clicked
+    window.electronAPI?.windowInteraction()
+    onTextClick?.()
+  }
+
+  const handleSettingsClick = () => {
+    // Ensure window stays on top when button is clicked
+    window.electronAPI?.windowInteraction()
+    onSettingsClick?.()
+  }
+
+  const handleGameSelect = (game: Game) => {
+    // Ensure window stays on top when dropdown is used
+    window.electronAPI?.windowInteraction()
+    onGameSelect?.(game)
+  }
+
   return (
     <div className="w-full mx-auto">
       <InteractiveArea className="px-2 py-1.5 rounded-3xl border border-gaming-border-primary bg-gaming-bg-primary">
@@ -30,7 +54,7 @@ export function NavigationBar({
           {/* Game Selection Dropdown */}
           <div className="flex-1">
             <SelectGame
-              onGameSelect={onGameSelect}
+              onGameSelect={handleGameSelect}
               selectedGame={selectedGame}
               onDropdownOpenChange={onDropdownOpenChange}
             />
@@ -41,7 +65,7 @@ export function NavigationBar({
             <div className="flex items-center gap-1">
               {/* Speak Button */}
               <Button
-                onClick={onSpeakClick}
+                onClick={handleSpeakClick}
                 variant="gaming"
                 size="sm"
                 className="gap-1 p-1 h-auto rounded-3xl"
@@ -52,7 +76,7 @@ export function NavigationBar({
 
               {/* Text Button */}
               <Button
-                onClick={onTextClick}
+                onClick={handleTextClick}
                 variant="gaming"
                 size="sm"
                 className="gap-1 p-1 h-auto rounded-3xl"
@@ -63,7 +87,7 @@ export function NavigationBar({
 
               {/* Settings Button */}
               <Button
-                onClick={onSettingsClick}
+                onClick={handleSettingsClick}
                 variant="gaming"
                 size="icon"
                 className="p-1 h-auto w-auto rounded-3xl"

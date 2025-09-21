@@ -25,14 +25,22 @@ export function TextChat({ onClose, onSendMessage, messages = [] }: TextChatProp
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
     if (message.trim()) {
+      // Ensure window stays on top when sending a message
+      window.electronAPI?.windowInteraction()
       onSendMessage?.(message.trim())
       setMessage('') // Clear input after sending
     }
   }
 
+  const handleClose = () => {
+    // Ensure window stays on top when closing chat
+    window.electronAPI?.windowInteraction()
+    onClose?.()
+  }
+
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === 'Escape') {
-      onClose?.()
+      handleClose()
     }
   }
 
@@ -102,7 +110,7 @@ export function TextChat({ onClose, onSendMessage, messages = [] }: TextChatProp
             </Button>
             <Button
               type="button"
-              onClick={onClose}
+              onClick={handleClose}
               variant="gaming"
               size="icon"
               className="size-6 p-0 rounded-full"

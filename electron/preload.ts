@@ -52,4 +52,10 @@ contextBridge.exposeInMainWorld('electronAPI', {
   setIgnoreMouseEvents: (ignore: boolean, options?: { forward?: boolean }) => {
     ipcRenderer.send('set-ignore-mouse-events', ignore, options)
   },
+  ensureAlwaysOnTop: () => {
+    ipcRenderer.send('ensure-always-on-top')
+  },
+  windowInteraction: () => {
+    ipcRenderer.send('window-interaction')
+  },
 })

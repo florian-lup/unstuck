@@ -8,6 +8,8 @@ export interface IElectronAPI {
     ignore: boolean,
     options?: { forward?: boolean }
   ) => void
+  ensureAlwaysOnTop: () => void
+  windowInteraction: () => void
 }
 
 declare global {

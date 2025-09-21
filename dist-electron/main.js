@@ -24,6 +24,8 @@ function createWindow() {
     // Keep on top of other windows
     resizable: false,
     // Prevent resizing
+    skipTaskbar: true,
+    // Don't show in taskbar
     width: windowWidth,
     // Fixed width for navigation bar
     height: windowHeight,
@@ -39,6 +41,22 @@ function createWindow() {
     }
   });
   win.setIgnoreMouseEvents(true, { forward: true });
+  win.on("blur", () => {
+    if (win && !win.isDestroyed()) {
+      win.setAlwaysOnTop(true, "screen-saver", 1);
+    }
+  });
+  win.on("focus", () => {
+    if (win && !win.isDestroyed()) {
+      win.setAlwaysOnTop(true, "screen-saver", 1);
+    }
+  });
+  win.on("show", () => {
+    if (win && !win.isDestroyed()) {
+      win.setAlwaysOnTop(true, "screen-saver", 1);
+      win.focus();
+    }
+  });
   win.webContents.on("did-finish-load", () => {
     win?.webContents.send("main-process-message", (/* @__PURE__ */ new Date()).toLocaleString());
   });
@@ -87,6 +105,23 @@ void app.whenReady().then(() => {
       }
     }
   );
+  ipcMain.on("ensure-always-on-top", () => {
+    if (win && !win.isDestroyed()) {
+      win.setAlwaysOnTop(true, "screen-saver", 1);
+      win.moveTop();
+    }
+  });
+  ipcMain.on("window-interaction", () => {
+    if (win && !win.isDestroyed()) {
+      win.setAlwaysOnTop(true, "screen-saver", 1);
+      win.moveTop();
+      setTimeout(() => {
+        if (win && !win.isDestroyed()) {
+          win.setAlwaysOnTop(true, "screen-saver", 1);
+        }
+      }, 100);
+    }
+  });
 });
 app.on("will-quit", () => {
   globalShortcut.unregisterAll();

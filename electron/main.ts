@@ -49,6 +49,7 @@ function createWindow() {
     transparent: true, // Make window background transparent
     alwaysOnTop: true, // Keep on top of other windows
     resizable: false, // Prevent resizing
+    skipTaskbar: true, // Don't show in taskbar
     width: windowWidth, // Fixed width for navigation bar
     height: windowHeight, // Fixed height for chat window
     x: Math.round((screenWidth - windowWidth) / 2), // Center horizontally
@@ -62,6 +63,29 @@ function createWindow() {
 
   // Make window click-through by default (ignores mouse events on empty space)
   win.setIgnoreMouseEvents(true, { forward: true })
+
+  // Handle window events to maintain always-on-top behavior
+  win.on('blur', () => {
+    // Ensure window stays on top even when it loses focus
+    if (win && !win.isDestroyed()) {
+      win.setAlwaysOnTop(true, 'screen-saver', 1)
+    }
+  })
+
+  win.on('focus', () => {
+    // Maintain always-on-top when focused
+    if (win && !win.isDestroyed()) {
+      win.setAlwaysOnTop(true, 'screen-saver', 1)
+    }
+  })
+
+  // Handle show event to ensure proper positioning
+  win.on('show', () => {
+    if (win && !win.isDestroyed()) {
+      win.setAlwaysOnTop(true, 'screen-saver', 1)
+      win.focus()
+    }
+  })
 
   // Test active push message to Renderer-process.
   win.webContents.on('did-finish-load', () => {
@@ -133,6 +157,30 @@ void app.whenReady().then(() => {
       }
     }
   )
+
+  // Handle window always-on-top control
+  ipcMain.on('ensure-always-on-top', () => {
+    if (win && !win.isDestroyed()) {
+      win.setAlwaysOnTop(true, 'screen-saver', 1)
+      win.moveTop()
+    }
+  })
+
+  // Handle window interaction events (when buttons are clicked)
+  ipcMain.on('window-interaction', () => {
+    if (win && !win.isDestroyed()) {
+      // Immediately ensure window stays on top when user interacts
+      win.setAlwaysOnTop(true, 'screen-saver', 1)
+      win.moveTop()
+      
+      // Set a timeout to recheck the window state
+      setTimeout(() => {
+        if (win && !win.isDestroyed()) {
+          win.setAlwaysOnTop(true, 'screen-saver', 1)
+        }
+      }, 100)
+    }
+  })
 })
 
 // Unregister all global shortcuts when app is quitting

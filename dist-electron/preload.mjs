@@ -47,5 +47,11 @@ electron.contextBridge.exposeInMainWorld("electronAPI", {
   },
   setIgnoreMouseEvents: (ignore, options) => {
     electron.ipcRenderer.send("set-ignore-mouse-events", ignore, options);
+  },
+  ensureAlwaysOnTop: () => {
+    electron.ipcRenderer.send("ensure-always-on-top");
+  },
+  windowInteraction: () => {
+    electron.ipcRenderer.send("window-interaction");
   }
 });
