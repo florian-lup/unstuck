@@ -63,7 +63,7 @@ function createAuthWindow() {
     title: 'Get Unstuck - Authentication',
     icon: path.join(process.env.VITE_PUBLIC, 'unstuck-logo.ico'),
     width: 500,
-    height: 700,
+    height: 500,
     center: true,
     resizable: false,
     frame: true, // Normal window with title bar

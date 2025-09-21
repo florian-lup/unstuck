@@ -71,27 +71,29 @@ export function AuthWindow({ onAuthSuccess }: AuthWindowProps) {
       <div className="w-full max-w-md space-y-8">
         {/* Logo and Title */}
         <div className="text-center space-y-6">
-          <div className="mx-auto w-20 h-20">
-            <img
-              src="/unstuck-logo.svg"
-              alt="Unstuck Logo"
-              className="w-full h-full"
-            />
+          <div className="flex items-center justify-center gap-4">
+            <div className="w-16 h-16">
+              <img
+                src="/unstuck-logo.svg"
+                alt="Unstuck Logo"
+                className="w-full h-full"
+              />
+            </div>
+            <h1 className="text-4xl font-bold text-foreground">
+              Get Unstuck
+            </h1>
           </div>
-          <h1 className="text-4xl font-bold text-foreground">
-            Get Unstuck
-          </h1>
           <p className="text-muted-foreground text-lg">
             Your gaming companion for overcoming challenges
           </p>
         </div>
 
         {/* Auth Buttons */}
-        <div className="space-y-4">
+        <div className="flex items-center justify-center space-x-4">
           <Button
             onClick={handleLogin}
             disabled={isLoading}
-            className="w-full text-lg py-6 bg-primary hover:bg-primary/90 text-primary-foreground"
+            className="w-36"
           >
             {isLoading ? 'Connecting...' : 'Log In'}
           </Button>
@@ -100,7 +102,7 @@ export function AuthWindow({ onAuthSuccess }: AuthWindowProps) {
             onClick={handleSignUp}
             disabled={isLoading}
             variant="outline"
-            className="w-full text-lg py-6 border-border hover:bg-accent hover:text-accent-foreground"
+            className="w-36"
           >
             {isLoading ? 'Connecting...' : 'Sign Up for Free'}
           </Button>
