@@ -35,24 +35,23 @@ process.env.VITE_PUBLIC = VITE_DEV_SERVER_URL
   ? path.join(process.env.APP_ROOT, 'public')
   : RENDERER_DIST
 
-let win: BrowserWindow | null
+let overlayWindow: BrowserWindow | null
 
 function createWindow() {
   const { width: screenWidth } = screen.getPrimaryDisplay().workAreaSize
-  const windowWidth = 450
-  const windowHeight = 650
+  const overlayWindowdowWidth = 450
+  const overlayWindowdowHeight = 650
 
-  win = new BrowserWindow({
+  overlayWindow = new BrowserWindow({
     title: 'Unstuck',
     icon: path.join(process.env.VITE_PUBLIC, 'unstuck-logo.ico'),
-    frame: false, // Remove window frame (title bar, borders)
-    transparent: true, // Make window background transparent
-    alwaysOnTop: true, // Keep on top of other windows
+    frame: false, // Remove overlayWindowdow frame (title bar, borders)
+    transparent: true, // Make overlayWindowdow background transparent
+    alwaysOnTop: true, // Keep on top of other overlayWindowdows
     resizable: false, // Prevent resizing
-    skipTaskbar: true, // Don't show in taskbar
-    width: windowWidth, // Fixed width for navigation bar
-    height: windowHeight, // Fixed height for chat window
-    x: Math.round((screenWidth - windowWidth) / 2), // Center horizontally
+    width: overlayWindowdowWidth, // Fixed width for navigation bar
+    height: overlayWindowdowHeight, // Fixed height for chat overlayWindowdow
+    x: Math.round((screenWidth - overlayWindowdowWidth) / 2), // Center horizontally
     y: 20, // Position at top of screen
     webPreferences: {
       preload: path.join(__dirname, 'preload.mjs'),
@@ -61,42 +60,42 @@ function createWindow() {
     },
   })
 
-  // Make window click-through by default (ignores mouse events on empty space)
-  win.setIgnoreMouseEvents(true, { forward: true })
+  // Make overlayWindowdow click-through by default (ignores mouse events on empty space)
+  overlayWindow.setIgnoreMouseEvents(true, { forward: true })
 
-  // Handle window events to maintain always-on-top behavior
-  win.on('blur', () => {
-    // Ensure window stays on top even when it loses focus
-    if (win && !win.isDestroyed()) {
-      win.setAlwaysOnTop(true, 'screen-saver', 1)
+  // Handle overlayWindowdow events to maintain always-on-top behavior
+  overlayWindow.on('blur', () => {
+    // Ensure overlayWindowdow stays on top even when it loses focus
+    if (overlayWindow && !overlayWindow.isDestroyed()) {
+      overlayWindow.setAlwaysOnTop(true, 'screen-saver', 1)
     }
   })
 
-  win.on('focus', () => {
+  overlayWindow.on('focus', () => {
     // Maintain always-on-top when focused
-    if (win && !win.isDestroyed()) {
-      win.setAlwaysOnTop(true, 'screen-saver', 1)
+    if (overlayWindow && !overlayWindow.isDestroyed()) {
+      overlayWindow.setAlwaysOnTop(true, 'screen-saver', 1)
     }
   })
 
   // Handle show event to ensure proper positioning
-  win.on('show', () => {
-    if (win && !win.isDestroyed()) {
-      win.setAlwaysOnTop(true, 'screen-saver', 1)
-      win.focus()
+  overlayWindow.on('show', () => {
+    if (overlayWindow && !overlayWindow.isDestroyed()) {
+      overlayWindow.setAlwaysOnTop(true, 'screen-saver', 1)
+      overlayWindow.focus()
     }
   })
 
   // Test active push message to Renderer-process.
-  win.webContents.on('did-finish-load', () => {
-    win?.webContents.send('main-process-message', new Date().toLocaleString())
+  overlayWindow.webContents.on('did-finish-load', () => {
+    overlayWindow?.webContents.send('main-process-message', new Date().toLocaleString())
   })
 
   if (VITE_DEV_SERVER_URL) {
-    void win.loadURL(VITE_DEV_SERVER_URL)
+    void overlayWindow.loadURL(VITE_DEV_SERVER_URL)
   } else {
-    // win.loadFile('dist/index.html')
-    void win.loadFile(path.join(RENDERER_DIST, 'index.html'))
+    // overlayWindow.loadFile('dist/index.html')
+    void overlayWindow.loadFile(path.join(RENDERER_DIST, 'index.html'))
   }
 }
 
@@ -106,13 +105,13 @@ function createWindow() {
 app.on('window-all-closed', () => {
   if (process.platform !== 'darwin') {
     app.quit()
-    win = null
+    overlayWindow = null
   }
 })
 
 app.on('activate', () => {
-  // On OS X it's common to re-create a window in the app when the
-  // dock icon is clicked and there are no other windows open.
+  // On OS X it's common to re-create a overlayWindowdow in the app when the
+  // dock icon is clicked and there are no other overlayWindowdows open.
   if (BrowserWindow.getAllWindows().length === 0) {
     createWindow()
   }
@@ -133,8 +132,8 @@ void app.whenReady().then(() => {
 
   // Watch for theme changes
   nativeTheme.on('updated', () => {
-    if (win && !win.isDestroyed()) {
-      win.webContents.send(
+    if (overlayWindow && !overlayWindow.isDestroyed()) {
+      overlayWindow.webContents.send(
         'theme-changed',
         nativeTheme.shouldUseDarkColors ? 'dark' : 'light'
       )
@@ -143,8 +142,8 @@ void app.whenReady().then(() => {
 
   // Register global shortcut for navigation bar toggle
   globalShortcut.register('Shift+\\', () => {
-    if (win && !win.isDestroyed()) {
-      win.webContents.send('toggle-navigation-bar')
+    if (overlayWindow && !overlayWindow.isDestroyed()) {
+      overlayWindow.webContents.send('toggle-navigation-bar')
     }
   })
 
@@ -152,31 +151,31 @@ void app.whenReady().then(() => {
   ipcMain.on(
     'set-ignore-mouse-events',
     (_event, ignore: boolean, options?: { forward?: boolean }) => {
-      if (win && !win.isDestroyed()) {
-        win.setIgnoreMouseEvents(ignore, options ?? { forward: true })
+      if (overlayWindow && !overlayWindow.isDestroyed()) {
+        overlayWindow.setIgnoreMouseEvents(ignore, options ?? { forward: true })
       }
     }
   )
 
-  // Handle window always-on-top control
+  // Handle overlayWindowdow always-on-top control
   ipcMain.on('ensure-always-on-top', () => {
-    if (win && !win.isDestroyed()) {
-      win.setAlwaysOnTop(true, 'screen-saver', 1)
-      win.moveTop()
+    if (overlayWindow && !overlayWindow.isDestroyed()) {
+      overlayWindow.setAlwaysOnTop(true, 'screen-saver', 1)
+      overlayWindow.moveTop()
     }
   })
 
-  // Handle window interaction events (when buttons are clicked)
-  ipcMain.on('window-interaction', () => {
-    if (win && !win.isDestroyed()) {
-      // Immediately ensure window stays on top when user interacts
-      win.setAlwaysOnTop(true, 'screen-saver', 1)
-      win.moveTop()
+  // Handle overlayWindowdow interaction events (when buttons are clicked)
+  ipcMain.on('overlayWindowdow-interaction', () => {
+    if (overlayWindow && !overlayWindow.isDestroyed()) {
+      // Immediately ensure overlayWindowdow stays on top when user interacts
+      overlayWindow.setAlwaysOnTop(true, 'screen-saver', 1)
+      overlayWindow.moveTop()
       
-      // Set a timeout to recheck the window state
+      // Set a timeout to recheck the overlayWindowdow state
       setTimeout(() => {
-        if (win && !win.isDestroyed()) {
-          win.setAlwaysOnTop(true, 'screen-saver', 1)
+        if (overlayWindow && !overlayWindow.isDestroyed()) {
+          overlayWindow.setAlwaysOnTop(true, 'screen-saver', 1)
         }
       }, 100)
     }
