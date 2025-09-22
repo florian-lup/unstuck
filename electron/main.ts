@@ -232,7 +232,7 @@ void app.whenReady().then(async () => {
     validateConfig(config)
     
     // Initialize Auth0 service in main process
-    await auth0Service.initialize(config.auth0Domain, config.auth0ClientId, config.auth0Audience)
+    await auth0Service.initialize(config.auth0Domain, config.auth0ClientId)
     
     // Listen for auth state changes
     auth0Service.onAuthStateChange((event, session, error) => {

@@ -10,7 +10,6 @@ import fs from 'fs'
 interface AppConfig {
   auth0Domain: string
   auth0ClientId: string
-  auth0Audience?: string
 }
 
 export function loadEnvironmentConfig(): AppConfig {
@@ -31,7 +30,6 @@ export function loadEnvironmentConfig(): AppConfig {
       return {
         auth0Domain: envVars.VITE_AUTH0_DOMAIN,
         auth0ClientId: envVars.VITE_AUTH0_CLIENT_ID,
-        auth0Audience: envVars.VITE_AUTH0_AUDIENCE,
       }
     } catch (error) {
       console.error('Failed to load .env file:', error)
@@ -42,7 +40,6 @@ export function loadEnvironmentConfig(): AppConfig {
   return {
     auth0Domain: process.env.VITE_AUTH0_DOMAIN || process.env.AUTH0_DOMAIN || '',
     auth0ClientId: process.env.VITE_AUTH0_CLIENT_ID || process.env.AUTH0_CLIENT_ID || '',
-    auth0Audience: process.env.VITE_AUTH0_AUDIENCE || process.env.AUTH0_AUDIENCE,
   }
 }
 
