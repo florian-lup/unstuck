@@ -1,4 +1,4 @@
-import { app, BrowserWindow, Menu, globalShortcut, ipcMain, shell, screen } from "electron";
+import { BrowserWindow, screen, shell, ipcMain, app, globalShortcut, Menu } from "electron";
 import { fileURLToPath } from "node:url";
 import path$1 from "node:path";
 import fs from "fs/promises";
@@ -532,6 +532,194 @@ function validateAuth0Config(config) {
     );
   }
 }
+class WindowManager {
+  constructor(rendererDist, vitePublic, preloadPath, viteDevServerUrl) {
+    this.rendererDist = rendererDist;
+    this.vitePublic = vitePublic;
+    this.preloadPath = preloadPath;
+    this.viteDevServerUrl = viteDevServerUrl;
+  }
+  overlayWindow = null;
+  authWindow = null;
+  createAuthWindow() {
+    this.authWindow = new BrowserWindow({
+      title: "Get Unstuck - Authentication",
+      icon: path$1.join(this.vitePublic, "unstuck-logo.ico"),
+      width: 500,
+      height: 600,
+      center: true,
+      resizable: false,
+      frame: true,
+      transparent: false,
+      alwaysOnTop: false,
+      show: false,
+      backgroundColor: "#0a0a0a",
+      webPreferences: {
+        preload: this.preloadPath,
+        nodeIntegration: false,
+        contextIsolation: true,
+        allowRunningInsecureContent: false,
+        experimentalFeatures: false,
+        devTools: process.env.NODE_ENV === "development",
+        webSecurity: true
+      }
+    });
+    this.setupAuthWindowSecurity();
+    this.setupAuthWindowEvents();
+    this.loadAuthWindow();
+    return this.authWindow;
+  }
+  createOverlayWindow() {
+    const { width: screenWidth } = screen.getPrimaryDisplay().workAreaSize;
+    const windowWidth = 450;
+    const windowHeight = 650;
+    this.overlayWindow = new BrowserWindow({
+      title: "Unstuck",
+      icon: path$1.join(this.vitePublic, "unstuck-logo.ico"),
+      frame: false,
+      transparent: true,
+      alwaysOnTop: true,
+      resizable: false,
+      width: windowWidth,
+      height: windowHeight,
+      x: Math.round((screenWidth - windowWidth) / 2),
+      y: 20,
+      webPreferences: {
+        preload: this.preloadPath,
+        nodeIntegration: false,
+        contextIsolation: true,
+        allowRunningInsecureContent: false,
+        experimentalFeatures: false,
+        devTools: process.env.NODE_ENV === "development",
+        webSecurity: true
+      }
+    });
+    this.setupOverlayWindowSecurity();
+    this.setupOverlayWindowEvents();
+    this.loadOverlayWindow();
+    this.overlayWindow.setIgnoreMouseEvents(true, { forward: true });
+    return this.overlayWindow;
+  }
+  setupAuthWindowSecurity() {
+    if (!this.authWindow) return;
+    this.authWindow.setMenuBarVisibility(false);
+    this.authWindow.webContents.on("will-navigate", (event, navigationUrl) => {
+      const parsedUrl = new URL(navigationUrl);
+      if (parsedUrl.origin !== "http://localhost:5173" && parsedUrl.origin !== "file://" && !navigationUrl.includes("auth.html")) {
+        console.log("Blocked navigation to:", navigationUrl);
+        event.preventDefault();
+      }
+    });
+    this.authWindow.webContents.setWindowOpenHandler(({ url }) => {
+      console.log("Blocked new window creation for:", url);
+      shell.openExternal(url);
+      return { action: "deny" };
+    });
+  }
+  setupOverlayWindowSecurity() {
+    if (!this.overlayWindow) return;
+    this.overlayWindow.webContents.on("will-navigate", (event, navigationUrl) => {
+      const parsedUrl = new URL(navigationUrl);
+      if (parsedUrl.origin !== "http://localhost:5173" && parsedUrl.origin !== "file://" && !navigationUrl.includes("index.html")) {
+        console.log("Blocked navigation to:", navigationUrl);
+        event.preventDefault();
+      }
+    });
+    this.overlayWindow.webContents.setWindowOpenHandler(({ url }) => {
+      console.log("Blocked new window creation for:", url);
+      shell.openExternal(url);
+      return { action: "deny" };
+    });
+  }
+  setupAuthWindowEvents() {
+    if (!this.authWindow) return;
+    this.authWindow.once("ready-to-show", () => {
+      if (this.authWindow && !this.authWindow.isDestroyed()) {
+        this.authWindow.show();
+      }
+    });
+    this.authWindow.on("closed", () => {
+      this.authWindow = null;
+    });
+  }
+  setupOverlayWindowEvents() {
+    if (!this.overlayWindow) return;
+    this.overlayWindow.on("blur", () => {
+      if (this.overlayWindow && !this.overlayWindow.isDestroyed()) {
+        this.overlayWindow.setAlwaysOnTop(true, "screen-saver", 1);
+      }
+    });
+    this.overlayWindow.on("focus", () => {
+      if (this.overlayWindow && !this.overlayWindow.isDestroyed()) {
+        this.overlayWindow.setAlwaysOnTop(true, "screen-saver", 1);
+      }
+    });
+    this.overlayWindow.on("show", () => {
+      if (this.overlayWindow && !this.overlayWindow.isDestroyed()) {
+        this.overlayWindow.setAlwaysOnTop(true, "screen-saver", 1);
+        this.overlayWindow.focus();
+      }
+    });
+    this.overlayWindow.webContents.on("did-finish-load", () => {
+      this.overlayWindow?.webContents.send("main-process-message", (/* @__PURE__ */ new Date()).toLocaleString());
+    });
+  }
+  loadAuthWindow() {
+    if (!this.authWindow) return;
+    if (this.viteDevServerUrl) {
+      void this.authWindow.loadURL(`${this.viteDevServerUrl}/auth.html`);
+    } else {
+      void this.authWindow.loadFile(path$1.join(this.rendererDist, "auth.html"));
+    }
+  }
+  loadOverlayWindow() {
+    if (!this.overlayWindow) return;
+    if (this.viteDevServerUrl) {
+      void this.overlayWindow.loadURL(this.viteDevServerUrl);
+    } else {
+      void this.overlayWindow.loadFile(path$1.join(this.rendererDist, "index.html"));
+    }
+  }
+  // Getters
+  getAuthWindow() {
+    return this.authWindow;
+  }
+  getOverlayWindow() {
+    return this.overlayWindow;
+  }
+  // Window management methods
+  closeAuthWindow() {
+    if (this.authWindow && !this.authWindow.isDestroyed()) {
+      this.authWindow.close();
+      this.authWindow = null;
+    }
+  }
+  closeOverlayWindow() {
+    if (this.overlayWindow && !this.overlayWindow.isDestroyed()) {
+      this.overlayWindow.close();
+      this.overlayWindow = null;
+    }
+  }
+  focusAuthWindow() {
+    if (this.authWindow) {
+      if (this.authWindow.isMinimized()) {
+        this.authWindow.restore();
+      }
+      this.authWindow.focus();
+    }
+  }
+  ensureOverlayOnTop() {
+    if (this.overlayWindow && !this.overlayWindow.isDestroyed()) {
+      this.overlayWindow.setAlwaysOnTop(true, "screen-saver", 1);
+      this.overlayWindow.moveTop();
+    }
+  }
+  setOverlayMouseEvents(ignore, options) {
+    if (this.overlayWindow && !this.overlayWindow.isDestroyed()) {
+      this.overlayWindow.setIgnoreMouseEvents(ignore, options ?? { forward: true });
+    }
+  }
+}
 class SecurityValidator {
   /**
    * Validate OAuth provider
@@ -641,163 +829,121 @@ class SecurityValidator {
     record.count++;
   }
 }
-const __dirname = path$1.dirname(fileURLToPath(import.meta.url));
-app.setName("Unstuck");
-process.env.APP_ROOT = path$1.join(__dirname, "..");
-const VITE_DEV_SERVER_URL = process.env.VITE_DEV_SERVER_URL;
-const MAIN_DIST = path$1.join(process.env.APP_ROOT, "dist-electron");
-const RENDERER_DIST = path$1.join(process.env.APP_ROOT, "dist");
-process.env.VITE_PUBLIC = VITE_DEV_SERVER_URL ? path$1.join(process.env.APP_ROOT, "public") : RENDERER_DIST;
-let overlayWindow;
-let authWindow;
-function createAuthWindow() {
-  authWindow = new BrowserWindow({
-    title: "Get Unstuck - Authentication",
-    icon: path$1.join(process.env.VITE_PUBLIC, "unstuck-logo.ico"),
-    width: 500,
-    height: 600,
-    center: true,
-    resizable: false,
-    frame: true,
-    // Normal window with title bar
-    transparent: false,
-    // Normal opaque window
-    alwaysOnTop: false,
-    // Normal window behavior
-    show: false,
-    // Don't show immediately to prevent blank page flash
-    backgroundColor: "#0a0a0a",
-    // Set background color to match loading screen
-    webPreferences: {
-      preload: path$1.join(__dirname, "preload.mjs"),
-      nodeIntegration: false,
-      contextIsolation: true,
-      allowRunningInsecureContent: false,
-      experimentalFeatures: false,
-      devTools: process.env.NODE_ENV === "development",
-      webSecurity: true
-    }
-  });
-  authWindow.setMenuBarVisibility(false);
-  authWindow.once("ready-to-show", () => {
-    if (authWindow && !authWindow.isDestroyed()) {
-      authWindow.show();
-    }
-  });
-  authWindow.webContents.on("will-navigate", (event, navigationUrl) => {
-    const parsedUrl = new URL(navigationUrl);
-    if (parsedUrl.origin !== "http://localhost:5173" && parsedUrl.origin !== "file://" && !navigationUrl.includes("auth.html")) {
-      console.log("Blocked navigation to:", navigationUrl);
-      event.preventDefault();
-    }
-  });
-  authWindow.webContents.setWindowOpenHandler(({ url }) => {
-    console.log("Blocked new window creation for:", url);
-    shell.openExternal(url);
-    return { action: "deny" };
-  });
-  if (VITE_DEV_SERVER_URL) {
-    void authWindow.loadURL(`${VITE_DEV_SERVER_URL}/auth.html`);
-  } else {
-    void authWindow.loadFile(path$1.join(RENDERER_DIST, "auth.html"));
+class AuthIPCHandlers {
+  constructor(windowManager2) {
+    this.windowManager = windowManager2;
   }
-  authWindow.on("closed", () => {
-    authWindow = null;
-    if (!overlayWindow) {
-      app.quit();
-    }
-  });
-  return authWindow;
-}
-function createOverlayWindow() {
-  const { width: screenWidth } = screen.getPrimaryDisplay().workAreaSize;
-  const overlayWindowdowWidth = 450;
-  const overlayWindowdowHeight = 650;
-  overlayWindow = new BrowserWindow({
-    title: "Unstuck",
-    icon: path$1.join(process.env.VITE_PUBLIC, "unstuck-logo.ico"),
-    frame: false,
-    // Remove overlayWindowdow frame (title bar, borders)
-    transparent: true,
-    // Make overlayWindowdow background transparent
-    alwaysOnTop: true,
-    // Keep on top of other overlayWindowdows
-    resizable: false,
-    // Prevent resizing
-    width: overlayWindowdowWidth,
-    // Fixed width for navigation bar
-    height: overlayWindowdowHeight,
-    // Fixed height for chat overlayWindowdow
-    x: Math.round((screenWidth - overlayWindowdowWidth) / 2),
-    // Center horizontally
-    y: 20,
-    // Position at top of screen
-    webPreferences: {
-      preload: path$1.join(__dirname, "preload.mjs"),
-      nodeIntegration: false,
-      contextIsolation: true,
-      allowRunningInsecureContent: false,
-      experimentalFeatures: false,
-      devTools: process.env.NODE_ENV === "development",
-      webSecurity: true
-    }
-  });
-  overlayWindow.setIgnoreMouseEvents(true, { forward: true });
-  overlayWindow.webContents.on("will-navigate", (event, navigationUrl) => {
-    const parsedUrl = new URL(navigationUrl);
-    if (parsedUrl.origin !== "http://localhost:5173" && parsedUrl.origin !== "file://" && !navigationUrl.includes("index.html")) {
-      console.log("Blocked navigation to:", navigationUrl);
-      event.preventDefault();
-    }
-  });
-  overlayWindow.webContents.setWindowOpenHandler(({ url }) => {
-    console.log("Blocked new window creation for:", url);
-    shell.openExternal(url);
-    return { action: "deny" };
-  });
-  overlayWindow.on("blur", () => {
-    if (overlayWindow && !overlayWindow.isDestroyed()) {
-      overlayWindow.setAlwaysOnTop(true, "screen-saver", 1);
-    }
-  });
-  overlayWindow.on("focus", () => {
-    if (overlayWindow && !overlayWindow.isDestroyed()) {
-      overlayWindow.setAlwaysOnTop(true, "screen-saver", 1);
-    }
-  });
-  overlayWindow.on("show", () => {
-    if (overlayWindow && !overlayWindow.isDestroyed()) {
-      overlayWindow.setAlwaysOnTop(true, "screen-saver", 1);
-      overlayWindow.focus();
-    }
-  });
-  overlayWindow.webContents.on("did-finish-load", () => {
-    overlayWindow?.webContents.send("main-process-message", (/* @__PURE__ */ new Date()).toLocaleString());
-  });
-  if (VITE_DEV_SERVER_URL) {
-    void overlayWindow.loadURL(VITE_DEV_SERVER_URL);
-  } else {
-    void overlayWindow.loadFile(path$1.join(RENDERER_DIST, "index.html"));
+  registerHandlers() {
+    this.registerAuthFlowHandlers();
+    this.registerWindowHandlers();
+    this.registerMouseEventHandlers();
   }
-}
-app.on("window-all-closed", () => {
-  if (process.platform !== "darwin") {
-    app.quit();
-    overlayWindow = null;
+  registerAuthFlowHandlers() {
+    ipcMain.handle("auth0-start-flow", async () => {
+      try {
+        SecurityValidator.checkRateLimit("auth0-start-flow", 5, 6e4);
+        const deviceAuth = await auth0Service.startDeviceAuthFlow();
+        await shell.openExternal(deviceAuth.verification_uri);
+        return { success: true, ...deviceAuth };
+      } catch (error) {
+        console.error("Start Auth0 device flow error:", error);
+        return { success: false, error: error.message };
+      }
+    });
+    ipcMain.handle("auth0-get-session", async () => {
+      try {
+        SecurityValidator.checkRateLimit("auth0-get-session", 10, 6e4);
+        const { user, tokens } = await auth0Service.getSession();
+        const sanitizedUser = user ? SecurityValidator.sanitizeUserForLogging(user) : null;
+        return {
+          success: true,
+          user: sanitizedUser,
+          session: user && tokens ? { user: sanitizedUser, tokens } : null,
+          tokens: tokens || null
+        };
+      } catch (error) {
+        console.error("Get Auth0 session error:", SecurityValidator.sanitizeUserForLogging(error));
+        return { success: false, error: error.message };
+      }
+    });
+    ipcMain.handle("auth0-sign-out", async () => {
+      try {
+        SecurityValidator.checkRateLimit("auth0-sign-out", 3, 6e4);
+        await auth0Service.signOut();
+        return { success: true };
+      } catch (error) {
+        console.error("Auth0 sign out error:", SecurityValidator.sanitizeUserForLogging(error));
+        return { success: false, error: error.message };
+      }
+    });
+    ipcMain.handle("auth0-is-secure-storage", async () => {
+      try {
+        SecurityValidator.checkRateLimit("auth0-is-secure-storage", 10, 6e4);
+        return await auth0Service.isSecureStorage();
+      } catch (error) {
+        console.error("Secure storage check error:", error);
+        return false;
+      }
+    });
+    ipcMain.handle("auth0-cancel-device-flow", async () => {
+      try {
+        SecurityValidator.checkRateLimit("auth0-cancel-device-flow", 10, 6e4);
+        auth0Service.cancelDeviceAuthorization();
+        return { success: true };
+      } catch (error) {
+        console.error("Cancel device flow error:", error);
+        return { success: false, error: error.message };
+      }
+    });
+    ipcMain.handle("open-external-url", async (_event, url) => {
+      try {
+        SecurityValidator.checkRateLimit("open-external-url", 5, 6e4);
+        const validUrl = SecurityValidator.validateUrl(url);
+        await shell.openExternal(validUrl);
+        return { success: true };
+      } catch (error) {
+        console.error("Failed to open external URL:", error);
+        return { success: false, error: error.message };
+      }
+    });
   }
-});
-app.on("activate", () => {
-  if (BrowserWindow.getAllWindows().length === 0) {
-    createAuthWindow();
+  registerWindowHandlers() {
+    ipcMain.on("auth-success", (_event, _user) => {
+      this.windowManager.closeAuthWindow();
+      this.windowManager.createOverlayWindow();
+    });
+    ipcMain.on("user-logout", () => {
+      console.log("User logging out...");
+      this.windowManager.closeOverlayWindow();
+      this.windowManager.createAuthWindow();
+    });
+    ipcMain.on("overlay-interaction", () => {
+      this.windowManager.ensureOverlayOnTop();
+      setTimeout(() => {
+        this.windowManager.ensureOverlayOnTop();
+      }, 100);
+    });
+    ipcMain.on("ensure-always-on-top", () => {
+      this.windowManager.ensureOverlayOnTop();
+    });
   }
-});
-void app.whenReady().then(async () => {
-  app.setName("Unstuck");
-  Menu.setApplicationMenu(null);
-  try {
-    validateAuth0Config(auth0Config);
-    await auth0Service.initialize(auth0Config.domain, auth0Config.clientId);
+  registerMouseEventHandlers() {
+    ipcMain.on("set-ignore-mouse-events", (_event, ignore, options) => {
+      try {
+        SecurityValidator.checkRateLimit("set-ignore-mouse-events", 20, 6e4);
+        const validIgnore = SecurityValidator.validateBoolean(ignore, "ignore");
+        const validOptions = SecurityValidator.validateMouseEventOptions(options);
+        this.windowManager.setOverlayMouseEvents(validIgnore, validOptions ?? { forward: true });
+      } catch (error) {
+        console.error("Mouse events error:", error);
+      }
+    });
+  }
+  // Setup auth state change listeners
+  setupAuthStateListeners() {
     auth0Service.onAuthStateChange((event, session, error) => {
+      const authWindow = this.windowManager.getAuthWindow();
+      const overlayWindow = this.windowManager.getOverlayWindow();
       if (event === "SIGNED_IN" && session?.user) {
         if (authWindow && !authWindow.isDestroyed()) {
           authWindow.webContents.send("auth0-success", session);
@@ -805,11 +951,8 @@ void app.whenReady().then(async () => {
         if (overlayWindow && !overlayWindow.isDestroyed()) {
           overlayWindow.webContents.send("auth0-success", session);
         }
-        if (authWindow && !authWindow.isDestroyed()) {
-          authWindow.close();
-          authWindow = null;
-        }
-        createOverlayWindow();
+        this.windowManager.closeAuthWindow();
+        this.windowManager.createOverlayWindow();
       } else if (event === "SIGNED_OUT") {
         if (authWindow && !authWindow.isDestroyed()) {
           authWindow.webContents.send("auth0-success", null);
@@ -817,12 +960,9 @@ void app.whenReady().then(async () => {
         if (overlayWindow && !overlayWindow.isDestroyed()) {
           overlayWindow.webContents.send("auth0-success", null);
         }
-        if (overlayWindow && !overlayWindow.isDestroyed()) {
-          overlayWindow.close();
-          overlayWindow = null;
-        }
+        this.windowManager.closeOverlayWindow();
         if (!authWindow || authWindow.isDestroyed()) {
-          createAuthWindow();
+          this.windowManager.createAuthWindow();
         }
       } else if (event === "TOKEN_REFRESHED" && session) {
         if (authWindow && !authWindow.isDestroyed()) {
@@ -837,142 +977,103 @@ void app.whenReady().then(async () => {
         }
       }
     });
+  }
+}
+class AppLifecycleManager {
+  constructor(windowManager2) {
+    this.windowManager = windowManager2;
+  }
+  setupAppEvents() {
+    app.on("window-all-closed", () => {
+      if (process.platform !== "darwin") {
+        app.quit();
+      }
+    });
+    app.on("activate", () => {
+      if (BrowserWindow.getAllWindows().length === 0) {
+        this.windowManager.createAuthWindow();
+      }
+    });
+    app.on("second-instance", (_event, _commandLine, _workingDirectory) => {
+      this.windowManager.focusAuthWindow();
+    });
+    app.on("before-quit", () => {
+      console.log("App is quitting...");
+    });
+  }
+  ensureSingleInstance() {
+    const gotTheLock = app.requestSingleInstanceLock();
+    if (!gotTheLock) {
+      app.quit();
+      return false;
+    }
+    return true;
+  }
+  setAppDefaults() {
+    app.setName("Unstuck");
+  }
+}
+class ShortcutsManager {
+  constructor(windowManager2) {
+    this.windowManager = windowManager2;
+  }
+  registerGlobalShortcuts() {
+    const shortcutRegistered = globalShortcut.register("Shift+\\", () => {
+      const overlayWindow = this.windowManager.getOverlayWindow();
+      if (overlayWindow && !overlayWindow.isDestroyed()) {
+        overlayWindow.webContents.send("toggle-navigation-bar");
+      }
+    });
+    if (!shortcutRegistered) {
+      console.warn("Failed to register global shortcut Shift+\\");
+    } else {
+      console.log("Global shortcut Shift+\\ registered successfully");
+    }
+  }
+  unregisterAllShortcuts() {
+    globalShortcut.unregisterAll();
+  }
+  setupShortcutCleanup() {
+    app.on("will-quit", () => {
+      this.unregisterAllShortcuts();
+    });
+  }
+}
+const __dirname = path$1.dirname(fileURLToPath(import.meta.url));
+process.env.APP_ROOT = path$1.join(__dirname, "..");
+const VITE_DEV_SERVER_URL = process.env.VITE_DEV_SERVER_URL;
+const MAIN_DIST = path$1.join(process.env.APP_ROOT, "dist-electron");
+const RENDERER_DIST = path$1.join(process.env.APP_ROOT, "dist");
+process.env.VITE_PUBLIC = VITE_DEV_SERVER_URL ? path$1.join(process.env.APP_ROOT, "public") : RENDERER_DIST;
+const windowManager = new WindowManager(
+  RENDERER_DIST,
+  process.env.VITE_PUBLIC,
+  path$1.join(__dirname, "preload.mjs"),
+  VITE_DEV_SERVER_URL
+);
+const authIPCHandlers = new AuthIPCHandlers(windowManager);
+const appLifecycle = new AppLifecycleManager(windowManager);
+const shortcutsManager = new ShortcutsManager(windowManager);
+void app.whenReady().then(async () => {
+  appLifecycle.setAppDefaults();
+  Menu.setApplicationMenu(null);
+  if (!appLifecycle.ensureSingleInstance()) {
+    return;
+  }
+  appLifecycle.setupAppEvents();
+  shortcutsManager.registerGlobalShortcuts();
+  shortcutsManager.setupShortcutCleanup();
+  try {
+    validateAuth0Config(auth0Config);
+    await auth0Service.initialize(auth0Config.domain, auth0Config.clientId);
+    authIPCHandlers.setupAuthStateListeners();
+    authIPCHandlers.registerHandlers();
   } catch (error) {
     console.error("Failed to initialize Auth0 configuration:", error);
     app.quit();
     return;
   }
-  createAuthWindow();
-  globalShortcut.register("Shift+\\", () => {
-    if (overlayWindow && !overlayWindow.isDestroyed()) {
-      overlayWindow.webContents.send("toggle-navigation-bar");
-    }
-  });
-  ipcMain.on("set-ignore-mouse-events", (_event, ignore, options) => {
-    try {
-      SecurityValidator.checkRateLimit("set-ignore-mouse-events", 20, 6e4);
-      const validIgnore = SecurityValidator.validateBoolean(ignore, "ignore");
-      const validOptions = SecurityValidator.validateMouseEventOptions(options);
-      if (overlayWindow && !overlayWindow.isDestroyed()) {
-        overlayWindow.setIgnoreMouseEvents(validIgnore, validOptions ?? { forward: true });
-      }
-    } catch (error) {
-      console.error("Mouse events error:", error);
-    }
-  });
-  ipcMain.on("ensure-always-on-top", () => {
-    if (overlayWindow && !overlayWindow.isDestroyed()) {
-      overlayWindow.setAlwaysOnTop(true, "screen-saver", 1);
-      overlayWindow.moveTop();
-    }
-  });
-  ipcMain.on("overlayWindowdow-interaction", () => {
-    if (overlayWindow && !overlayWindow.isDestroyed()) {
-      overlayWindow.setAlwaysOnTop(true, "screen-saver", 1);
-      overlayWindow.moveTop();
-      setTimeout(() => {
-        if (overlayWindow && !overlayWindow.isDestroyed()) {
-          overlayWindow.setAlwaysOnTop(true, "screen-saver", 1);
-        }
-      }, 100);
-    }
-  });
-  ipcMain.on("auth-success", (_event, _user) => {
-    if (authWindow && !authWindow.isDestroyed()) {
-      authWindow.close();
-      authWindow = null;
-    }
-    createOverlayWindow();
-  });
-  ipcMain.handle("open-external-url", async (_event, url) => {
-    try {
-      SecurityValidator.checkRateLimit("open-external-url", 5, 6e4);
-      const validUrl = SecurityValidator.validateUrl(url);
-      await shell.openExternal(validUrl);
-      return { success: true };
-    } catch (error) {
-      console.error("Failed to open external URL:", error);
-      return { success: false, error: error.message };
-    }
-  });
-  const gotTheLock = app.requestSingleInstanceLock();
-  if (!gotTheLock) {
-    app.quit();
-  } else {
-    app.on("second-instance", (_event, _commandLine, _workingDirectory) => {
-      if (authWindow) {
-        if (authWindow.isMinimized()) authWindow.restore();
-        authWindow.focus();
-      }
-    });
-  }
-  ipcMain.on("user-logout", () => {
-    console.log("User logging out...");
-    if (overlayWindow && !overlayWindow.isDestroyed()) {
-      overlayWindow.close();
-      overlayWindow = null;
-    }
-    createAuthWindow();
-  });
-  ipcMain.handle("auth0-start-flow", async () => {
-    try {
-      SecurityValidator.checkRateLimit("auth0-start-flow", 5, 6e4);
-      const deviceAuth = await auth0Service.startDeviceAuthFlow();
-      await shell.openExternal(deviceAuth.verification_uri);
-      return { success: true, ...deviceAuth };
-    } catch (error) {
-      console.error("Start Auth0 device flow error:", error);
-      return { success: false, error: error.message };
-    }
-  });
-  ipcMain.handle("auth0-get-session", async () => {
-    try {
-      SecurityValidator.checkRateLimit("auth0-get-session", 10, 6e4);
-      const { user, tokens } = await auth0Service.getSession();
-      const sanitizedUser = user ? SecurityValidator.sanitizeUserForLogging(user) : null;
-      return {
-        success: true,
-        user: sanitizedUser,
-        session: user && tokens ? { user: sanitizedUser, tokens } : null,
-        tokens: tokens || null
-      };
-    } catch (error) {
-      console.error("Get Auth0 session error:", SecurityValidator.sanitizeUserForLogging(error));
-      return { success: false, error: error.message };
-    }
-  });
-  ipcMain.handle("auth0-sign-out", async () => {
-    try {
-      SecurityValidator.checkRateLimit("auth0-sign-out", 3, 6e4);
-      await auth0Service.signOut();
-      return { success: true };
-    } catch (error) {
-      console.error("Auth0 sign out error:", SecurityValidator.sanitizeUserForLogging(error));
-      return { success: false, error: error.message };
-    }
-  });
-  ipcMain.handle("auth0-is-secure-storage", async () => {
-    try {
-      SecurityValidator.checkRateLimit("auth0-is-secure-storage", 10, 6e4);
-      return await auth0Service.isSecureStorage();
-    } catch (error) {
-      console.error("Secure storage check error:", error);
-      return false;
-    }
-  });
-  ipcMain.handle("auth0-cancel-device-flow", async () => {
-    try {
-      SecurityValidator.checkRateLimit("auth0-cancel-device-flow", 10, 6e4);
-      auth0Service.cancelDeviceAuthorization();
-      return { success: true };
-    } catch (error) {
-      console.error("Cancel device flow error:", error);
-      return { success: false, error: error.message };
-    }
-  });
-});
-app.on("will-quit", () => {
-  globalShortcut.unregisterAll();
+  windowManager.createAuthWindow();
 });
 export {
   MAIN_DIST,
