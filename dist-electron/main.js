@@ -180,15 +180,6 @@ class Auth0Service {
     return { user: null, tokens: null };
   }
   /**
-   * Manual token refresh (for testing or explicit refresh requests)
-   */
-  async forceTokenRefresh() {
-    if (!this.currentSession?.tokens.refresh_token) {
-      throw new Error("No refresh token available for forced refresh");
-    }
-    await this.refreshTokens();
-  }
-  /**
    * Sign out user and clear all stored tokens
    */
   async signOut() {
@@ -950,16 +941,6 @@ void app.whenReady().then(async () => {
       return { success: true };
     } catch (error) {
       console.error("Cancel device flow error:", error);
-      return { success: false, error: error.message };
-    }
-  });
-  ipcMain.handle("auth0-refresh-tokens", async () => {
-    try {
-      SecurityValidator.checkRateLimit("auth0-refresh-tokens", 3, 6e4);
-      await auth0Service.forceTokenRefresh();
-      return { success: true };
-    } catch (error) {
-      console.error("Manual token refresh error:", error);
       return { success: false, error: error.message };
     }
   });

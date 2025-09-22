@@ -473,17 +473,6 @@ void app.whenReady().then(async () => {
     }
   })
 
-  // Manual token refresh handler
-  ipcMain.handle('auth0-refresh-tokens', async () => {
-    try {
-      SecurityValidator.checkRateLimit('auth0-refresh-tokens', 3, 60000)
-      await auth0Service.forceTokenRefresh()
-      return { success: true }
-    } catch (error) {
-      console.error('Manual token refresh error:', error)
-      return { success: false, error: (error as Error).message }
-    }
-  })
 })
 
 // Unregister all global shortcuts when app is quitting

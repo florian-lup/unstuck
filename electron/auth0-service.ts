@@ -248,8 +248,8 @@ export class Auth0Service {
             error.message.includes('expired too long ago') ||
             error.message.includes('Too many token refresh attempts')
           )) {
-            await this.signOut()
-            return { user: null, tokens: null }
+          await this.signOut()
+          return { user: null, tokens: null }
           }
           // For other errors, return current tokens but they may be expired
           console.warn('Continuing with potentially expired tokens')
@@ -263,17 +263,6 @@ export class Auth0Service {
     }
 
     return { user: null, tokens: null }
-  }
-
-  /**
-   * Manual token refresh (for testing or explicit refresh requests)
-   */
-  async forceTokenRefresh(): Promise<void> {
-    if (!this.currentSession?.tokens.refresh_token) {
-      throw new Error('No refresh token available for forced refresh')
-    }
-    
-    await this.refreshTokens()
   }
 
   /**
@@ -392,12 +381,12 @@ export class Auth0Service {
     let response: Response
     try {
       response = await fetch(tokenEndpoint, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/x-www-form-urlencoded',
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/x-www-form-urlencoded',
           'User-Agent': 'Unstuck-App/1.0.0', // Identify our app
-        },
-        body: body.toString(),
+      },
+      body: body.toString(),
         // Add timeout to prevent hanging requests
         signal: AbortSignal.timeout(30000), // 30 second timeout
       })
@@ -454,7 +443,7 @@ export class Auth0Service {
     if (newExpiry <= now || newExpiry > now + 86400000) { // Max 24 hours
       throw new Error('Invalid token expiry in response')
     }
-
+    
     const newTokens: Auth0Tokens = {
       access_token: data.access_token,
       refresh_token: data.refresh_token || this.currentSession.tokens.refresh_token,
