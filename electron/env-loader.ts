@@ -57,5 +57,4 @@ export function validateConfig(config: AppConfig) {
     )
   }
   
-  console.log('✅ Auth0 configuration loaded securely in main process')
 }

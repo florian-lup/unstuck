@@ -72,7 +72,6 @@ export class Auth0Service {
     // Try to restore existing session
     await this.restoreSession()
     
-    console.log('🔒 Auth0Service initialized in main process')
   }
 
   /**
@@ -90,9 +89,6 @@ export class Auth0Service {
       body.append('audience', this.audience)
     }
 
-    console.log('🔒 Starting Auth0 Device Authorization Flow')
-    console.log('🔑 Domain:', this.domain)
-    console.log('🔑 Client ID:', this.clientId)
 
     const response = await fetch(deviceCodeEndpoint, {
       method: 'POST',
@@ -130,7 +126,6 @@ export class Auth0Service {
    * Cancel current device authorization flow
    */
   cancelDeviceAuthorization(): void {
-    console.log('🛑 Canceling device authorization polling')
     if (this.currentPollInterval) {
       clearInterval(this.currentPollInterval)
       this.currentPollInterval = null
@@ -197,7 +192,6 @@ export class Auth0Service {
           
         } else if (data.error === 'authorization_pending') {
           // Still waiting for user to authorize
-          console.log('⏳ Waiting for user authorization...')
         } else if (data.error === 'slow_down') {
           // Increase polling interval
           this.cancelDeviceAuthorization()

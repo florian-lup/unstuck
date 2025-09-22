@@ -37,7 +37,6 @@ class Auth0Service {
     this.audience = audience;
     await this.ensureSecureDir();
     await this.restoreSession();
-    console.log("🔒 Auth0Service initialized in main process");
   }
   /**
    * Start Device Authorization Flow
@@ -51,9 +50,6 @@ class Auth0Service {
     if (this.audience) {
       body.append("audience", this.audience);
     }
-    console.log("🔒 Starting Auth0 Device Authorization Flow");
-    console.log("🔑 Domain:", this.domain);
-    console.log("🔑 Client ID:", this.clientId);
     const response = await fetch(deviceCodeEndpoint, {
       method: "POST",
       headers: {
@@ -83,7 +79,6 @@ class Auth0Service {
    * Cancel current device authorization flow
    */
   cancelDeviceAuthorization() {
-    console.log("🛑 Canceling device authorization polling");
     if (this.currentPollInterval) {
       clearInterval(this.currentPollInterval);
       this.currentPollInterval = null;
@@ -130,7 +125,6 @@ class Auth0Service {
           this.currentSession = session;
           this.notifyListeners("SIGNED_IN", session);
         } else if (data.error === "authorization_pending") {
-          console.log("⏳ Waiting for user authorization...");
         } else if (data.error === "slow_down") {
           this.cancelDeviceAuthorization();
           setTimeout(() => {
@@ -558,7 +552,6 @@ function validateConfig(config) {
       'Invalid Auth0 domain format. Domain should be like "your-tenant.auth0.com"'
     );
   }
-  console.log("✅ Auth0 configuration loaded securely in main process");
 }
 class SecurityValidator {
   /**
@@ -948,7 +941,6 @@ void app.whenReady().then(async () => {
       SecurityValidator.checkRateLimit("auth0-start-flow", 5, 6e4);
       const deviceAuth = await auth0Service.startDeviceAuthFlow();
       await shell.openExternal(deviceAuth.verification_uri);
-      console.log("✅ Browser opened successfully");
       return { success: true, ...deviceAuth };
     } catch (error) {
       console.error("Start Auth0 device flow error:", error);

@@ -412,7 +412,6 @@ void app.whenReady().then(async () => {
       // Open the verification URL in system browser
       await shell.openExternal(deviceAuth.verification_uri)
       
-      console.log('✅ Browser opened successfully')
       
       return { success: true, ...deviceAuth }
     } catch (error) {
