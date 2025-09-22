@@ -8,6 +8,7 @@ import fs from 'fs/promises'
 import path from 'path'
 import os from 'os'
 import crypto from 'crypto'
+import { SecurityValidator } from './security-validators'
 
 export interface Auth0User {
   sub: string
@@ -104,7 +105,8 @@ export class Auth0Service {
       console.error('Auth0 API Error Response:', {
         status: response.status,
         statusText: response.statusText,
-        errorData
+        error: errorData.error,
+        error_description: errorData.error_description
       })
       throw new Error(`Device authorization request failed: ${errorData.error_description || errorData.error || response.statusText}`)
     }
@@ -243,7 +245,7 @@ export class Auth0Service {
         try {
           await this.refreshTokens()
         } catch (error) {
-          console.error('Automatic token refresh failed:', error)
+          console.error('Automatic token refresh failed:', SecurityValidator.sanitizeUserForLogging(error))
           // If refresh fails due to security checks, force re-authentication
           if (error instanceof Error && (
             error.message.includes('re-authentication required') ||
@@ -572,7 +574,7 @@ export class Auth0Service {
             // Notify listeners that user is signed in with refreshed tokens
             this.notifyListeners('SIGNED_IN', this.currentSession)
           } catch (refreshError) {
-            console.warn('Failed to refresh restored tokens, clearing session:', refreshError)
+            console.warn('Failed to refresh restored tokens, clearing session:', SecurityValidator.sanitizeUserForLogging(refreshError))
             await this.clearSession()
             this.currentSession = null
           }
@@ -585,7 +587,7 @@ export class Auth0Service {
         }
       }
     } catch (error) {
-      console.warn('Failed to restore session:', error)
+      console.warn('Failed to restore session:', SecurityValidator.sanitizeUserForLogging(error))
       await this.clearSession()
       this.currentSession = null
     }

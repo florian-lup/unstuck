@@ -17,7 +17,7 @@ export function useAuth() {
       setSession(session)
       setLoading(false)
     }).catch((error) => {
-      console.error('Failed to get initial session:', error)
+      console.error('Failed to get initial session:', error instanceof Error ? error.message : 'Unknown error')
       setLoading(false)
     })
 
@@ -43,7 +43,7 @@ export function useAuth() {
       await secureAuth.signOut()
       console.log('Successfully signed out')
     } catch (error) {
-      console.error('Sign out error:', error)
+      console.error('Sign out error:', error instanceof Error ? error.message : 'Unknown sign out error')
     }
   }
 

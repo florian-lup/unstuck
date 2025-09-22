@@ -5,6 +5,115 @@ import fs from "fs/promises";
 import path from "path";
 import os from "os";
 import crypto from "crypto";
+class SecurityValidator {
+  /**
+   * Validate OAuth provider
+   */
+  static validateOAuthProvider(provider) {
+    const validProviders = ["google", "github", "discord"];
+    if (typeof provider !== "string") {
+      throw new Error("OAuth provider must be a string");
+    }
+    if (!validProviders.includes(provider)) {
+      throw new Error(`Invalid OAuth provider: ${provider}. Must be one of: ${validProviders.join(", ")}`);
+    }
+    return provider;
+  }
+  /**
+   * Validate URL string
+   */
+  static validateUrl(url) {
+    if (typeof url !== "string") {
+      throw new Error("URL must be a string");
+    }
+    if (url.length === 0) {
+      throw new Error("URL cannot be empty");
+    }
+    if (url.length > 2048) {
+      throw new Error("URL too long (max 2048 characters)");
+    }
+    if (!url.startsWith("https://")) {
+      throw new Error("URL must use https:// protocol");
+    }
+    return url;
+  }
+  /**
+   * Validate mouse event options
+   */
+  static validateMouseEventOptions(options) {
+    if (options === void 0 || options === null) {
+      return void 0;
+    }
+    if (typeof options !== "object") {
+      throw new Error("Mouse event options must be an object");
+    }
+    const opts = options;
+    if ("forward" in opts && typeof opts.forward !== "boolean") {
+      throw new Error("Mouse event forward option must be a boolean");
+    }
+    return { forward: opts.forward };
+  }
+  /**
+   * Validate boolean value
+   */
+  static validateBoolean(value, fieldName) {
+    if (typeof value !== "boolean") {
+      throw new Error(`${fieldName} must be a boolean`);
+    }
+    return value;
+  }
+  /**
+   * Validate string with length limits
+   */
+  static validateString(value, fieldName, maxLength = 255) {
+    if (typeof value !== "string") {
+      throw new Error(`${fieldName} must be a string`);
+    }
+    if (value.length > maxLength) {
+      throw new Error(`${fieldName} too long (max ${maxLength} characters)`);
+    }
+    return value;
+  }
+  /**
+   * Sanitize user object for logging (remove sensitive fields)
+   */
+  static sanitizeUserForLogging(user) {
+    if (!user || typeof user !== "object") {
+      return user;
+    }
+    const sanitized = { ...user };
+    delete sanitized.access_token;
+    delete sanitized.refresh_token;
+    delete sanitized.session;
+    delete sanitized.raw_app_meta_data;
+    delete sanitized.raw_user_meta_data;
+    return {
+      id: sanitized.id,
+      email: sanitized.email,
+      created_at: sanitized.created_at
+    };
+  }
+  /**
+   * Rate limiting for IPC calls
+   */
+  static rateLimitMap = /* @__PURE__ */ new Map();
+  static checkRateLimit(channel, maxRequests = 10, windowMs = 6e4) {
+    const now = Date.now();
+    const key = channel;
+    const record = this.rateLimitMap.get(key);
+    if (!record || now > record.resetTime) {
+      this.rateLimitMap.set(key, {
+        count: 1,
+        resetTime: now + windowMs
+      });
+      return;
+    }
+    if (record.count >= maxRequests) {
+      throw new Error(`Rate limit exceeded for channel: ${channel}`);
+    }
+    record.count++;
+  }
+}
 class Auth0Service {
   domain = "";
   clientId = "";
@@ -62,7 +171,8 @@ class Auth0Service {
       console.error("Auth0 API Error Response:", {
         status: response.status,
         statusText: response.statusText,
-        errorData
+        error: errorData.error,
+        error_description: errorData.error_description
       });
       throw new Error(`Device authorization request failed: ${errorData.error_description || errorData.error || response.statusText}`);
     }
@@ -165,7 +275,7 @@ class Auth0Service {
         try {
           await this.refreshTokens();
         } catch (error) {
-          console.error("Automatic token refresh failed:", error);
+          console.error("Automatic token refresh failed:", SecurityValidator.sanitizeUserForLogging(error));
           if (error instanceof Error && (error.message.includes("re-authentication required") || error.message.includes("expired too long ago") || error.message.includes("Too many token refresh attempts"))) {
             await this.signOut();
             return { user: null, tokens: null };
@@ -412,7 +522,7 @@ class Auth0Service {
             console.log("✅ Session restored and tokens refreshed successfully");
             this.notifyListeners("SIGNED_IN", this.currentSession);
           } catch (refreshError) {
-            console.warn("Failed to refresh restored tokens, clearing session:", refreshError);
+            console.warn("Failed to refresh restored tokens, clearing session:", SecurityValidator.sanitizeUserForLogging(refreshError));
             await this.clearSession();
             this.currentSession = null;
           }
@@ -423,7 +533,7 @@ class Auth0Service {
         }
       }
     } catch (error) {
-      console.warn("Failed to restore session:", error);
+      console.warn("Failed to restore session:", SecurityValidator.sanitizeUserForLogging(error));
       await this.clearSession();
       this.currentSession = null;
     }
@@ -744,115 +854,6 @@ class WindowManager {
     if (this.overlayWindow && !this.overlayWindow.isDestroyed()) {
       this.overlayWindow.setIgnoreMouseEvents(ignore, options ?? { forward: true });
     }
-  }
-}
-class SecurityValidator {
-  /**
-   * Validate OAuth provider
-   */
-  static validateOAuthProvider(provider) {
-    const validProviders = ["google", "github", "discord"];
-    if (typeof provider !== "string") {
-      throw new Error("OAuth provider must be a string");
-    }
-    if (!validProviders.includes(provider)) {
-      throw new Error(`Invalid OAuth provider: ${provider}. Must be one of: ${validProviders.join(", ")}`);
-    }
-    return provider;
-  }
-  /**
-   * Validate URL string
-   */
-  static validateUrl(url) {
-    if (typeof url !== "string") {
-      throw new Error("URL must be a string");
-    }
-    if (url.length === 0) {
-      throw new Error("URL cannot be empty");
-    }
-    if (url.length > 2048) {
-      throw new Error("URL too long (max 2048 characters)");
-    }
-    if (!url.startsWith("https://")) {
-      throw new Error("URL must use https:// protocol");
-    }
-    return url;
-  }
-  /**
-   * Validate mouse event options
-   */
-  static validateMouseEventOptions(options) {
-    if (options === void 0 || options === null) {
-      return void 0;
-    }
-    if (typeof options !== "object") {
-      throw new Error("Mouse event options must be an object");
-    }
-    const opts = options;
-    if ("forward" in opts && typeof opts.forward !== "boolean") {
-      throw new Error("Mouse event forward option must be a boolean");
-    }
-    return { forward: opts.forward };
-  }
-  /**
-   * Validate boolean value
-   */
-  static validateBoolean(value, fieldName) {
-    if (typeof value !== "boolean") {
-      throw new Error(`${fieldName} must be a boolean`);
-    }
-    return value;
-  }
-  /**
-   * Validate string with length limits
-   */
-  static validateString(value, fieldName, maxLength = 255) {
-    if (typeof value !== "string") {
-      throw new Error(`${fieldName} must be a string`);
-    }
-    if (value.length > maxLength) {
-      throw new Error(`${fieldName} too long (max ${maxLength} characters)`);
-    }
-    return value;
-  }
-  /**
-   * Sanitize user object for logging (remove sensitive fields)
-   */
-  static sanitizeUserForLogging(user) {
-    if (!user || typeof user !== "object") {
-      return user;
-    }
-    const sanitized = { ...user };
-    delete sanitized.access_token;
-    delete sanitized.refresh_token;
-    delete sanitized.session;
-    delete sanitized.raw_app_meta_data;
-    delete sanitized.raw_user_meta_data;
-    return {
-      id: sanitized.id,
-      email: sanitized.email,
-      created_at: sanitized.created_at
-    };
-  }
-  /**
-   * Rate limiting for IPC calls
-   */
-  static rateLimitMap = /* @__PURE__ */ new Map();
-  static checkRateLimit(channel, maxRequests = 10, windowMs = 6e4) {
-    const now = Date.now();
-    const key = channel;
-    const record = this.rateLimitMap.get(key);
-    if (!record || now > record.resetTime) {
-      this.rateLimitMap.set(key, {
-        count: 1,
-        resetTime: now + windowMs
-      });
-      return;
-    }
-    if (record.count >= maxRequests) {
-      throw new Error(`Rate limit exceeded for channel: ${channel}`);
-    }
-    record.count++;
   }
 }
 class AuthIPCHandlers {
