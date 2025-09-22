@@ -1,7 +1,9 @@
-import { useEffect, useState } from 'react'
+import { useEffect } from 'react'
 import { AuthUser } from '../lib/auth-client'
 import { useAuth } from '../hooks/use-auth'
 import { useAuthFlow } from '../hooks/use-auth-flow'
+import { useCountdownTimer } from '../hooks/use-countdown-timer'
+import { formatTime } from '../lib/utils'
 import { Button } from './ui/button'
 
 interface AuthWindowProps {
@@ -11,40 +13,19 @@ interface AuthWindowProps {
 export function AuthWindow({ onAuthSuccess }: AuthWindowProps) {
   const { user } = useAuth()
   const { isLoading, deviceAuth, handleLogin, handleSignUp, clearDeviceAuth } = useAuthFlow()
-  const [timeLeft, setTimeLeft] = useState<number | null>(null)
+  
+  // Use custom countdown timer hook
+  const { timeLeft } = useCountdownTimer({
+    initialTime: deviceAuth?.expires_in,
+    onComplete: clearDeviceAuth,
+    autoStart: true
+  })
 
   useEffect(() => {
     if (user) {
       onAuthSuccess(user)
     }
   }, [user, onAuthSuccess])
-
-  // Countdown timer for device code expiration - uses Auth0's actual value
-  useEffect(() => {
-    if (deviceAuth) {
-      setTimeLeft(deviceAuth.expires_in) // Use Auth0's actual expiration time
-      const timer = setInterval(() => {
-        setTimeLeft((prev) => {
-          if (prev === null || prev <= 1) {
-            clearInterval(timer)
-            clearDeviceAuth()
-            return null
-          }
-          return prev - 1
-        })
-      }, 1000)
-
-      return () => clearInterval(timer)
-    } else {
-      setTimeLeft(null) // Clear timer when no deviceAuth
-    }
-  }, [deviceAuth, clearDeviceAuth]) // Now clearDeviceAuth is stable with useCallback
-
-  const formatTime = (seconds: number) => {
-    const minutes = Math.floor(seconds / 60)
-    const remainingSeconds = seconds % 60
-    return `${minutes}:${remainingSeconds.toString().padStart(2, '0')}`
-  }
 
   if (deviceAuth) {
     return (
