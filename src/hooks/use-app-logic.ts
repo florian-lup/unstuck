@@ -7,7 +7,7 @@ import { type Message } from '../components/text-chat'
 
 export function useAppLogic() {
   // Authentication state
-  const { user, signOut, isSecureStorage } = useAuth()
+  const { user, signOut } = useAuth()
   
   // Core application state
   const [selectedGame, setSelectedGame] = useState<Game | null>(null)
@@ -37,10 +37,18 @@ export function useAppLogic() {
 
   const handleTextClick = () => {
     setIsTextChatVisible(!isTextChatVisible)
+    // Close settings menu when text chat opens
+    if (!isTextChatVisible && showSettingsMenu) {
+      setShowSettingsMenu(false)
+    }
   }
 
   const handleSettingsClick = () => {
     setShowSettingsMenu(!showSettingsMenu)
+    // Close text chat when settings opens
+    if (!showSettingsMenu && isTextChatVisible) {
+      setIsTextChatVisible(false)
+    }
   }
 
   const handleLogout = async () => {
@@ -91,8 +99,15 @@ export function useAppLogic() {
   }
 
   const handleDropdownOpenChange = (open: boolean) => {
-    if (open && isTextChatVisible) {
-      setIsTextChatVisible(false)
+    if (open) {
+      // Close text chat when dropdown opens
+      if (isTextChatVisible) {
+        setIsTextChatVisible(false)
+      }
+      // Close settings menu when dropdown opens
+      if (showSettingsMenu) {
+        setShowSettingsMenu(false)
+      }
     }
   }
 
@@ -104,7 +119,6 @@ export function useAppLogic() {
     isNavigationBarVisible,
     showSettingsMenu,
     user,
-    isSecureStorage,
     
     // Actions
     handleSpeakClick,
