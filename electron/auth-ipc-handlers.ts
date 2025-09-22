@@ -131,8 +131,6 @@ export class AuthIPCHandlers {
     // Handle mouse event control for click-through functionality
     ipcMain.on('set-ignore-mouse-events', (_event, ignore: unknown, options?: unknown) => {
       try {
-        SecurityValidator.checkRateLimit('set-ignore-mouse-events', 20, 60000)
-        
         const validIgnore = SecurityValidator.validateBoolean(ignore, 'ignore')
         const validOptions = SecurityValidator.validateMouseEventOptions(options)
         

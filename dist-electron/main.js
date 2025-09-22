@@ -930,7 +930,6 @@ class AuthIPCHandlers {
   registerMouseEventHandlers() {
     ipcMain.on("set-ignore-mouse-events", (_event, ignore, options) => {
       try {
-        SecurityValidator.checkRateLimit("set-ignore-mouse-events", 20, 6e4);
         const validIgnore = SecurityValidator.validateBoolean(ignore, "ignore");
         const validOptions = SecurityValidator.validateMouseEventOptions(options);
         this.windowManager.setOverlayMouseEvents(validIgnore, validOptions ?? { forward: true });
