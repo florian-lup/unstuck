@@ -43,6 +43,10 @@ export class Auth0Service {
   private listeners: Set<(event: Auth0Event, session: Auth0Session | null, error?: string) => void> = new Set()
   private currentPollInterval: NodeJS.Timeout | null = null
   private currentPollTimeout: NodeJS.Timeout | null = null
+  private refreshAttempts: Map<string, { count: number; lastAttempt: number }> = new Map()
+  private readonly REFRESH_RATE_LIMIT = 5 // Max refresh attempts
+  private readonly REFRESH_RATE_WINDOW = 60000 // 1 minute window
+  private readonly MIN_TOKEN_VALIDITY_BUFFER = 300000 // 5 minutes buffer before expiry
 
   /**
    * Initialize Auth0 client configuration
@@ -237,9 +241,18 @@ export class Auth0Service {
         try {
           await this.refreshTokens()
         } catch (error) {
-          console.warn('Token refresh failed:', error)
-          await this.signOut()
-          return { user: null, tokens: null }
+          console.error('Automatic token refresh failed:', error)
+          // If refresh fails due to security checks, force re-authentication
+          if (error instanceof Error && (
+            error.message.includes('re-authentication required') ||
+            error.message.includes('expired too long ago') ||
+            error.message.includes('Too many token refresh attempts')
+          )) {
+            await this.signOut()
+            return { user: null, tokens: null }
+          }
+          // For other errors, return current tokens but they may be expired
+          console.warn('Continuing with potentially expired tokens')
         }
       }
       
@@ -250,6 +263,17 @@ export class Auth0Service {
     }
 
     return { user: null, tokens: null }
+  }
+
+  /**
+   * Manual token refresh (for testing or explicit refresh requests)
+   */
+  async forceTokenRefresh(): Promise<void> {
+    if (!this.currentSession?.tokens.refresh_token) {
+      throw new Error('No refresh token available for forced refresh')
+    }
+    
+    await this.refreshTokens()
   }
 
   /**
@@ -325,8 +349,32 @@ export class Auth0Service {
   }
 
   private async refreshTokens(): Promise<void> {
+    // 1. Basic validation
     if (!this.currentSession?.tokens.refresh_token) {
       throw new Error('No refresh token available')
+    }
+
+    // 2. Token expiry validation with buffer
+    const now = Date.now()
+    const tokenExpiry = this.currentSession.tokens.expires_at
+    
+    // Don't refresh if token is still valid with sufficient buffer
+    if (tokenExpiry && tokenExpiry > now + this.MIN_TOKEN_VALIDITY_BUFFER) {
+      throw new Error('Token refresh not needed - token still valid')
+    }
+
+    // Don't refresh if token is already expired for too long (potential replay attack)
+    if (tokenExpiry && tokenExpiry < now - this.REFRESH_RATE_WINDOW) {
+      throw new Error('Token expired too long ago - re-authentication required')
+    }
+
+    // 3. Rate limiting validation
+    const refreshKey = this.currentSession.tokens.refresh_token
+    this.validateRefreshRateLimit(refreshKey)
+
+    // 4. Domain validation (ensure we're still talking to the right Auth0 tenant)
+    if (!this.domain || (!this.domain.includes('.auth0.com') && !this.domain.includes('.us.auth0.com'))) {
+      throw new Error('Invalid Auth0 domain for token refresh')
     }
 
     const tokenEndpoint = `${this.domain}/oauth/token`
@@ -341,33 +389,134 @@ export class Auth0Service {
       body.append('audience', this.audience)
     }
 
-    const response = await fetch(tokenEndpoint, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/x-www-form-urlencoded',
-      },
-      body: body.toString(),
-    })
-
-    if (!response.ok) {
-      throw new Error('Token refresh failed')
+    let response: Response
+    try {
+      response = await fetch(tokenEndpoint, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/x-www-form-urlencoded',
+          'User-Agent': 'Unstuck-App/1.0.0', // Identify our app
+        },
+        body: body.toString(),
+        // Add timeout to prevent hanging requests
+        signal: AbortSignal.timeout(30000), // 30 second timeout
+      })
+    } catch (error) {
+      this.recordRefreshAttempt(refreshKey)
+      if (error instanceof Error && error.name === 'TimeoutError') {
+        throw new Error('Token refresh request timed out')
+      }
+      throw new Error(`Token refresh network error: ${error instanceof Error ? error.message : 'Unknown error'}`)
     }
 
-    const data = await response.json()
-    
+    // 5. Enhanced error handling with specific error codes
+    if (!response.ok) {
+      this.recordRefreshAttempt(refreshKey)
+      
+      let errorData: any = {}
+      try {
+        errorData = await response.json()
+      } catch {
+        // If JSON parsing fails, use status text
+        errorData = { error: response.statusText }
+      }
+
+      // Handle specific Auth0 error codes
+      if (errorData.error === 'invalid_grant') {
+        // Refresh token is invalid/expired - force re-authentication
+        await this.signOut()
+        throw new Error('Refresh token invalid - re-authentication required')
+      }
+      
+      if (errorData.error === 'invalid_client') {
+        throw new Error('Invalid client credentials - check Auth0 configuration')
+      }
+
+      throw new Error(`Token refresh failed: ${errorData.error_description || errorData.error || 'Unknown error'}`)
+    }
+
+    let data: any
+    try {
+      data = await response.json()
+    } catch {
+      this.recordRefreshAttempt(refreshKey)
+      throw new Error('Invalid response format from token endpoint')
+    }
+
+    // 6. Validate response data
+    if (!data.access_token || !data.expires_in) {
+      this.recordRefreshAttempt(refreshKey)
+      throw new Error('Invalid token response - missing required fields')
+    }
+
+    // 7. Validate token expiry is reasonable (not in past, not too far in future)
+    const newExpiry = now + (data.expires_in * 1000)
+    if (newExpiry <= now || newExpiry > now + 86400000) { // Max 24 hours
+      throw new Error('Invalid token expiry in response')
+    }
+
     const newTokens: Auth0Tokens = {
       access_token: data.access_token,
       refresh_token: data.refresh_token || this.currentSession.tokens.refresh_token,
       id_token: data.id_token,
-      expires_at: Date.now() + (data.expires_in * 1000),
+      expires_at: newExpiry,
       token_type: data.token_type || 'Bearer',
       scope: data.scope,
     }
 
+    // 8. Update session with new tokens
     this.currentSession.tokens = newTokens
     await this.storeSession(this.currentSession)
-    this.notifyListeners('TOKEN_REFRESHED', this.currentSession)
     
+    // 9. Clear rate limiting on successful refresh
+    this.clearRefreshAttempts(refreshKey)
+    
+    this.notifyListeners('TOKEN_REFRESHED', this.currentSession)
+  }
+
+  /**
+   * Validate rate limiting for token refresh attempts
+   */
+  private validateRefreshRateLimit(refreshToken: string): void {
+    const now = Date.now()
+    const attempt = this.refreshAttempts.get(refreshToken)
+    
+    if (!attempt) {
+      return // First attempt
+    }
+    
+    // Clean up old attempts outside the window
+    if (now - attempt.lastAttempt > this.REFRESH_RATE_WINDOW) {
+      this.refreshAttempts.delete(refreshToken)
+      return
+    }
+    
+    // Check rate limit
+    if (attempt.count >= this.REFRESH_RATE_LIMIT) {
+      throw new Error(`Too many token refresh attempts. Please wait ${Math.ceil(this.REFRESH_RATE_WINDOW / 60000)} minutes.`)
+    }
+  }
+
+  /**
+   * Record a failed refresh attempt
+   */
+  private recordRefreshAttempt(refreshToken: string): void {
+    const now = Date.now()
+    const attempt = this.refreshAttempts.get(refreshToken)
+    
+    if (!attempt || now - attempt.lastAttempt > this.REFRESH_RATE_WINDOW) {
+      this.refreshAttempts.set(refreshToken, { count: 1, lastAttempt: now })
+    } else {
+      attempt.count++
+      attempt.lastAttempt = now
+    }
+  }
+
+  /**
+   * Clear refresh attempts on successful refresh
+   */
+  private clearRefreshAttempts(refreshToken: string): void {
+    this.refreshAttempts.delete(refreshToken)
   }
 
   private async revokeToken(token: string): Promise<void> {
@@ -388,8 +537,8 @@ export class Auth0Service {
   }
 
   private isTokenExpired(tokens: Auth0Tokens): boolean {
-    // Add 5-minute buffer for token refresh
-    return tokens.expires_at < Date.now() + (5 * 60 * 1000)
+    // Use the security buffer we defined for consistency
+    return tokens.expires_at < Date.now() + this.MIN_TOKEN_VALIDITY_BUFFER
   }
 
   private async storeSession(session: Auth0Session): Promise<void> {

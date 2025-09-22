@@ -11,7 +11,8 @@ const ALLOWED_INVOKE_CHANNELS = [
   "auth-get-oauth-url",
   "auth-get-session",
   "auth-sign-out",
-  "auth-is-secure-storage"
+  "auth-is-secure-storage",
+  "auth0-refresh-tokens"
 ];
 const ALLOWED_LISTEN_CHANNELS = [
   "toggle-navigation-bar",
@@ -79,6 +80,7 @@ electron.contextBridge.exposeInMainWorld("electronAPI", {
     signOut: () => electron.ipcRenderer.invoke("auth0-sign-out"),
     isSecureStorage: () => electron.ipcRenderer.invoke("auth0-is-secure-storage"),
     cancelDeviceFlow: () => electron.ipcRenderer.invoke("auth0-cancel-device-flow"),
+    refreshTokens: () => electron.ipcRenderer.invoke("auth0-refresh-tokens"),
     // Listen for auth events from main process
     onAuthSuccess: (callback) => {
       const listener = (_event, session) => callback(session);

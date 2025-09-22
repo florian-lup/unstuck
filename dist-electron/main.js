@@ -14,6 +14,13 @@ class Auth0Service {
   listeners = /* @__PURE__ */ new Set();
   currentPollInterval = null;
   currentPollTimeout = null;
+  refreshAttempts = /* @__PURE__ */ new Map();
+  REFRESH_RATE_LIMIT = 5;
+  // Max refresh attempts
+  REFRESH_RATE_WINDOW = 6e4;
+  // 1 minute window
+  MIN_TOKEN_VALIDITY_BUFFER = 3e5;
+  // 5 minutes buffer before expiry
   /**
    * Initialize Auth0 client configuration
    */
@@ -157,9 +164,12 @@ class Auth0Service {
         try {
           await this.refreshTokens();
         } catch (error) {
-          console.warn("Token refresh failed:", error);
-          await this.signOut();
-          return { user: null, tokens: null };
+          console.error("Automatic token refresh failed:", error);
+          if (error instanceof Error && (error.message.includes("re-authentication required") || error.message.includes("expired too long ago") || error.message.includes("Too many token refresh attempts"))) {
+            await this.signOut();
+            return { user: null, tokens: null };
+          }
+          console.warn("Continuing with potentially expired tokens");
         }
       }
       return {
@@ -168,6 +178,15 @@ class Auth0Service {
       };
     }
     return { user: null, tokens: null };
+  }
+  /**
+   * Manual token refresh (for testing or explicit refresh requests)
+   */
+  async forceTokenRefresh() {
+    if (!this.currentSession?.tokens.refresh_token) {
+      throw new Error("No refresh token available for forced refresh");
+    }
+    await this.refreshTokens();
   }
   /**
    * Sign out user and clear all stored tokens
@@ -228,6 +247,19 @@ class Auth0Service {
     if (!this.currentSession?.tokens.refresh_token) {
       throw new Error("No refresh token available");
     }
+    const now = Date.now();
+    const tokenExpiry = this.currentSession.tokens.expires_at;
+    if (tokenExpiry && tokenExpiry > now + this.MIN_TOKEN_VALIDITY_BUFFER) {
+      throw new Error("Token refresh not needed - token still valid");
+    }
+    if (tokenExpiry && tokenExpiry < now - this.REFRESH_RATE_WINDOW) {
+      throw new Error("Token expired too long ago - re-authentication required");
+    }
+    const refreshKey = this.currentSession.tokens.refresh_token;
+    this.validateRefreshRateLimit(refreshKey);
+    if (!this.domain || !this.domain.includes(".auth0.com") && !this.domain.includes(".us.auth0.com")) {
+      throw new Error("Invalid Auth0 domain for token refresh");
+    }
     const tokenEndpoint = `${this.domain}/oauth/token`;
     const body = new URLSearchParams({
       grant_type: "refresh_token",
@@ -237,28 +269,107 @@ class Auth0Service {
     if (this.audience) {
       body.append("audience", this.audience);
     }
-    const response = await fetch(tokenEndpoint, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/x-www-form-urlencoded"
-      },
-      body: body.toString()
-    });
-    if (!response.ok) {
-      throw new Error("Token refresh failed");
+    let response;
+    try {
+      response = await fetch(tokenEndpoint, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/x-www-form-urlencoded",
+          "User-Agent": "Unstuck-App/1.0.0"
+          // Identify our app
+        },
+        body: body.toString(),
+        // Add timeout to prevent hanging requests
+        signal: AbortSignal.timeout(3e4)
+        // 30 second timeout
+      });
+    } catch (error) {
+      this.recordRefreshAttempt(refreshKey);
+      if (error instanceof Error && error.name === "TimeoutError") {
+        throw new Error("Token refresh request timed out");
+      }
+      throw new Error(`Token refresh network error: ${error instanceof Error ? error.message : "Unknown error"}`);
     }
-    const data = await response.json();
+    if (!response.ok) {
+      this.recordRefreshAttempt(refreshKey);
+      let errorData = {};
+      try {
+        errorData = await response.json();
+      } catch {
+        errorData = { error: response.statusText };
+      }
+      if (errorData.error === "invalid_grant") {
+        await this.signOut();
+        throw new Error("Refresh token invalid - re-authentication required");
+      }
+      if (errorData.error === "invalid_client") {
+        throw new Error("Invalid client credentials - check Auth0 configuration");
+      }
+      throw new Error(`Token refresh failed: ${errorData.error_description || errorData.error || "Unknown error"}`);
+    }
+    let data;
+    try {
+      data = await response.json();
+    } catch {
+      this.recordRefreshAttempt(refreshKey);
+      throw new Error("Invalid response format from token endpoint");
+    }
+    if (!data.access_token || !data.expires_in) {
+      this.recordRefreshAttempt(refreshKey);
+      throw new Error("Invalid token response - missing required fields");
+    }
+    const newExpiry = now + data.expires_in * 1e3;
+    if (newExpiry <= now || newExpiry > now + 864e5) {
+      throw new Error("Invalid token expiry in response");
+    }
     const newTokens = {
       access_token: data.access_token,
       refresh_token: data.refresh_token || this.currentSession.tokens.refresh_token,
       id_token: data.id_token,
-      expires_at: Date.now() + data.expires_in * 1e3,
+      expires_at: newExpiry,
       token_type: data.token_type || "Bearer",
       scope: data.scope
     };
     this.currentSession.tokens = newTokens;
     await this.storeSession(this.currentSession);
+    this.clearRefreshAttempts(refreshKey);
     this.notifyListeners("TOKEN_REFRESHED", this.currentSession);
+  }
+  /**
+   * Validate rate limiting for token refresh attempts
+   */
+  validateRefreshRateLimit(refreshToken) {
+    const now = Date.now();
+    const attempt = this.refreshAttempts.get(refreshToken);
+    if (!attempt) {
+      return;
+    }
+    if (now - attempt.lastAttempt > this.REFRESH_RATE_WINDOW) {
+      this.refreshAttempts.delete(refreshToken);
+      return;
+    }
+    if (attempt.count >= this.REFRESH_RATE_LIMIT) {
+      throw new Error(`Too many token refresh attempts. Please wait ${Math.ceil(this.REFRESH_RATE_WINDOW / 6e4)} minutes.`);
+    }
+  }
+  /**
+   * Record a failed refresh attempt
+   */
+  recordRefreshAttempt(refreshToken) {
+    const now = Date.now();
+    const attempt = this.refreshAttempts.get(refreshToken);
+    if (!attempt || now - attempt.lastAttempt > this.REFRESH_RATE_WINDOW) {
+      this.refreshAttempts.set(refreshToken, { count: 1, lastAttempt: now });
+    } else {
+      attempt.count++;
+      attempt.lastAttempt = now;
+    }
+  }
+  /**
+   * Clear refresh attempts on successful refresh
+   */
+  clearRefreshAttempts(refreshToken) {
+    this.refreshAttempts.delete(refreshToken);
   }
   async revokeToken(token) {
     const revokeEndpoint = `${this.domain}/oauth/revoke`;
@@ -275,7 +386,7 @@ class Auth0Service {
     });
   }
   isTokenExpired(tokens) {
-    return tokens.expires_at < Date.now() + 5 * 60 * 1e3;
+    return tokens.expires_at < Date.now() + this.MIN_TOKEN_VALIDITY_BUFFER;
   }
   async storeSession(session) {
     await this.secureSetItem("auth0_session", JSON.stringify(session));
@@ -839,6 +950,16 @@ void app.whenReady().then(async () => {
       return { success: true };
     } catch (error) {
       console.error("Cancel device flow error:", error);
+      return { success: false, error: error.message };
+    }
+  });
+  ipcMain.handle("auth0-refresh-tokens", async () => {
+    try {
+      SecurityValidator.checkRateLimit("auth0-refresh-tokens", 3, 6e4);
+      await auth0Service.forceTokenRefresh();
+      return { success: true };
+    } catch (error) {
+      console.error("Manual token refresh error:", error);
       return { success: false, error: error.message };
     }
   });
