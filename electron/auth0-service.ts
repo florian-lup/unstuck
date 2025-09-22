@@ -109,9 +109,6 @@ export class Auth0Service {
 
     const deviceData = await response.json()
     
-    console.log('✅ Device code obtained')
-    console.log('📱 User code:', deviceData.user_code)
-    console.log('🌐 Verification URI:', deviceData.verification_uri)
     
     // Start polling for completion
     this.pollForDeviceAuthorization(deviceData.device_code, deviceData.interval || 5)
@@ -192,7 +189,6 @@ export class Auth0Service {
           // Notify listeners
           this.notifyListeners('SIGNED_IN', session)
           
-          console.log('🔒 Device authorization successful!')
           
         } else if (data.error === 'authorization_pending') {
           // Still waiting for user to authorize
@@ -372,7 +368,6 @@ export class Auth0Service {
     await this.storeSession(this.currentSession)
     this.notifyListeners('TOKEN_REFRESHED', this.currentSession)
     
-    console.log('🔒 Auth0 tokens refreshed')
   }
 
   private async revokeToken(token: string): Promise<void> {
@@ -406,7 +401,6 @@ export class Auth0Service {
       const sessionData = await this.secureGetItem('auth0_session')
       if (sessionData) {
         this.currentSession = JSON.parse(sessionData)
-        console.log('🔒 Auth0 session restored')
       }
     } catch (error) {
       console.warn('Failed to restore session:', error)

@@ -24,7 +24,6 @@ export function useAuth() {
     // Listen for auth changes via secure IPC
     const { unsubscribe } = secureAuth.onAuthStateChange(
       async (event, session, error) => {
-        console.log('Auth0 event:', event, session ? 'Session exists' : 'No session', error ? `Error: ${error}` : '')
         
         if (event === 'ERROR' && error) {
           console.error('Authentication error:', error)

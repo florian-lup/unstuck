@@ -4,7 +4,6 @@ import './index.css'
 
 function AuthApp() {
   const handleAuthSuccess = (user: AuthUser) => {
-    console.log('Authentication successful:', user)
     // The main process handles auth state changes automatically
     // No need to manually send IPC messages
   }

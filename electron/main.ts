@@ -236,7 +236,6 @@ void app.whenReady().then(async () => {
     
     // Listen for auth state changes
     auth0Service.onAuthStateChange((event, session, error) => {
-      console.log('Auth0 state changed:', event, error || '')
       
       if (event === 'SIGNED_IN' && session?.user) {
         // Notify renderer processes
@@ -346,8 +345,7 @@ void app.whenReady().then(async () => {
   })
 
   // Handle authentication success
-  ipcMain.on('auth-success', (_event, user) => {
-    console.log('Authentication successful for user:', user.email)
+  ipcMain.on('auth-success', (_event, _user) => {
     
     // Close auth window
     if (authWindow && !authWindow.isDestroyed()) {
@@ -410,7 +408,6 @@ void app.whenReady().then(async () => {
       
       const deviceAuth = await auth0Service.startDeviceAuthFlow()
       
-      console.log('🚀 Opening Auth0 verification URL in browser:', deviceAuth.verification_uri)
       
       // Open the verification URL in system browser
       await shell.openExternal(deviceAuth.verification_uri)

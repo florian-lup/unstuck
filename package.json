@@ -8,7 +8,7 @@
     "dev": "vite",
     "build": "tsc && vite build && electron-builder",
     "build:prod": "cross-env NODE_ENV=production pnpm build",
-    "test:env": "node -e \"console.log('VITE_AUTH0_DOMAIN:', process.env.VITE_AUTH0_DOMAIN ? 'SET' : 'NOT SET'); console.log('VITE_AUTH0_CLIENT_ID:', process.env.VITE_AUTH0_CLIENT_ID ? 'SET' : 'NOT SET'); console.log('VITE_AUTH0_AUDIENCE:', process.env.VITE_AUTH0_AUDIENCE ? 'SET' : 'NOT SET')\"",
+    "test:env": "node -e \"console.log('Environment variables:', process.env.VITE_AUTH0_DOMAIN && process.env.VITE_AUTH0_CLIENT_ID ? 'configured' : 'missing')\"",
     "lint": "eslint . --ext ts,tsx --report-unused-disable-directives --max-warnings 0",
     "preview": "vite preview",
     "format": "prettier --write .",

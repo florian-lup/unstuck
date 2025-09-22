@@ -25,9 +25,6 @@ export function useAuthFlow() {
         flow_type: flowType,
       })
       
-      console.log('Auth0 Device Flow started for:', flowType)
-      console.log('User code:', authInfo.user_code)
-      console.log('Verification URI:', authInfo.verification_uri)
       
     } catch (error) {
       console.error('Auth0 device flow failed:', error)

@@ -170,7 +170,6 @@ export class SecureAuthClient {
 
     // Listen for successful authentication from main process
     window.electronAPI.auth.onAuthSuccess((session: AuthSession) => {
-      console.log('Authentication successful:', session.user)
       this.user = session.user
       this.session = session
       this.notifyListeners('SIGNED_IN', session)
@@ -184,7 +183,6 @@ export class SecureAuthClient {
 
     // Listen for token refresh events
     window.electronAPI.auth.onTokenRefresh?.((session: AuthSession) => {
-      console.log('Tokens refreshed')
       this.session = session
       this.notifyListeners('TOKEN_REFRESHED', session)
     })

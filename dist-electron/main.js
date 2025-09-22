@@ -63,9 +63,6 @@ class Auth0Service {
       throw new Error(`Device authorization request failed: ${errorData.error_description || errorData.error || response.statusText}`);
     }
     const deviceData = await response.json();
-    console.log("✅ Device code obtained");
-    console.log("📱 User code:", deviceData.user_code);
-    console.log("🌐 Verification URI:", deviceData.verification_uri);
     this.pollForDeviceAuthorization(deviceData.device_code, deviceData.interval || 5);
     return {
       device_code: deviceData.device_code,
@@ -124,7 +121,6 @@ class Auth0Service {
           await this.storeSession(session);
           this.currentSession = session;
           this.notifyListeners("SIGNED_IN", session);
-          console.log("🔒 Device authorization successful!");
         } else if (data.error === "authorization_pending") {
           console.log("⏳ Waiting for user authorization...");
         } else if (data.error === "slow_down") {
@@ -263,7 +259,6 @@ class Auth0Service {
     this.currentSession.tokens = newTokens;
     await this.storeSession(this.currentSession);
     this.notifyListeners("TOKEN_REFRESHED", this.currentSession);
-    console.log("🔒 Auth0 tokens refreshed");
   }
   async revokeToken(token) {
     const revokeEndpoint = `${this.domain}/oauth/revoke`;
@@ -290,7 +285,6 @@ class Auth0Service {
       const sessionData = await this.secureGetItem("auth0_session");
       if (sessionData) {
         this.currentSession = JSON.parse(sessionData);
-        console.log("🔒 Auth0 session restored");
       }
     } catch (error) {
       console.warn("Failed to restore session:", error);
@@ -675,7 +669,6 @@ void app.whenReady().then(async () => {
     validateConfig(config);
     await auth0Service.initialize(config.auth0Domain, config.auth0ClientId, config.auth0Audience);
     auth0Service.onAuthStateChange((event, session, error) => {
-      console.log("Auth0 state changed:", event, error || "");
       if (event === "SIGNED_IN" && session?.user) {
         if (authWindow && !authWindow.isDestroyed()) {
           authWindow.webContents.send("auth0-success", session);
@@ -755,8 +748,7 @@ void app.whenReady().then(async () => {
       }, 100);
     }
   });
-  ipcMain.on("auth-success", (_event, user) => {
-    console.log("Authentication successful for user:", user.email);
+  ipcMain.on("auth-success", (_event, _user) => {
     if (authWindow && !authWindow.isDestroyed()) {
       authWindow.close();
       authWindow = null;
@@ -797,7 +789,6 @@ void app.whenReady().then(async () => {
     try {
       SecurityValidator.checkRateLimit("auth0-start-flow", 5, 6e4);
       const deviceAuth = await auth0Service.startDeviceAuthFlow();
-      console.log("🚀 Opening Auth0 verification URL in browser:", deviceAuth.verification_uri);
       await shell.openExternal(deviceAuth.verification_uri);
       console.log("✅ Browser opened successfully");
       return { success: true, ...deviceAuth };
