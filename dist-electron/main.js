@@ -149,7 +149,6 @@ class Auth0Service {
       this.notifyListeners("ERROR", null, "Authorization timeout. Please try again.");
     }, 10 * 60 * 1e3);
   }
-  // OAuth callback handling removed - not needed for Device Authorization Flow
   /**
    * Get current session
    */
@@ -580,8 +579,8 @@ class SecurityValidator {
     if (url.length > 2048) {
       throw new Error("URL too long (max 2048 characters)");
     }
-    if (!url.startsWith("https://") && !url.startsWith("unstuck://")) {
-      throw new Error("URL must use https:// or unstuck:// protocol");
+    if (!url.startsWith("https://")) {
+      throw new Error("URL must use https:// protocol");
     }
     return url;
   }

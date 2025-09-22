@@ -224,8 +224,6 @@ export class Auth0Service {
     }, 10 * 60 * 1000)
   }
 
-  // OAuth callback handling removed - not needed for Device Authorization Flow
-
   /**
    * Get current session
    */

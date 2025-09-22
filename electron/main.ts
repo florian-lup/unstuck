@@ -41,8 +41,6 @@ process.env.VITE_PUBLIC = VITE_DEV_SERVER_URL
 let overlayWindow: BrowserWindow | null
 let authWindow: BrowserWindow | null
 
-// OAuth callback handling removed - not needed for Device Authorization Flow
-
 function createAuthWindow() {
   authWindow = new BrowserWindow({
     title: 'Get Unstuck - Authentication',
@@ -370,8 +368,6 @@ void app.whenReady().then(async () => {
       return { success: false, error: (error as Error).message }
     }
   })
-
-  // Deep link handling removed - not needed for Device Authorization Flow
   
   const gotTheLock = app.requestSingleInstanceLock()
   

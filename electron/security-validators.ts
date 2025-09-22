@@ -37,9 +37,9 @@ export class SecurityValidator {
       throw new Error('URL too long (max 2048 characters)')
     }
     
-    // Allow https:// and custom protocol unstuck://
-    if (!url.startsWith('https://') && !url.startsWith('unstuck://')) {
-      throw new Error('URL must use https:// or unstuck:// protocol')
+    // Only allow https:// URLs for security
+    if (!url.startsWith('https://')) {
+      throw new Error('URL must use https:// protocol')
     }
     
     return url
