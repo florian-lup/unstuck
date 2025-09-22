@@ -1,16 +1,15 @@
-import { LogOut, User, Shield, ShieldAlert } from 'lucide-react'
+import { LogOut, User } from 'lucide-react'
 import { Button } from './ui/button'
 import { InteractiveArea } from './interactive-area'
 import { AuthUser } from '../lib/auth-client'
 
 interface SettingsMenuProps {
   user: AuthUser | null
-  isSecureStorage?: boolean
   onLogout: () => void
   onClose: () => void
 }
 
-export function SettingsMenu({ user, isSecureStorage = false, onLogout, onClose }: SettingsMenuProps) {
+export function SettingsMenu({ user, onLogout, onClose }: SettingsMenuProps) {
   const handleLogout = () => {
     // Ensure window stays on top when button is clicked
     window.electronAPI?.windowInteraction()
@@ -32,26 +31,6 @@ export function SettingsMenu({ user, isSecureStorage = false, onLogout, onClose 
                 {user?.email || 'Unknown User'}
               </p>
               <p className="text-xs text-overlay-text-muted">Signed in</p>
-            </div>
-          </div>
-
-          {/* Security Status */}
-          <div className="flex items-center gap-2 p-2 rounded-lg bg-overlay-bg-secondary/50">
-            {isSecureStorage ? (
-              <Shield className="w-4 h-4 text-green-400" />
-            ) : (
-              <ShieldAlert className="w-4 h-4 text-yellow-400" />
-            )}
-            <div className="flex-1">
-              <p className="text-xs font-medium text-overlay-text-primary">
-                {isSecureStorage ? 'Secure Storage' : 'Standard Storage'}
-              </p>
-              <p className="text-xs text-overlay-text-muted">
-                {isSecureStorage 
-                  ? 'Tokens stored in OS keychain'
-                  : 'Tokens stored in localStorage'
-                }
-              </p>
             </div>
           </div>
 
