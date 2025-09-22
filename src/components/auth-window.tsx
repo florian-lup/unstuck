@@ -24,7 +24,7 @@ export function AuthWindow({ onAuthSuccess }: AuthWindowProps) {
         {/* Logo and Title */}
         <div className="text-center space-y-6">
           <div className="flex items-center justify-center gap-4">
-            <div className="w-16 h-16">
+            <div className="w-10 h-10">
               <img
                 src="/unstuck-logo.svg"
                 alt="Unstuck Logo"
@@ -36,7 +36,7 @@ export function AuthWindow({ onAuthSuccess }: AuthWindowProps) {
             </h1>
           </div>
           <p className="text-muted-foreground text-lg">
-            Your gaming companion for overcoming challenges
+            Ask questions without ever leaving the game screen
           </p>
         </div>
 
@@ -58,13 +58,6 @@ export function AuthWindow({ onAuthSuccess }: AuthWindowProps) {
           >
             {isLoading ? 'Connecting...' : 'Sign Up for Free'}
           </Button>
-        </div>
-
-        {/* Footer */}
-        <div className="text-center">
-          <p className="text-sm text-muted-foreground">
-            By continuing, you agree to our Terms of Service and Privacy Policy
-          </p>
         </div>
       </div>
     </div>
