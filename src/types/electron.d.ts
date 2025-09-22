@@ -8,12 +8,14 @@ export interface IElectronAPI {
   ensureAlwaysOnTop: () => void
   windowInteraction: () => void
   auth: {
-    getOAuthUrl: (provider: 'google' | 'github' | 'discord') => Promise<{ success: boolean; url?: string; error?: string }>
-    getSession: () => Promise<{ success: boolean; user?: any; session?: any; error?: string }>
+    startAuthFlow: () => Promise<{ success: boolean; device_code?: string; user_code?: string; verification_uri?: string; expires_in?: number; error?: string }>
+    getSession: () => Promise<{ success: boolean; user?: any; session?: any; tokens?: any; error?: string }>
     signOut: () => Promise<{ success: boolean; error?: string }>
     isSecureStorage: () => Promise<boolean>
-    onAuthSuccess: (callback: (user: any) => void) => any
+    cancelDeviceFlow: () => Promise<{ success: boolean; error?: string }>
+    onAuthSuccess: (callback: (session: any) => void) => any
     onAuthError: (callback: (error: string) => void) => any
+    onTokenRefresh?: (callback: (session: any) => void) => any
     removeAuthListeners: () => void
   }
 }

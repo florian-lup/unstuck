@@ -8,8 +8,9 @@ import path from 'path'
 import fs from 'fs'
 
 interface AppConfig {
-  supabaseUrl: string
-  supabasePublishableKey: string
+  auth0Domain: string
+  auth0ClientId: string
+  auth0Audience?: string
 }
 
 export function loadEnvironmentConfig(): AppConfig {
@@ -28,8 +29,9 @@ export function loadEnvironmentConfig(): AppConfig {
       })
       
       return {
-        supabaseUrl: envVars.VITE_SUPABASE_URL,
-        supabasePublishableKey: envVars.VITE_SUPABASE_PUBLISHABLE_KEY,
+        auth0Domain: envVars.VITE_AUTH0_DOMAIN,
+        auth0ClientId: envVars.VITE_AUTH0_CLIENT_ID,
+        auth0Audience: envVars.VITE_AUTH0_AUDIENCE,
       }
     } catch (error) {
       console.error('Failed to load .env file:', error)
@@ -38,17 +40,25 @@ export function loadEnvironmentConfig(): AppConfig {
 
   // In production, use build-time environment variables or system env
   return {
-    supabaseUrl: process.env.VITE_SUPABASE_URL || process.env.SUPABASE_URL || '',
-    supabasePublishableKey: process.env.VITE_SUPABASE_PUBLISHABLE_KEY || process.env.SUPABASE_PUBLISHABLE_KEY || '',
+    auth0Domain: process.env.VITE_AUTH0_DOMAIN || process.env.AUTH0_DOMAIN || '',
+    auth0ClientId: process.env.VITE_AUTH0_CLIENT_ID || process.env.AUTH0_CLIENT_ID || '',
+    auth0Audience: process.env.VITE_AUTH0_AUDIENCE || process.env.AUTH0_AUDIENCE,
   }
 }
 
 export function validateConfig(config: AppConfig) {
-  if (!config.supabaseUrl || !config.supabasePublishableKey) {
+  if (!config.auth0Domain || !config.auth0ClientId) {
     throw new Error(
-      'Missing Supabase configuration. Please ensure VITE_SUPABASE_URL and VITE_SUPABASE_PUBLISHABLE_KEY are set.'
+      'Missing Auth0 configuration. Please ensure VITE_AUTH0_DOMAIN and VITE_AUTH0_CLIENT_ID are set.'
     )
   }
   
-  console.log('✅ Environment configuration loaded securely in main process')
+  // Validate domain format
+  if (!config.auth0Domain.includes('.auth0.com') && !config.auth0Domain.includes('.us.auth0.com')) {
+    throw new Error(
+      'Invalid Auth0 domain format. Domain should be like "your-tenant.auth0.com"'
+    )
+  }
+  
+  console.log('✅ Auth0 configuration loaded securely in main process')
 }

@@ -86,27 +86,33 @@ contextBridge.exposeInMainWorld('electronAPI', {
   windowInteraction: () => {
     ipcRenderer.send('window-interaction')
   },
-  // Secure authentication APIs (no direct Supabase client exposure)
+  // Secure Auth0 authentication APIs (no direct Auth0 client exposure)
   auth: {
-    getOAuthUrl: (provider: 'google' | 'github' | 'discord') => 
-      ipcRenderer.invoke('auth-get-oauth-url', provider),
-    getSession: () => ipcRenderer.invoke('auth-get-session'),
-    signOut: () => ipcRenderer.invoke('auth-sign-out'),
-    isSecureStorage: () => ipcRenderer.invoke('auth-is-secure-storage'),
+    startAuthFlow: () => ipcRenderer.invoke('auth0-start-flow'),
+    getSession: () => ipcRenderer.invoke('auth0-get-session'),
+    signOut: () => ipcRenderer.invoke('auth0-sign-out'),
+    isSecureStorage: () => ipcRenderer.invoke('auth0-is-secure-storage'),
+    cancelDeviceFlow: () => ipcRenderer.invoke('auth0-cancel-device-flow'),
     // Listen for auth events from main process
-    onAuthSuccess: (callback: (user: any) => void) => {
-      const listener = (_event: Electron.IpcRendererEvent, user: any) => callback(user)
-      ipcRenderer.on('auth-success', listener)
+    onAuthSuccess: (callback: (session: any) => void) => {
+      const listener = (_event: Electron.IpcRendererEvent, session: any) => callback(session)
+      ipcRenderer.on('auth0-success', listener)
       return listener
     },
     onAuthError: (callback: (error: string) => void) => {
       const listener = (_event: Electron.IpcRendererEvent, error: string) => callback(error)
-      ipcRenderer.on('auth-error', listener)  
+      ipcRenderer.on('auth0-error', listener)  
+      return listener
+    },
+    onTokenRefresh: (callback: (session: any) => void) => {
+      const listener = (_event: Electron.IpcRendererEvent, session: any) => callback(session)
+      ipcRenderer.on('auth0-token-refresh', listener)
       return listener
     },
     removeAuthListeners: () => {
-      ipcRenderer.removeAllListeners('auth-success')
-      ipcRenderer.removeAllListeners('auth-error')
+      ipcRenderer.removeAllListeners('auth0-success')
+      ipcRenderer.removeAllListeners('auth0-error')
+      ipcRenderer.removeAllListeners('auth0-token-refresh')
     },
   },
 })

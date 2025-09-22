@@ -1,25 +1,36 @@
 /**
  * Secure Auth Client - Renderer Process
- * Uses IPC to communicate with main process instead of direct Supabase client
+ * Uses IPC to communicate with main process for Auth0 authentication
  */
 
 export interface AuthUser {
-  id: string
+  sub: string
   email?: string
-  user_metadata?: Record<string, any>
+  name?: string
+  nickname?: string
+  picture?: string
+  email_verified?: boolean
+  [key: string]: any
+}
+
+export interface AuthTokens {
+  access_token: string
+  refresh_token?: string
+  id_token?: string
+  expires_at: number
+  token_type: string
+  scope?: string
 }
 
 export interface AuthSession {
-  access_token: string
-  refresh_token: string
-  expires_at?: number
   user: AuthUser
+  tokens: AuthTokens
 }
 
-export type AuthEvent = 'SIGNED_IN' | 'SIGNED_OUT' | 'TOKEN_REFRESHED'
+export type AuthEvent = 'SIGNED_IN' | 'SIGNED_OUT' | 'TOKEN_REFRESHED' | 'ERROR'
 
 export class SecureAuthClient {
-  private listeners: Set<(event: AuthEvent, session: AuthSession | null) => void> = new Set()
+  private listeners: Set<(event: AuthEvent, session: AuthSession | null, error?: string) => void> = new Set()
   private user: AuthUser | null = null
   private session: AuthSession | null = null
   
@@ -28,25 +39,30 @@ export class SecureAuthClient {
   }
 
   /**
-   * Get OAuth URL for system browser authentication
+   * Start Auth0 Device Authorization Flow
    */
-  async getOAuthUrl(provider: 'google' | 'github' | 'discord'): Promise<string> {
+  async startAuthFlow(): Promise<{ device_code: string; user_code: string; verification_uri: string; expires_in: number }> {
     if (!window.electronAPI?.auth) {
       throw new Error('Auth API not available')
     }
 
-    const result = await window.electronAPI.auth.getOAuthUrl(provider)
+    const result = await window.electronAPI.auth.startAuthFlow()
     if (!result.success) {
-      throw new Error(result.error || 'Failed to get OAuth URL')
+      throw new Error(result.error || 'Failed to start authentication flow')
     }
     
-    return result.url!
+    return {
+      device_code: result.device_code!,
+      user_code: result.user_code!,
+      verification_uri: result.verification_uri!,
+      expires_in: result.expires_in!,
+    }
   }
 
   /**
    * Get current session
    */
-  async getSession(): Promise<{ user: AuthUser | null; session: AuthSession | null }> {
+  async getSession(): Promise<{ user: AuthUser | null; session: AuthSession | null; tokens: AuthTokens | null }> {
     if (!window.electronAPI?.auth) {
       throw new Error('Auth API not available')
     }
@@ -62,6 +78,7 @@ export class SecureAuthClient {
     return {
       user: this.user,
       session: this.session,
+      tokens: result.tokens || null,
     }
   }
 
@@ -97,9 +114,23 @@ export class SecureAuthClient {
   }
 
   /**
+   * Cancel device authorization flow
+   */
+  async cancelDeviceFlow(): Promise<void> {
+    if (!window.electronAPI?.auth) {
+      throw new Error('Auth API not available')
+    }
+
+    const result = await window.electronAPI.auth.cancelDeviceFlow()
+    if (!result.success) {
+      throw new Error(result.error || 'Failed to cancel device flow')
+    }
+  }
+
+  /**
    * Listen for auth state changes
    */
-  onAuthStateChange(callback: (event: AuthEvent, session: AuthSession | null) => void) {
+  onAuthStateChange(callback: (event: AuthEvent, session: AuthSession | null, error?: string) => void) {
     this.listeners.add(callback)
     
     // Return unsubscribe function
@@ -124,6 +155,13 @@ export class SecureAuthClient {
     return this.session
   }
 
+  /**
+   * Get current tokens
+   */
+  getCurrentTokens(): AuthTokens | null {
+    return this.session?.tokens || null
+  }
+
   private setupIpcListeners() {
     if (!window.electronAPI?.auth) {
       console.warn('Auth API not available, skipping IPC listeners')
@@ -131,30 +169,33 @@ export class SecureAuthClient {
     }
 
     // Listen for successful authentication from main process
-    window.electronAPI.auth.onAuthSuccess((user: AuthUser) => {
-      console.log('Authentication successful:', user)
-      this.user = user
-      // Session will be updated via getSession call
-      this.getSession().then(({ session }) => {
-        if (session) {
-          this.notifyListeners('SIGNED_IN', session)
-        }
-      })
+    window.electronAPI.auth.onAuthSuccess((session: AuthSession) => {
+      console.log('Authentication successful:', session.user)
+      this.user = session.user
+      this.session = session
+      this.notifyListeners('SIGNED_IN', session)
     })
 
     // Listen for authentication errors
     window.electronAPI.auth.onAuthError((error: string) => {
       console.error('Authentication error:', error)
-      // Could emit an error event here if needed
+      this.notifyListeners('ERROR', null, error)
+    })
+
+    // Listen for token refresh events
+    window.electronAPI.auth.onTokenRefresh?.((session: AuthSession) => {
+      console.log('Tokens refreshed')
+      this.session = session
+      this.notifyListeners('TOKEN_REFRESHED', session)
     })
   }
 
-  private notifyListeners(event: AuthEvent, session: AuthSession | null) {
+  private notifyListeners(event: AuthEvent, session: AuthSession | null, error?: string) {
     this.listeners.forEach(listener => {
       try {
-        listener(event, session)
-      } catch (error) {
-        console.error('Auth listener error:', error)
+        listener(event, session, error)
+      } catch (err) {
+        console.error('Auth listener error:', err)
       }
     })
   }

@@ -72,26 +72,33 @@ electron.contextBridge.exposeInMainWorld("electronAPI", {
   windowInteraction: () => {
     electron.ipcRenderer.send("window-interaction");
   },
-  // Secure authentication APIs (no direct Supabase client exposure)
+  // Secure Auth0 authentication APIs (no direct Auth0 client exposure)
   auth: {
-    getOAuthUrl: (provider) => electron.ipcRenderer.invoke("auth-get-oauth-url", provider),
-    getSession: () => electron.ipcRenderer.invoke("auth-get-session"),
-    signOut: () => electron.ipcRenderer.invoke("auth-sign-out"),
-    isSecureStorage: () => electron.ipcRenderer.invoke("auth-is-secure-storage"),
+    startAuthFlow: () => electron.ipcRenderer.invoke("auth0-start-flow"),
+    getSession: () => electron.ipcRenderer.invoke("auth0-get-session"),
+    signOut: () => electron.ipcRenderer.invoke("auth0-sign-out"),
+    isSecureStorage: () => electron.ipcRenderer.invoke("auth0-is-secure-storage"),
+    cancelDeviceFlow: () => electron.ipcRenderer.invoke("auth0-cancel-device-flow"),
     // Listen for auth events from main process
     onAuthSuccess: (callback) => {
-      const listener = (_event, user) => callback(user);
-      electron.ipcRenderer.on("auth-success", listener);
+      const listener = (_event, session) => callback(session);
+      electron.ipcRenderer.on("auth0-success", listener);
       return listener;
     },
     onAuthError: (callback) => {
       const listener = (_event, error) => callback(error);
-      electron.ipcRenderer.on("auth-error", listener);
+      electron.ipcRenderer.on("auth0-error", listener);
+      return listener;
+    },
+    onTokenRefresh: (callback) => {
+      const listener = (_event, session) => callback(session);
+      electron.ipcRenderer.on("auth0-token-refresh", listener);
       return listener;
     },
     removeAuthListeners: () => {
-      electron.ipcRenderer.removeAllListeners("auth-success");
-      electron.ipcRenderer.removeAllListeners("auth-error");
+      electron.ipcRenderer.removeAllListeners("auth0-success");
+      electron.ipcRenderer.removeAllListeners("auth0-error");
+      electron.ipcRenderer.removeAllListeners("auth0-token-refresh");
     }
   }
 });

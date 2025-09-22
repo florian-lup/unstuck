@@ -6,11 +6,10 @@ import {
   screen,
   globalShortcut,
   shell,
-  safeStorage,
 } from 'electron'
 import { fileURLToPath } from 'node:url'
 import path from 'node:path'
-import { authService } from './auth-service'
+import { auth0Service } from './auth0-service'
 import { loadEnvironmentConfig, validateConfig } from './env-loader'
 import { SecurityValidator } from './security-validators'
 
@@ -42,28 +41,14 @@ process.env.VITE_PUBLIC = VITE_DEV_SERVER_URL
 let overlayWindow: BrowserWindow | null
 let authWindow: BrowserWindow | null
 
-// Handle OAuth callback URLs
-async function handleOAuthCallback(url: string) {
-  try {
-    const user = await authService.handleOAuthCallback(url)
-    if (user && authWindow && !authWindow.isDestroyed()) {
-      // Notify renderer of successful authentication
-      authWindow.webContents.send('auth-success', user)
-    }
-  } catch (error) {
-    console.error('OAuth callback error:', error)
-    if (authWindow && !authWindow.isDestroyed()) {
-      authWindow.webContents.send('auth-error', (error as Error).message)
-    }
-  }
-}
+// OAuth callback handling removed - not needed for Device Authorization Flow
 
 function createAuthWindow() {
   authWindow = new BrowserWindow({
     title: 'Get Unstuck - Authentication',
     icon: path.join(process.env.VITE_PUBLIC, 'unstuck-logo.ico'),
     width: 500,
-    height: 500,
+    height: 600,
     center: true,
     resizable: false,
     frame: true, // Normal window with title bar
@@ -246,20 +231,38 @@ void app.whenReady().then(async () => {
     const config = loadEnvironmentConfig()
     validateConfig(config)
     
-    // Initialize auth service in main process
-    await authService.initialize(config.supabaseUrl, config.supabasePublishableKey)
+    // Initialize Auth0 service in main process
+    await auth0Service.initialize(config.auth0Domain, config.auth0ClientId, config.auth0Audience)
     
     // Listen for auth state changes
-    authService.onAuthStateChange((event, session) => {
-      console.log('Auth state changed:', event)
+    auth0Service.onAuthStateChange((event, session, error) => {
+      console.log('Auth0 state changed:', event, error || '')
+      
       if (event === 'SIGNED_IN' && session?.user) {
+        // Notify renderer processes
+        if (authWindow && !authWindow.isDestroyed()) {
+          authWindow.webContents.send('auth0-success', session)
+        }
+        if (overlayWindow && !overlayWindow.isDestroyed()) {
+          overlayWindow.webContents.send('auth0-success', session)
+        }
+        
         // Close auth window and open overlay
         if (authWindow && !authWindow.isDestroyed()) {
           authWindow.close()
           authWindow = null
         }
         createOverlayWindow()
+        
       } else if (event === 'SIGNED_OUT') {
+        // Notify renderer processes
+        if (authWindow && !authWindow.isDestroyed()) {
+          authWindow.webContents.send('auth0-success', null)
+        }
+        if (overlayWindow && !overlayWindow.isDestroyed()) {
+          overlayWindow.webContents.send('auth0-success', null)
+        }
+        
         // Close overlay and show auth window
         if (overlayWindow && !overlayWindow.isDestroyed()) {
           overlayWindow.close()
@@ -267,6 +270,21 @@ void app.whenReady().then(async () => {
         }
         if (!authWindow || authWindow.isDestroyed()) {
           createAuthWindow()
+        }
+        
+      } else if (event === 'TOKEN_REFRESHED' && session) {
+        // Notify renderer processes of token refresh
+        if (authWindow && !authWindow.isDestroyed()) {
+          authWindow.webContents.send('auth0-token-refresh', session)
+        }
+        if (overlayWindow && !overlayWindow.isDestroyed()) {
+          overlayWindow.webContents.send('auth0-token-refresh', session)
+        }
+        
+      } else if (event === 'ERROR') {
+        // Notify renderer processes of errors
+        if (authWindow && !authWindow.isDestroyed()) {
+          authWindow.webContents.send('auth0-error', error || 'Authentication error')
         }
       }
     })
@@ -355,34 +373,21 @@ void app.whenReady().then(async () => {
     }
   })
 
-  // Handle deep links for OAuth callbacks
-  app.setAsDefaultProtocolClient('unstuck')
+  // Deep link handling removed - not needed for Device Authorization Flow
   
   const gotTheLock = app.requestSingleInstanceLock()
   
   if (!gotTheLock) {
     app.quit()
   } else {
-    app.on('second-instance', (_event, commandLine, _workingDirectory) => {
+    app.on('second-instance', (_event, _commandLine, _workingDirectory) => {
       // Someone tried to run a second instance, focus our auth window instead
       if (authWindow) {
         if (authWindow.isMinimized()) authWindow.restore()
         authWindow.focus()
       }
-      
-      // Handle deep link from command line
-      const url = commandLine.find(arg => arg.startsWith('unstuck://'))
-      if (url) {
-        handleOAuthCallback(url)
-      }
     })
   }
-
-  // Handle deep links on macOS
-  app.on('open-url', (event, url) => {
-    event.preventDefault()
-    handleOAuthCallback(url)
-  })
 
   // Handle user logout
   ipcMain.on('user-logout', () => {
@@ -398,62 +403,76 @@ void app.whenReady().then(async () => {
     createAuthWindow()
   })
 
-  // Secure authentication IPC handlers with validation
-  ipcMain.handle('auth-get-oauth-url', async (_event, provider: unknown) => {
+  // Secure Auth0 Device Authorization Flow IPC handlers with validation
+  ipcMain.handle('auth0-start-flow', async () => {
     try {
-      SecurityValidator.checkRateLimit('auth-get-oauth-url', 5, 60000)
-      const validProvider = SecurityValidator.validateOAuthProvider(provider)
+      SecurityValidator.checkRateLimit('auth0-start-flow', 5, 60000)
       
-      const url = await authService.getOAuthUrl(validProvider)
-      return { success: true, url }
+      const deviceAuth = await auth0Service.startDeviceAuthFlow()
+      
+      console.log('🚀 Opening Auth0 verification URL in browser:', deviceAuth.verification_uri)
+      
+      // Open the verification URL in system browser
+      await shell.openExternal(deviceAuth.verification_uri)
+      
+      console.log('✅ Browser opened successfully')
+      
+      return { success: true, ...deviceAuth }
     } catch (error) {
-      console.error('Get OAuth URL error:', SecurityValidator.sanitizeUserForLogging(error))
+      console.error('Start Auth0 device flow error:', error)
       return { success: false, error: (error as Error).message }
     }
   })
 
-  ipcMain.handle('auth-get-session', async () => {
+  ipcMain.handle('auth0-get-session', async () => {
     try {
-      SecurityValidator.checkRateLimit('auth-get-session', 10, 60000)
+      SecurityValidator.checkRateLimit('auth0-get-session', 10, 60000)
       
-      const { user, session } = await authService.getSession()
+      const { user, tokens } = await auth0Service.getSession()
       const sanitizedUser = user ? SecurityValidator.sanitizeUserForLogging(user) : null
       
       return { 
         success: true, 
-        user: sanitizedUser, 
-        session: session ? {
-          access_token: session.access_token,
-          refresh_token: session.refresh_token,
-          expires_at: session.expires_at,
-          user: sanitizedUser,
-        } : null 
+        user: sanitizedUser,
+        session: user && tokens ? { user: sanitizedUser, tokens } : null,
+        tokens: tokens || null
       }
     } catch (error) {
-      console.error('Get session error:', SecurityValidator.sanitizeUserForLogging(error))
+      console.error('Get Auth0 session error:', SecurityValidator.sanitizeUserForLogging(error))
       return { success: false, error: (error as Error).message }
     }
   })
 
-  ipcMain.handle('auth-sign-out', async () => {
+  ipcMain.handle('auth0-sign-out', async () => {
     try {
-      SecurityValidator.checkRateLimit('auth-sign-out', 3, 60000)
+      SecurityValidator.checkRateLimit('auth0-sign-out', 3, 60000)
       
-      await authService.signOut()
+      await auth0Service.signOut()
       return { success: true }
     } catch (error) {
-      console.error('Sign out error:', SecurityValidator.sanitizeUserForLogging(error))
+      console.error('Auth0 sign out error:', SecurityValidator.sanitizeUserForLogging(error))
       return { success: false, error: (error as Error).message }
     }
   })
 
-  ipcMain.handle('auth-is-secure-storage', () => {
+  ipcMain.handle('auth0-is-secure-storage', async () => {
     try {
-      SecurityValidator.checkRateLimit('auth-is-secure-storage', 10, 60000)
-      return safeStorage.isEncryptionAvailable()
+      SecurityValidator.checkRateLimit('auth0-is-secure-storage', 10, 60000)
+      return await auth0Service.isSecureStorage()
     } catch (error) {
       console.error('Secure storage check error:', error)
       return false
+    }
+  })
+
+  ipcMain.handle('auth0-cancel-device-flow', async () => {
+    try {
+      SecurityValidator.checkRateLimit('auth0-cancel-device-flow', 10, 60000)
+      auth0Service.cancelDeviceAuthorization()
+      return { success: true }
+    } catch (error) {
+      console.error('Cancel device flow error:', error)
+      return { success: false, error: (error as Error).message }
     }
   })
 })

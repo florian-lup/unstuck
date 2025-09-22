@@ -16,12 +16,20 @@ export function useAuth() {
       setUser(user)
       setSession(session)
       setLoading(false)
+    }).catch((error) => {
+      console.error('Failed to get initial session:', error)
+      setLoading(false)
     })
 
     // Listen for auth changes via secure IPC
     const { unsubscribe } = secureAuth.onAuthStateChange(
-      async (event, session) => {
-        console.log('Auth event:', event, session ? 'Session exists' : 'No session')
+      async (event, session, error) => {
+        console.log('Auth0 event:', event, session ? 'Session exists' : 'No session', error ? `Error: ${error}` : '')
+        
+        if (event === 'ERROR' && error) {
+          console.error('Authentication error:', error)
+        }
+        
         setUser(session?.user ?? null)
         setSession(session)
         setLoading(false)

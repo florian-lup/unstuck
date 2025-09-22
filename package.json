@@ -8,15 +8,15 @@
     "dev": "vite",
     "build": "tsc && vite build && electron-builder",
     "build:prod": "cross-env NODE_ENV=production pnpm build",
-    "test:env": "node -e \"console.log('VITE_SUPABASE_URL:', process.env.VITE_SUPABASE_URL ? 'SET' : 'NOT SET'); console.log('VITE_SUPABASE_PUBLISHABLE_KEY:', process.env.VITE_SUPABASE_PUBLISHABLE_KEY ? 'SET' : 'NOT SET')\"",
+    "test:env": "node -e \"console.log('VITE_AUTH0_DOMAIN:', process.env.VITE_AUTH0_DOMAIN ? 'SET' : 'NOT SET'); console.log('VITE_AUTH0_CLIENT_ID:', process.env.VITE_AUTH0_CLIENT_ID ? 'SET' : 'NOT SET'); console.log('VITE_AUTH0_AUDIENCE:', process.env.VITE_AUTH0_AUDIENCE ? 'SET' : 'NOT SET')\"",
     "lint": "eslint . --ext ts,tsx --report-unused-disable-directives --max-warnings 0",
     "preview": "vite preview",
     "format": "prettier --write .",
     "format:check": "prettier --check ."
   },
   "dependencies": {
+    "@auth0/auth0-react": "^2.5.0",
     "@radix-ui/react-slot": "^1.2.3",
-    "@supabase/supabase-js": "^2.57.4",
     "@tailwindcss/vite": "^4.1.11",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
@@ -56,9 +56,10 @@
   "main": "dist-electron/main.js",
   "pnpm": {
     "onlyBuiltDependencies": [
+      "@tailwindcss/oxide",
+      "browser-tabs-lock",
       "electron",
-      "esbuild",
-      "@tailwindcss/oxide"
+      "esbuild"
     ]
   }
 }
