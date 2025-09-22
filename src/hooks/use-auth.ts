@@ -72,12 +72,12 @@ function getKeychainType(): string {
     return 'unknown'
   }
   
-  const platform = window.navigator.platform.toLowerCase()
-  if (platform.includes('win')) {
+  const userAgent = window.navigator.userAgent.toLowerCase()
+  if (userAgent.includes('win')) {
     return 'Windows Credential Manager'
-  } else if (platform.includes('mac')) {
+  } else if (userAgent.includes('mac')) {
     return 'macOS Keychain'
-  } else if (platform.includes('linux')) {
+  } else if (userAgent.includes('linux')) {
     return 'Linux libsecret'
   }
   return 'unknown'

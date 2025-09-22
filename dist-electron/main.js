@@ -4,6 +4,7 @@ import path$1 from "node:path";
 import fs from "fs/promises";
 import path from "path";
 import os from "os";
+import crypto from "crypto";
 import fs$1 from "fs";
 class Auth0Service {
   domain = "";
@@ -380,7 +381,23 @@ class Auth0Service {
     return tokens.expires_at < Date.now() + this.MIN_TOKEN_VALIDITY_BUFFER;
   }
   async storeSession(session) {
-    await this.secureSetItem("auth0_session", JSON.stringify(session));
+    try {
+      await this.secureSetItem("auth0_session", JSON.stringify(session));
+    } catch (error) {
+      if (error instanceof Error && error.message.includes("Secure storage required for refresh tokens")) {
+        const sessionWithoutRefreshToken = {
+          ...session,
+          tokens: {
+            ...session.tokens,
+            refresh_token: void 0
+          }
+        };
+        console.warn("⚠️ Storing session without refresh token due to fallback security limitations");
+        await this.secureSetItem("auth0_session", JSON.stringify(sessionWithoutRefreshToken));
+      } else {
+        throw error;
+      }
+    }
   }
   async restoreSession() {
     try {
@@ -416,8 +433,7 @@ class Auth0Service {
     try {
       const { safeStorage } = await import("electron");
       if (!safeStorage.isEncryptionAvailable()) {
-        console.warn("Secure storage not available, falling back to file storage");
-        return await this.fileGetItem(key);
+        return await this.enhancedFileGetItem(key);
       }
       const filePath = path.join(this.secureDir, `${key}.dat`);
       const encrypted = await fs.readFile(filePath);
@@ -430,8 +446,11 @@ class Auth0Service {
     try {
       const { safeStorage } = await import("electron");
       if (!safeStorage.isEncryptionAvailable()) {
-        console.warn("Secure storage not available, using file storage with limited security");
-        return await this.fileSetItem(key, value);
+        console.warn("🔐 OS encryption unavailable - using enhanced fallback");
+        if (key.includes("refresh_token")) {
+          throw new Error("Secure storage required for refresh tokens");
+        }
+        return await this.enhancedFileSetItem(key, value);
       }
       const encrypted = safeStorage.encryptString(value);
       const filePath = path.join(this.secureDir, `${key}.dat`);
@@ -448,20 +467,59 @@ class Auth0Service {
     } catch (error) {
     }
   }
-  // Fallback file storage (less secure but functional)
-  async fileGetItem(key) {
+  // Enhanced fallback file storage with basic encryption
+  async enhancedFileGetItem(key) {
     try {
       const filePath = path.join(this.secureDir, `${key}.json`);
       const data = await fs.readFile(filePath, "utf8");
-      return JSON.parse(data).value;
+      const parsed = JSON.parse(data);
+      if (parsed.expiresAt && Date.now() > parsed.expiresAt) {
+        await fs.unlink(filePath).catch(() => {
+        });
+        return null;
+      }
+      if (parsed.encrypted && parsed.iv && parsed.authTag) {
+        return this.decryptValue(parsed.encrypted, parsed.iv, parsed.authTag);
+      }
+      console.warn("🔒 Found legacy token format - forcing re-authentication for security");
+      await fs.unlink(filePath).catch(() => {
+      });
+      return null;
     } catch {
       return null;
     }
   }
-  async fileSetItem(key, value) {
+  async enhancedFileSetItem(key, value) {
+    const algorithm = "aes-256-gcm";
+    const keyDerivation = crypto.pbkdf2Sync("unstuck-fallback-key", "unstuck-salt-2024", 1e5, 32, "sha256");
+    const iv = crypto.randomBytes(16);
+    const cipher = crypto.createCipheriv(algorithm, keyDerivation, iv);
+    let encrypted = cipher.update(value, "utf8", "hex");
+    encrypted += cipher.final("hex");
+    const authTag = cipher.getAuthTag();
+    const data = {
+      encrypted,
+      iv: iv.toString("hex"),
+      authTag: authTag.toString("hex"),
+      timestamp: Date.now(),
+      // Shorter expiry for fallback storage (24 hours)
+      expiresAt: Date.now() + 24 * 60 * 60 * 1e3
+    };
     const filePath = path.join(this.secureDir, `${key}.json`);
-    await fs.writeFile(filePath, JSON.stringify({ value }), { mode: 384 });
+    await fs.writeFile(filePath, JSON.stringify(data), { mode: 384 });
   }
+  decryptValue(encryptedHex, ivHex, authTagHex) {
+    const algorithm = "aes-256-gcm";
+    const keyDerivation = crypto.pbkdf2Sync("unstuck-fallback-key", "unstuck-salt-2024", 1e5, 32, "sha256");
+    const iv = Buffer.from(ivHex, "hex");
+    const decipher = crypto.createDecipheriv(algorithm, keyDerivation, iv);
+    decipher.setAuthTag(Buffer.from(authTagHex, "hex"));
+    let decrypted = decipher.update(encryptedHex, "hex", "utf8");
+    decrypted += decipher.final("utf8");
+    return decrypted;
+  }
+  // Note: Legacy plain-text methods removed for security.
+  // Only encrypted storage is now supported in fallback mode.
 }
 const auth0Service = new Auth0Service();
 function loadEnvironmentConfig() {
@@ -478,8 +536,7 @@ function loadEnvironmentConfig() {
       });
       return {
         auth0Domain: envVars.VITE_AUTH0_DOMAIN,
-        auth0ClientId: envVars.VITE_AUTH0_CLIENT_ID,
-        auth0Audience: envVars.VITE_AUTH0_AUDIENCE
+        auth0ClientId: envVars.VITE_AUTH0_CLIENT_ID
       };
     } catch (error) {
       console.error("Failed to load .env file:", error);
@@ -487,8 +544,7 @@ function loadEnvironmentConfig() {
   }
   return {
     auth0Domain: process.env.VITE_AUTH0_DOMAIN || process.env.AUTH0_DOMAIN || "",
-    auth0ClientId: process.env.VITE_AUTH0_CLIENT_ID || process.env.AUTH0_CLIENT_ID || "",
-    auth0Audience: process.env.VITE_AUTH0_AUDIENCE || process.env.AUTH0_AUDIENCE
+    auth0ClientId: process.env.VITE_AUTH0_CLIENT_ID || process.env.AUTH0_CLIENT_ID || ""
   };
 }
 function validateConfig(config) {
@@ -769,7 +825,7 @@ void app.whenReady().then(async () => {
   try {
     const config = loadEnvironmentConfig();
     validateConfig(config);
-    await auth0Service.initialize(config.auth0Domain, config.auth0ClientId, config.auth0Audience);
+    await auth0Service.initialize(config.auth0Domain, config.auth0ClientId);
     auth0Service.onAuthStateChange((event, session, error) => {
       if (event === "SIGNED_IN" && session?.user) {
         if (authWindow && !authWindow.isDestroyed()) {
