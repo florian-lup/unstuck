@@ -2,9 +2,16 @@ import { ipcMain, shell } from 'electron'
 import { auth0Service } from './auth0-service'
 import { SecurityValidator } from './security-validators'
 import { WindowManager } from './window-manager'
+import { Auth0Config } from '../config/auth.config'
 
 export class AuthIPCHandlers {
+  private config!: Auth0Config  // Will be initialized in setConfig() method
+
   constructor(private readonly windowManager: WindowManager) {}
+
+  setConfig(config: Auth0Config): void {
+    this.config = config
+  }
 
   registerHandlers(): void {
     this.registerAuthFlowHandlers()
@@ -16,7 +23,8 @@ export class AuthIPCHandlers {
     // Auth0 Device Authorization Flow
     ipcMain.handle('auth0-start-flow', async () => {
       try {
-        SecurityValidator.checkRateLimit('auth0-start-flow', 5, 60000)
+        const rateLimitConfig = this.config.rateLimiting.ipcRateLimits.startFlow
+        SecurityValidator.checkRateLimit('auth0-start-flow', rateLimitConfig.requests, rateLimitConfig.windowMs)
         
         const deviceAuth = await auth0Service.startDeviceAuthFlow()
         
@@ -32,7 +40,8 @@ export class AuthIPCHandlers {
 
     ipcMain.handle('auth0-get-session', async () => {
       try {
-        SecurityValidator.checkRateLimit('auth0-get-session', 10, 60000)
+        const rateLimitConfig = this.config.rateLimiting.ipcRateLimits.getSession
+        SecurityValidator.checkRateLimit('auth0-get-session', rateLimitConfig.requests, rateLimitConfig.windowMs)
         
         const { user, tokens } = await auth0Service.getSession()
         const sanitizedUser = user ? SecurityValidator.sanitizeUserForLogging(user) : null
@@ -51,7 +60,8 @@ export class AuthIPCHandlers {
 
     ipcMain.handle('auth0-sign-out', async () => {
       try {
-        SecurityValidator.checkRateLimit('auth0-sign-out', 3, 60000)
+        const rateLimitConfig = this.config.rateLimiting.ipcRateLimits.signOut
+        SecurityValidator.checkRateLimit('auth0-sign-out', rateLimitConfig.requests, rateLimitConfig.windowMs)
         
         await auth0Service.signOut()
         return { success: true }
@@ -63,7 +73,8 @@ export class AuthIPCHandlers {
 
     ipcMain.handle('auth0-is-secure-storage', async () => {
       try {
-        SecurityValidator.checkRateLimit('auth0-is-secure-storage', 10, 60000)
+        const rateLimitConfig = this.config.rateLimiting.ipcRateLimits.isSecureStorage
+        SecurityValidator.checkRateLimit('auth0-is-secure-storage', rateLimitConfig.requests, rateLimitConfig.windowMs)
         return await auth0Service.isSecureStorage()
       } catch (error) {
         console.error('Secure storage check error:', error)
@@ -73,7 +84,8 @@ export class AuthIPCHandlers {
 
     ipcMain.handle('auth0-cancel-device-flow', async () => {
       try {
-        SecurityValidator.checkRateLimit('auth0-cancel-device-flow', 10, 60000)
+        const rateLimitConfig = this.config.rateLimiting.ipcRateLimits.cancelDeviceFlow
+        SecurityValidator.checkRateLimit('auth0-cancel-device-flow', rateLimitConfig.requests, rateLimitConfig.windowMs)
         auth0Service.cancelDeviceAuthorization()
         return { success: true }
       } catch (error) {
@@ -85,7 +97,8 @@ export class AuthIPCHandlers {
     // External URL handling
     ipcMain.handle('open-external-url', async (_event, url: unknown) => {
       try {
-        SecurityValidator.checkRateLimit('open-external-url', 5, 60000)
+        const rateLimitConfig = this.config.rateLimiting.ipcRateLimits.openExternalUrl
+        SecurityValidator.checkRateLimit('open-external-url', rateLimitConfig.requests, rateLimitConfig.windowMs)
         const validUrl = SecurityValidator.validateUrl(url)
         
         await shell.openExternal(validUrl)

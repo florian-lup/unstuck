@@ -58,8 +58,11 @@ void app.whenReady().then(async () => {
   try {
     validateAuth0Config(auth0Config)
     
-    // Initialize Auth0 service in main process (this will restore any existing session)
-    await auth0Service.initialize(auth0Config.domain, auth0Config.clientId)
+    // Initialize Auth0 service in main process with full config (this will restore any existing session)
+    await auth0Service.initialize(auth0Config.domain, auth0Config.clientId, auth0Config)
+    
+    // Pass config to IPC handlers for rate limiting
+    authIPCHandlers.setConfig(auth0Config)
     
     // Setup auth state listeners
     authIPCHandlers.setupAuthStateListeners()

@@ -9,6 +9,7 @@ import path from 'path'
 import os from 'os'
 import crypto from 'crypto'
 import { SecurityValidator } from './security-validators'
+import { Auth0Config } from '../config/auth.config'
 
 export interface Auth0User {
   sub: string
@@ -40,32 +41,64 @@ export class Auth0Service {
   private domain: string = ''
   private clientId: string = ''
   private audience?: string
+  private scope: string = 'openid profile email offline_access'
+  private config!: Auth0Config  // Will be initialized in initialize() method
   private secureDir = path.join(os.homedir(), '.unstuck-secure')
   private currentSession: Auth0Session | null = null
   private listeners: Set<(event: Auth0Event, session: Auth0Session | null, error?: string) => void> = new Set()
   private currentPollInterval: NodeJS.Timeout | null = null
   private currentPollTimeout: NodeJS.Timeout | null = null
   private refreshAttempts: Map<string, { count: number; lastAttempt: number }> = new Map()
-  private readonly REFRESH_RATE_LIMIT = 5 // Max refresh attempts
-  private readonly REFRESH_RATE_WINDOW = 60000 // 1 minute window
-  private readonly MIN_TOKEN_VALIDITY_BUFFER = 300000 // 5 minutes buffer before expiry
+  
+  // Configurable constants from config file
+  private get REFRESH_RATE_LIMIT() { 
+    return this.config.rateLimiting.maxRefreshAttempts
+  }
+  private get REFRESH_RATE_WINDOW() { 
+    return this.config.rateLimiting.refreshWindowMinutes * 60000 
+  }
+  private get MIN_TOKEN_VALIDITY_BUFFER() { 
+    return this.config.tokenManagement.minValidityBufferMinutes * 60000 
+  }
+  private get POLLING_INTERVAL() {
+    return this.config.deviceFlow.pollingInterval
+  }
+  private get SLOW_DOWN_INCREMENT() {
+    return this.config.deviceFlow.slowDownIncrement
+  }
+  private get TIMEOUT_MINUTES() {
+    return this.config.deviceFlow.timeoutMinutes
+  }
+  private get REFRESH_TIMEOUT_SECONDS() {
+    return this.config.tokenManagement.refreshTimeoutSeconds
+  }
+  private get FALLBACK_STORAGE_EXPIRY_HOURS() {
+    return this.config.tokenManagement.fallbackStorageExpiryHours
+  }
+  private get USER_AGENT() {
+    return this.config.appInfo.userAgent
+  }
 
   /**
    * Initialize Auth0 client configuration
    */
-  async initialize(domain: string, clientId: string, audience?: string): Promise<void> {
+  async initialize(domain: string, clientId: string, config: Auth0Config): Promise<void> {
     if (!domain || !clientId) {
       throw new Error('Missing Auth0 credentials')
     }
 
-    // Validate domain format
+    // Store full config for later use
+    this.config = config
+
+    // Validate domain format (enhanced with config-based validation)
     if (!domain.includes('.auth0.com') && !domain.includes('.us.auth0.com')) {
       throw new Error('Invalid Auth0 domain format')
     }
 
     this.domain = domain.startsWith('https://') ? domain : `https://${domain}`
     this.clientId = clientId
-    this.audience = audience
+    this.audience = config.audience
+    this.scope = config.scope
 
     // Ensure secure directory exists
     await this.ensureSecureDir()
@@ -73,7 +106,7 @@ export class Auth0Service {
     // Try to restore existing session - this will emit SIGNED_IN event if session is valid
     await this.restoreSession()
     
-    console.log('Auth0 service initialized successfully')
+    console.log('Auth0 service initialized successfully with enhanced configuration')
   }
 
   /**
@@ -84,7 +117,7 @@ export class Auth0Service {
     
     const body = new URLSearchParams({
       client_id: this.clientId,
-      scope: 'openid profile email offline_access',
+      scope: this.scope,
     })
 
     if (this.audience) {
@@ -114,8 +147,9 @@ export class Auth0Service {
     const deviceData = await response.json()
     
     
-    // Start polling for completion
-    this.pollForDeviceAuthorization(deviceData.device_code, deviceData.interval || 5)
+    // Start polling for completion with configurable interval
+    const pollingInterval = deviceData.interval || this.POLLING_INTERVAL
+    this.pollForDeviceAuthorization(deviceData.device_code, pollingInterval)
     
     return {
       device_code: deviceData.device_code,
@@ -196,11 +230,12 @@ export class Auth0Service {
         } else if (data.error === 'authorization_pending') {
           // Still waiting for user to authorize
         } else if (data.error === 'slow_down') {
-          // Increase polling interval
+          // Increase polling interval by configured amount
           this.cancelDeviceAuthorization()
+          const newInterval = interval + this.SLOW_DOWN_INCREMENT
           setTimeout(() => {
-            this.pollForDeviceAuthorization(deviceCode, interval + 5)
-          }, (interval + 5) * 1000)
+            this.pollForDeviceAuthorization(deviceCode, newInterval)
+          }, newInterval * 1000)
         } else if (data.error === 'expired_token') {
           // Device code expired
           this.cancelDeviceAuthorization()
@@ -220,11 +255,11 @@ export class Auth0Service {
       }
     }, interval * 1000)
 
-    // Stop polling after 10 minutes
+    // Stop polling after configured timeout
     this.currentPollTimeout = setTimeout(() => {
       this.cancelDeviceAuthorization()
       this.notifyListeners('ERROR', null, 'Authorization timeout. Please try again.')
-    }, 10 * 60 * 1000)
+    }, this.TIMEOUT_MINUTES * 60 * 1000)
   }
 
   /**
@@ -366,8 +401,10 @@ export class Auth0Service {
     this.validateRefreshRateLimit(refreshKey)
 
     // 4. Domain validation (ensure we're still talking to the right Auth0 tenant)
-    if (!this.domain || (!this.domain.includes('.auth0.com') && !this.domain.includes('.us.auth0.com'))) {
-      throw new Error('Invalid Auth0 domain for token refresh')
+    if (this.config.security.validateDomainOnRefresh) {
+      if (!this.domain || (!this.domain.includes('.auth0.com') && !this.domain.includes('.us.auth0.com'))) {
+        throw new Error('Invalid Auth0 domain for token refresh')
+      }
     }
 
     const tokenEndpoint = `${this.domain}/oauth/token`
@@ -388,11 +425,11 @@ export class Auth0Service {
       method: 'POST',
       headers: {
         'Content-Type': 'application/x-www-form-urlencoded',
-          'User-Agent': 'Unstuck-App/1.0.0', // Identify our app
+          'User-Agent': this.USER_AGENT, // Identify our app
       },
       body: body.toString(),
-        // Add timeout to prevent hanging requests
-        signal: AbortSignal.timeout(30000), // 30 second timeout
+        // Add configurable timeout to prevent hanging requests
+        signal: AbortSignal.timeout(this.REFRESH_TIMEOUT_SECONDS * 1000),
       })
     } catch (error) {
       this.recordRefreshAttempt(refreshKey)
@@ -444,8 +481,9 @@ export class Auth0Service {
 
     // 7. Validate token expiry is reasonable (not in past, not too far in future)
     const newExpiry = now + (data.expires_in * 1000)
-    if (newExpiry <= now || newExpiry > now + 86400000) { // Max 24 hours
-      throw new Error('Invalid token expiry in response')
+    const maxValidityMs = this.config.tokenManagement.maxTokenValidityHours * 60 * 60 * 1000
+    if (newExpiry <= now || newExpiry > now + maxValidityMs) {
+      throw new Error(`Invalid token expiry in response (max allowed: ${this.config.tokenManagement.maxTokenValidityHours} hours)`)
     }
     
     const newTokens: Auth0Tokens = {
@@ -712,8 +750,8 @@ export class Auth0Service {
       iv: iv.toString('hex'),
       authTag: authTag.toString('hex'),
       timestamp: Date.now(),
-      // Shorter expiry for fallback storage (24 hours)
-      expiresAt: Date.now() + (24 * 60 * 60 * 1000)
+      // Configurable expiry for fallback storage
+      expiresAt: Date.now() + (this.FALLBACK_STORAGE_EXPIRY_HOURS * 60 * 60 * 1000)
     }
     
     const filePath = path.join(this.secureDir, `${key}.json`)

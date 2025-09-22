@@ -120,7 +120,7 @@ export class SecurityValidator {
    */
   private static rateLimitMap = new Map<string, { count: number; resetTime: number }>()
   
-  static checkRateLimit(channel: string, maxRequests = 10, windowMs = 60000): void {
+  static checkRateLimit(channel: string, maxRequests: number, windowMs: number): void {
     const now = Date.now()
     const key = channel
     

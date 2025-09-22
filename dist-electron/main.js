@@ -97,7 +97,7 @@ class SecurityValidator {
    * Rate limiting for IPC calls
    */
   static rateLimitMap = /* @__PURE__ */ new Map();
-  static checkRateLimit(channel, maxRequests = 10, windowMs = 6e4) {
+  static checkRateLimit(channel, maxRequests, windowMs) {
     const now = Date.now();
     const key = channel;
     const record = this.rateLimitMap.get(key);
@@ -118,34 +118,61 @@ class Auth0Service {
   domain = "";
   clientId = "";
   audience;
+  scope = "openid profile email offline_access";
+  config;
+  // Will be initialized in initialize() method
   secureDir = path.join(os.homedir(), ".unstuck-secure");
   currentSession = null;
   listeners = /* @__PURE__ */ new Set();
   currentPollInterval = null;
   currentPollTimeout = null;
   refreshAttempts = /* @__PURE__ */ new Map();
-  REFRESH_RATE_LIMIT = 5;
-  // Max refresh attempts
-  REFRESH_RATE_WINDOW = 6e4;
-  // 1 minute window
-  MIN_TOKEN_VALIDITY_BUFFER = 3e5;
-  // 5 minutes buffer before expiry
+  // Configurable constants from config file
+  get REFRESH_RATE_LIMIT() {
+    return this.config.rateLimiting.maxRefreshAttempts;
+  }
+  get REFRESH_RATE_WINDOW() {
+    return this.config.rateLimiting.refreshWindowMinutes * 6e4;
+  }
+  get MIN_TOKEN_VALIDITY_BUFFER() {
+    return this.config.tokenManagement.minValidityBufferMinutes * 6e4;
+  }
+  get POLLING_INTERVAL() {
+    return this.config.deviceFlow.pollingInterval;
+  }
+  get SLOW_DOWN_INCREMENT() {
+    return this.config.deviceFlow.slowDownIncrement;
+  }
+  get TIMEOUT_MINUTES() {
+    return this.config.deviceFlow.timeoutMinutes;
+  }
+  get REFRESH_TIMEOUT_SECONDS() {
+    return this.config.tokenManagement.refreshTimeoutSeconds;
+  }
+  get FALLBACK_STORAGE_EXPIRY_HOURS() {
+    return this.config.tokenManagement.fallbackStorageExpiryHours;
+  }
+  get USER_AGENT() {
+    return this.config.appInfo.userAgent;
+  }
   /**
    * Initialize Auth0 client configuration
    */
-  async initialize(domain, clientId, audience) {
+  async initialize(domain, clientId, config) {
     if (!domain || !clientId) {
       throw new Error("Missing Auth0 credentials");
     }
+    this.config = config;
     if (!domain.includes(".auth0.com") && !domain.includes(".us.auth0.com")) {
       throw new Error("Invalid Auth0 domain format");
     }
     this.domain = domain.startsWith("https://") ? domain : `https://${domain}`;
     this.clientId = clientId;
-    this.audience = audience;
+    this.audience = config.audience;
+    this.scope = config.scope;
     await this.ensureSecureDir();
     await this.restoreSession();
-    console.log("Auth0 service initialized successfully");
+    console.log("Auth0 service initialized successfully with enhanced configuration");
   }
   /**
    * Start Device Authorization Flow
@@ -154,7 +181,7 @@ class Auth0Service {
     const deviceCodeEndpoint = `${this.domain}/oauth/device/code`;
     const body = new URLSearchParams({
       client_id: this.clientId,
-      scope: "openid profile email offline_access"
+      scope: this.scope
     });
     if (this.audience) {
       body.append("audience", this.audience);
@@ -177,7 +204,8 @@ class Auth0Service {
       throw new Error(`Device authorization request failed: ${errorData.error_description || errorData.error || response.statusText}`);
     }
     const deviceData = await response.json();
-    this.pollForDeviceAuthorization(deviceData.device_code, deviceData.interval || 5);
+    const pollingInterval = deviceData.interval || this.POLLING_INTERVAL;
+    this.pollForDeviceAuthorization(deviceData.device_code, pollingInterval);
     return {
       device_code: deviceData.device_code,
       user_code: deviceData.user_code,
@@ -237,9 +265,10 @@ class Auth0Service {
         } else if (data.error === "authorization_pending") {
         } else if (data.error === "slow_down") {
           this.cancelDeviceAuthorization();
+          const newInterval = interval + this.SLOW_DOWN_INCREMENT;
           setTimeout(() => {
-            this.pollForDeviceAuthorization(deviceCode, interval + 5);
-          }, (interval + 5) * 1e3);
+            this.pollForDeviceAuthorization(deviceCode, newInterval);
+          }, newInterval * 1e3);
         } else if (data.error === "expired_token") {
           this.cancelDeviceAuthorization();
           this.notifyListeners("ERROR", null, "Device code expired. Please try again.");
@@ -257,7 +286,7 @@ class Auth0Service {
     this.currentPollTimeout = setTimeout(() => {
       this.cancelDeviceAuthorization();
       this.notifyListeners("ERROR", null, "Authorization timeout. Please try again.");
-    }, 10 * 60 * 1e3);
+    }, this.TIMEOUT_MINUTES * 60 * 1e3);
   }
   /**
    * Check if user is currently signed in with valid tokens
@@ -359,8 +388,10 @@ class Auth0Service {
     }
     const refreshKey = this.currentSession.tokens.refresh_token;
     this.validateRefreshRateLimit(refreshKey);
-    if (!this.domain || !this.domain.includes(".auth0.com") && !this.domain.includes(".us.auth0.com")) {
-      throw new Error("Invalid Auth0 domain for token refresh");
+    if (this.config.security.validateDomainOnRefresh) {
+      if (!this.domain || !this.domain.includes(".auth0.com") && !this.domain.includes(".us.auth0.com")) {
+        throw new Error("Invalid Auth0 domain for token refresh");
+      }
     }
     const tokenEndpoint = `${this.domain}/oauth/token`;
     const body = new URLSearchParams({
@@ -377,13 +408,12 @@ class Auth0Service {
         method: "POST",
         headers: {
           "Content-Type": "application/x-www-form-urlencoded",
-          "User-Agent": "Unstuck-App/1.0.0"
+          "User-Agent": this.USER_AGENT
           // Identify our app
         },
         body: body.toString(),
-        // Add timeout to prevent hanging requests
-        signal: AbortSignal.timeout(3e4)
-        // 30 second timeout
+        // Add configurable timeout to prevent hanging requests
+        signal: AbortSignal.timeout(this.REFRESH_TIMEOUT_SECONDS * 1e3)
       });
     } catch (error) {
       this.recordRefreshAttempt(refreshKey);
@@ -421,8 +451,9 @@ class Auth0Service {
       throw new Error("Invalid token response - missing required fields");
     }
     const newExpiry = now + data.expires_in * 1e3;
-    if (newExpiry <= now || newExpiry > now + 864e5) {
-      throw new Error("Invalid token expiry in response");
+    const maxValidityMs = this.config.tokenManagement.maxTokenValidityHours * 60 * 60 * 1e3;
+    if (newExpiry <= now || newExpiry > now + maxValidityMs) {
+      throw new Error(`Invalid token expiry in response (max allowed: ${this.config.tokenManagement.maxTokenValidityHours} hours)`);
     }
     const newTokens = {
       access_token: data.access_token,
@@ -630,8 +661,8 @@ class Auth0Service {
       iv: iv.toString("hex"),
       authTag: authTag.toString("hex"),
       timestamp: Date.now(),
-      // Shorter expiry for fallback storage (24 hours)
-      expiresAt: Date.now() + 24 * 60 * 60 * 1e3
+      // Configurable expiry for fallback storage
+      expiresAt: Date.now() + this.FALLBACK_STORAGE_EXPIRY_HOURS * 60 * 60 * 1e3
     };
     const filePath = path.join(this.secureDir, `${key}.json`);
     await fs.writeFile(filePath, JSON.stringify(data), { mode: 384 });
@@ -652,12 +683,59 @@ class Auth0Service {
 const auth0Service = new Auth0Service();
 const auth0Config = {
   domain: "dev-go8elfmr2gh3aye8.us.auth0.com",
-  // Replace with your Auth0 domain
-  clientId: "vVv9ZUVlCqxZQemAwrOGve0HSrK5rTlO"
-  // Replace with your Auth0 client ID
+  clientId: "vVv9ZUVlCqxZQemAwrOGve0HSrK5rTlO",
+  // Request access to user profile and enable refresh tokens
+  scope: "openid profile email offline_access",
+  // Optional: Add if you have an API to access
+  // audience: 'https://your-api.example.com',
+  deviceFlow: {
+    pollingInterval: 5,
+    // Poll every 5 seconds
+    slowDownIncrement: 5,
+    // Increase by 5s when rate limited
+    timeoutMinutes: 10
+    // Give up after 10 minutes
+  },
+  tokenManagement: {
+    refreshTimeoutSeconds: 30,
+    // Network timeout for token refresh
+    minValidityBufferMinutes: 5,
+    // Refresh tokens 5min before expiry
+    fallbackStorageExpiryHours: 24,
+    // Fallback storage expires in 24h
+    maxTokenValidityHours: 24
+    // Maximum allowed token validity (security limit)
+  },
+  rateLimiting: {
+    maxRefreshAttempts: 5,
+    // Max 5 refresh attempts
+    refreshWindowMinutes: 1,
+    // Within 1 minute window
+    ipcRateLimits: {
+      startFlow: { requests: 5, windowMs: 6e4 },
+      getSession: { requests: 10, windowMs: 6e4 },
+      signOut: { requests: 3, windowMs: 6e4 },
+      isSecureStorage: { requests: 10, windowMs: 6e4 },
+      cancelDeviceFlow: { requests: 10, windowMs: 6e4 },
+      openExternalUrl: { requests: 5, windowMs: 6e4 }
+    },
+    defaultIpcRateLimit: { requests: 10, windowMs: 6e4 }
+  },
+  appInfo: {
+    name: "Unstuck",
+    version: "1.0.0",
+    userAgent: "Unstuck/1.0.0"
+  },
+  security: {
+    enforceHttpsRedirects: true,
+    allowInsecureConnections: false,
+    // Set to true for local development if needed
+    validateDomainOnRefresh: true
+  },
+  environment: process.env.NODE_ENV === "production" ? "production" : "development"
 };
 function validateAuth0Config(config) {
-  if (!config.domain || false) {
+  if (!config.domain || !config.clientId) {
     throw new Error(
       "Missing Auth0 configuration. Please set domain and clientId in config/auth.config.ts"
     );
@@ -666,6 +744,21 @@ function validateAuth0Config(config) {
     throw new Error(
       'Invalid Auth0 domain format. Domain should be like "your-tenant.auth0.com"'
     );
+  }
+  if (config.scope && !config.scope.includes("openid")) {
+    console.warn('Auth0 scope should include "openid" for proper authentication');
+  }
+  if (config.audience && !config.audience.startsWith("https://")) {
+    console.warn("Auth0 audience should be a valid HTTPS URL");
+  }
+  if (config.deviceFlow?.pollingInterval && config.deviceFlow.pollingInterval < 1) {
+    throw new Error("Device flow polling interval must be at least 1 second");
+  }
+  if (config.tokenManagement?.minValidityBufferMinutes && config.tokenManagement.minValidityBufferMinutes < 1) {
+    throw new Error("Token validity buffer must be at least 1 minute");
+  }
+  if (config.environment === "production" && config.security?.allowInsecureConnections) {
+    throw new Error("Insecure connections cannot be allowed in production environment");
   }
 }
 class WindowManager {
@@ -857,8 +950,13 @@ class WindowManager {
   }
 }
 class AuthIPCHandlers {
+  // Will be initialized in setConfig() method
   constructor(windowManager2) {
     this.windowManager = windowManager2;
+  }
+  config;
+  setConfig(config) {
+    this.config = config;
   }
   registerHandlers() {
     this.registerAuthFlowHandlers();
@@ -868,7 +966,8 @@ class AuthIPCHandlers {
   registerAuthFlowHandlers() {
     ipcMain.handle("auth0-start-flow", async () => {
       try {
-        SecurityValidator.checkRateLimit("auth0-start-flow", 5, 6e4);
+        const rateLimitConfig = this.config.rateLimiting.ipcRateLimits.startFlow;
+        SecurityValidator.checkRateLimit("auth0-start-flow", rateLimitConfig.requests, rateLimitConfig.windowMs);
         const deviceAuth = await auth0Service.startDeviceAuthFlow();
         await shell.openExternal(deviceAuth.verification_uri);
         return { success: true, ...deviceAuth };
@@ -879,7 +978,8 @@ class AuthIPCHandlers {
     });
     ipcMain.handle("auth0-get-session", async () => {
       try {
-        SecurityValidator.checkRateLimit("auth0-get-session", 10, 6e4);
+        const rateLimitConfig = this.config.rateLimiting.ipcRateLimits.getSession;
+        SecurityValidator.checkRateLimit("auth0-get-session", rateLimitConfig.requests, rateLimitConfig.windowMs);
         const { user, tokens } = await auth0Service.getSession();
         const sanitizedUser = user ? SecurityValidator.sanitizeUserForLogging(user) : null;
         return {
@@ -895,7 +995,8 @@ class AuthIPCHandlers {
     });
     ipcMain.handle("auth0-sign-out", async () => {
       try {
-        SecurityValidator.checkRateLimit("auth0-sign-out", 3, 6e4);
+        const rateLimitConfig = this.config.rateLimiting.ipcRateLimits.signOut;
+        SecurityValidator.checkRateLimit("auth0-sign-out", rateLimitConfig.requests, rateLimitConfig.windowMs);
         await auth0Service.signOut();
         return { success: true };
       } catch (error) {
@@ -905,7 +1006,8 @@ class AuthIPCHandlers {
     });
     ipcMain.handle("auth0-is-secure-storage", async () => {
       try {
-        SecurityValidator.checkRateLimit("auth0-is-secure-storage", 10, 6e4);
+        const rateLimitConfig = this.config.rateLimiting.ipcRateLimits.isSecureStorage;
+        SecurityValidator.checkRateLimit("auth0-is-secure-storage", rateLimitConfig.requests, rateLimitConfig.windowMs);
         return await auth0Service.isSecureStorage();
       } catch (error) {
         console.error("Secure storage check error:", error);
@@ -914,7 +1016,8 @@ class AuthIPCHandlers {
     });
     ipcMain.handle("auth0-cancel-device-flow", async () => {
       try {
-        SecurityValidator.checkRateLimit("auth0-cancel-device-flow", 10, 6e4);
+        const rateLimitConfig = this.config.rateLimiting.ipcRateLimits.cancelDeviceFlow;
+        SecurityValidator.checkRateLimit("auth0-cancel-device-flow", rateLimitConfig.requests, rateLimitConfig.windowMs);
         auth0Service.cancelDeviceAuthorization();
         return { success: true };
       } catch (error) {
@@ -924,7 +1027,8 @@ class AuthIPCHandlers {
     });
     ipcMain.handle("open-external-url", async (_event, url) => {
       try {
-        SecurityValidator.checkRateLimit("open-external-url", 5, 6e4);
+        const rateLimitConfig = this.config.rateLimiting.ipcRateLimits.openExternalUrl;
+        SecurityValidator.checkRateLimit("open-external-url", rateLimitConfig.requests, rateLimitConfig.windowMs);
         const validUrl = SecurityValidator.validateUrl(url);
         await shell.openExternal(validUrl);
         return { success: true };
@@ -1091,7 +1195,8 @@ void app.whenReady().then(async () => {
   shortcutsManager.setupShortcutCleanup();
   try {
     validateAuth0Config(auth0Config);
-    await auth0Service.initialize(auth0Config.domain, auth0Config.clientId);
+    await auth0Service.initialize(auth0Config.domain, auth0Config.clientId, auth0Config);
+    authIPCHandlers.setConfig(auth0Config);
     authIPCHandlers.setupAuthStateListeners();
     authIPCHandlers.registerHandlers();
     if (auth0Service.isSignedIn()) {
