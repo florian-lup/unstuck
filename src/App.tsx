@@ -14,7 +14,6 @@ function App() {
     isNavigationBarVisible,
     showSettingsMenu,
     user,
-    isSecureStorage,
     
     // Actions
     handleSpeakClick,
@@ -43,7 +42,7 @@ function App() {
           {showSettingsMenu && (
             <SettingsMenu
               user={user}
-              isSecureStorage={isSecureStorage}
+              isOpen={showSettingsMenu}
               onLogout={handleLogout}
               onClose={() => setShowSettingsMenu(false)}
             />
