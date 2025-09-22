@@ -52,7 +52,7 @@ export class Auth0Service {
   /**
    * Initialize Auth0 client configuration
    */
-  async initialize(domain: string, clientId: string, audience?: string) {
+  async initialize(domain: string, clientId: string, audience?: string): Promise<void> {
     if (!domain || !clientId) {
       throw new Error('Missing Auth0 credentials')
     }
@@ -69,9 +69,10 @@ export class Auth0Service {
     // Ensure secure directory exists
     await this.ensureSecureDir()
     
-    // Try to restore existing session
+    // Try to restore existing session - this will emit SIGNED_IN event if session is valid
     await this.restoreSession()
     
+    console.log('Auth0 service initialized successfully')
   }
 
   /**
@@ -222,6 +223,14 @@ export class Auth0Service {
       this.cancelDeviceAuthorization()
       this.notifyListeners('ERROR', null, 'Authorization timeout. Please try again.')
     }, 10 * 60 * 1000)
+  }
+
+  /**
+   * Check if user is currently signed in with valid tokens
+   */
+  isSignedIn(): boolean {
+    if (!this.currentSession) return false
+    return !this.isTokenExpired(this.currentSession.tokens)
   }
 
   /**
@@ -549,11 +558,36 @@ export class Auth0Service {
     try {
       const sessionData = await this.secureGetItem('auth0_session')
       if (sessionData) {
-        this.currentSession = JSON.parse(sessionData)
+        const restoredSession: Auth0Session = JSON.parse(sessionData)
+        
+        // Check if the restored tokens are still valid
+        if (this.isTokenExpired(restoredSession.tokens)) {
+          console.log('Restored session has expired tokens, attempting refresh...')
+          this.currentSession = restoredSession
+          
+          try {
+            // Try to refresh the tokens
+            await this.refreshTokens()
+            console.log('✅ Session restored and tokens refreshed successfully')
+            // Notify listeners that user is signed in with refreshed tokens
+            this.notifyListeners('SIGNED_IN', this.currentSession)
+          } catch (refreshError) {
+            console.warn('Failed to refresh restored tokens, clearing session:', refreshError)
+            await this.clearSession()
+            this.currentSession = null
+          }
+        } else {
+          // Tokens are still valid
+          this.currentSession = restoredSession
+          console.log('✅ Session restored successfully with valid tokens')
+          // Notify listeners that user is signed in
+          this.notifyListeners('SIGNED_IN', this.currentSession)
+        }
       }
     } catch (error) {
       console.warn('Failed to restore session:', error)
       await this.clearSession()
+      this.currentSession = null
     }
   }
 

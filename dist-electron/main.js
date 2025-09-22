@@ -36,6 +36,7 @@ class Auth0Service {
     this.audience = audience;
     await this.ensureSecureDir();
     await this.restoreSession();
+    console.log("Auth0 service initialized successfully");
   }
   /**
    * Start Device Authorization Flow
@@ -147,6 +148,13 @@ class Auth0Service {
       this.cancelDeviceAuthorization();
       this.notifyListeners("ERROR", null, "Authorization timeout. Please try again.");
     }, 10 * 60 * 1e3);
+  }
+  /**
+   * Check if user is currently signed in with valid tokens
+   */
+  isSignedIn() {
+    if (!this.currentSession) return false;
+    return !this.isTokenExpired(this.currentSession.tokens);
   }
   /**
    * Get current session
@@ -395,11 +403,29 @@ class Auth0Service {
     try {
       const sessionData = await this.secureGetItem("auth0_session");
       if (sessionData) {
-        this.currentSession = JSON.parse(sessionData);
+        const restoredSession = JSON.parse(sessionData);
+        if (this.isTokenExpired(restoredSession.tokens)) {
+          console.log("Restored session has expired tokens, attempting refresh...");
+          this.currentSession = restoredSession;
+          try {
+            await this.refreshTokens();
+            console.log("✅ Session restored and tokens refreshed successfully");
+            this.notifyListeners("SIGNED_IN", this.currentSession);
+          } catch (refreshError) {
+            console.warn("Failed to refresh restored tokens, clearing session:", refreshError);
+            await this.clearSession();
+            this.currentSession = null;
+          }
+        } else {
+          this.currentSession = restoredSession;
+          console.log("✅ Session restored successfully with valid tokens");
+          this.notifyListeners("SIGNED_IN", this.currentSession);
+        }
       }
     } catch (error) {
       console.warn("Failed to restore session:", error);
       await this.clearSession();
+      this.currentSession = null;
     }
   }
   async clearSession() {
@@ -1067,12 +1093,18 @@ void app.whenReady().then(async () => {
     await auth0Service.initialize(auth0Config.domain, auth0Config.clientId);
     authIPCHandlers.setupAuthStateListeners();
     authIPCHandlers.registerHandlers();
+    if (auth0Service.isSignedIn()) {
+      console.log("User already signed in, opening main application");
+      windowManager.createOverlayWindow();
+    } else {
+      console.log("No valid session found, showing authentication window");
+      windowManager.createAuthWindow();
+    }
   } catch (error) {
     console.error("Failed to initialize Auth0 configuration:", error);
     app.quit();
     return;
   }
-  windowManager.createAuthWindow();
 });
 export {
   MAIN_DIST,

@@ -58,7 +58,7 @@ void app.whenReady().then(async () => {
   try {
     validateAuth0Config(auth0Config)
     
-    // Initialize Auth0 service in main process
+    // Initialize Auth0 service in main process (this will restore any existing session)
     await auth0Service.initialize(auth0Config.domain, auth0Config.clientId)
     
     // Setup auth state listeners
@@ -67,12 +67,18 @@ void app.whenReady().then(async () => {
     // Register IPC handlers
     authIPCHandlers.registerHandlers()
     
+    // Check if user is already signed in and create appropriate window
+    if (auth0Service.isSignedIn()) {
+      console.log('User already signed in, opening main application')
+      windowManager.createOverlayWindow()
+    } else {
+      console.log('No valid session found, showing authentication window')
+      windowManager.createAuthWindow()
+    }
+    
   } catch (error) {
     console.error('Failed to initialize Auth0 configuration:', error)
     app.quit()
     return
   }
-  
-  // Start with authentication window
-  windowManager.createAuthWindow()
 })
