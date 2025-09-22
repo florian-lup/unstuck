@@ -5,7 +5,6 @@ import fs from "fs/promises";
 import path from "path";
 import os from "os";
 import crypto from "crypto";
-import fs$1 from "fs";
 class Auth0Service {
   domain = "";
   clientId = "";
@@ -515,38 +514,19 @@ class Auth0Service {
   // Only encrypted storage is now supported in fallback mode.
 }
 const auth0Service = new Auth0Service();
-function loadEnvironmentConfig() {
-  if (process.env.NODE_ENV === "development" || !app.isPackaged) {
-    try {
-      const envPath = path.join(process.env.APP_ROOT || process.cwd(), ".env");
-      const envFile = fs$1.readFileSync(envPath, "utf8");
-      const envVars = {};
-      envFile.split("\n").forEach((line) => {
-        const [key, value] = line.split("=");
-        if (key && value) {
-          envVars[key.trim()] = value.trim().replace(/^["']|["']$/g, "");
-        }
-      });
-      return {
-        auth0Domain: envVars.VITE_AUTH0_DOMAIN,
-        auth0ClientId: envVars.VITE_AUTH0_CLIENT_ID
-      };
-    } catch (error) {
-      console.error("Failed to load .env file:", error);
-    }
-  }
-  return {
-    auth0Domain: process.env.VITE_AUTH0_DOMAIN || process.env.AUTH0_DOMAIN || "",
-    auth0ClientId: process.env.VITE_AUTH0_CLIENT_ID || process.env.AUTH0_CLIENT_ID || ""
-  };
-}
-function validateConfig(config) {
-  if (!config.auth0Domain || !config.auth0ClientId) {
+const auth0Config = {
+  domain: "dev-go8elfmr2gh3aye8.us.auth0.com",
+  // Replace with your Auth0 domain
+  clientId: "vVv9ZUVlCqxZQemAwrOGve0HSrK5rTlO"
+  // Replace with your Auth0 client ID
+};
+function validateAuth0Config(config) {
+  if (!config.domain || false) {
     throw new Error(
-      "Missing Auth0 configuration. Please ensure VITE_AUTH0_DOMAIN and VITE_AUTH0_CLIENT_ID are set."
+      "Missing Auth0 configuration. Please set domain and clientId in config/auth.config.ts"
     );
   }
-  if (!config.auth0Domain.includes(".auth0.com") && !config.auth0Domain.includes(".us.auth0.com")) {
+  if (!config.domain.includes(".auth0.com") && !config.domain.includes(".us.auth0.com")) {
     throw new Error(
       'Invalid Auth0 domain format. Domain should be like "your-tenant.auth0.com"'
     );
@@ -815,9 +795,8 @@ void app.whenReady().then(async () => {
   app.setName("Unstuck");
   Menu.setApplicationMenu(null);
   try {
-    const config = loadEnvironmentConfig();
-    validateConfig(config);
-    await auth0Service.initialize(config.auth0Domain, config.auth0ClientId);
+    validateAuth0Config(auth0Config);
+    await auth0Service.initialize(auth0Config.domain, auth0Config.clientId);
     auth0Service.onAuthStateChange((event, session, error) => {
       if (event === "SIGNED_IN" && session?.user) {
         if (authWindow && !authWindow.isDestroyed()) {
@@ -859,7 +838,7 @@ void app.whenReady().then(async () => {
       }
     });
   } catch (error) {
-    console.error("Failed to initialize auth service:", error);
+    console.error("Failed to initialize Auth0 configuration:", error);
     app.quit();
     return;
   }

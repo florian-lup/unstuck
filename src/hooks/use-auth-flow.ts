@@ -1,5 +1,5 @@
 import { useState, useCallback } from 'react'
-import { secureAuth } from '../lib/secure-auth-client'
+import { secureAuth } from '../lib/auth-client'
 
 export interface DeviceAuthInfo {
   user_code: string

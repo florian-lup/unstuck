@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { AuthUser } from '../lib/secure-auth-client'
+import { AuthUser } from '../lib/auth-client'
 import { useAuth } from '../hooks/use-auth'
 import { useAuthFlow } from '../hooks/use-auth-flow'
 import { Button } from './ui/button'

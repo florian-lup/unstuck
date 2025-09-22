@@ -1,5 +1,5 @@
 import { AuthWindow } from './components/auth-window'
-import { AuthUser } from './lib/secure-auth-client'
+import { AuthUser } from './lib/auth-client'
 import './index.css'
 
 function AuthApp() {

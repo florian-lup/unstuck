@@ -1,7 +1,7 @@
 import { LogOut, User, Shield, ShieldAlert } from 'lucide-react'
 import { Button } from './ui/button'
 import { InteractiveArea } from './interactive-area'
-import { AuthUser } from '../lib/secure-auth-client'
+import { AuthUser } from '../lib/auth-client'
 
 interface SettingsMenuProps {
   user: AuthUser | null

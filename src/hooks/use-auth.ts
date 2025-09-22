@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { secureAuth, AuthUser, AuthSession } from '../lib/secure-auth-client'
+import { secureAuth, AuthUser, AuthSession } from '../lib/auth-client'
 
 export function useAuth() {
   const [user, setUser] = useState<AuthUser | null>(null)

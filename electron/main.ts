@@ -10,7 +10,7 @@ import {
 import { fileURLToPath } from 'node:url'
 import path from 'node:path'
 import { auth0Service } from './auth0-service'
-import { loadEnvironmentConfig, validateConfig } from './env-loader'
+import { auth0Config, validateAuth0Config } from '../config/auth.config'
 import { SecurityValidator } from './security-validators'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
@@ -224,13 +224,12 @@ void app.whenReady().then(async () => {
   // Remove the default menu bar
   Menu.setApplicationMenu(null)
   
-  // Load and validate environment configuration securely
+  // Load and validate Auth0 configuration
   try {
-    const config = loadEnvironmentConfig()
-    validateConfig(config)
+    validateAuth0Config(auth0Config)
     
     // Initialize Auth0 service in main process
-    await auth0Service.initialize(config.auth0Domain, config.auth0ClientId)
+    await auth0Service.initialize(auth0Config.domain, auth0Config.clientId)
     
     // Listen for auth state changes
     auth0Service.onAuthStateChange((event, session, error) => {
@@ -286,7 +285,7 @@ void app.whenReady().then(async () => {
       }
     })
   } catch (error) {
-    console.error('Failed to initialize auth service:', error)
+    console.error('Failed to initialize Auth0 configuration:', error)
     app.quit()
     return
   }

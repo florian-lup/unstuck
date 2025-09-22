@@ -7,15 +7,12 @@
   "scripts": {
     "dev": "vite",
     "build": "tsc && vite build && electron-builder",
-    "build:prod": "cross-env NODE_ENV=production pnpm build",
-    "test:env": "node -e \"console.log('Environment variables:', process.env.VITE_AUTH0_DOMAIN && process.env.VITE_AUTH0_CLIENT_ID ? 'configured' : 'missing')\"",
     "lint": "eslint . --ext ts,tsx --report-unused-disable-directives --max-warnings 0",
     "preview": "vite preview",
     "format": "prettier --write .",
     "format:check": "prettier --check ."
   },
   "dependencies": {
-    "@auth0/auth0-react": "^2.5.0",
     "@radix-ui/react-slot": "^1.2.3",
     "@tailwindcss/vite": "^4.1.11",
     "class-variance-authority": "^0.7.1",
