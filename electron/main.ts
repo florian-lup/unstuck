@@ -247,7 +247,7 @@ void app.whenReady().then(async () => {
     validateConfig(config)
     
     // Initialize auth service in main process
-    await authService.initialize(config.supabaseUrl, config.supabaseAnonKey)
+    await authService.initialize(config.supabaseUrl, config.supabasePublishableKey)
     
     // Listen for auth state changes
     authService.onAuthStateChange((event, session) => {

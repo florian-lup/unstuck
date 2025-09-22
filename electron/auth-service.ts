@@ -15,12 +15,12 @@ export class AuthService {
   /**
    * Initialize Supabase client in main process only
    */
-  async initialize(supabaseUrl: string, supabaseAnonKey: string) {
-    if (!supabaseUrl || !supabaseAnonKey) {
+  async initialize(supabaseUrl: string, supabasePublishableKey: string) {
+    if (!supabaseUrl || !supabasePublishableKey) {
       throw new Error('Missing Supabase credentials')
     }
 
-    this.supabase = createClient(supabaseUrl, supabaseAnonKey, {
+    this.supabase = createClient(supabaseUrl, supabasePublishableKey, {
       auth: {
         flowType: 'pkce',
         detectSessionInUrl: false,

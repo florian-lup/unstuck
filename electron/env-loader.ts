@@ -9,7 +9,7 @@ import fs from 'fs'
 
 interface AppConfig {
   supabaseUrl: string
-  supabaseAnonKey: string
+  supabasePublishableKey: string
 }
 
 export function loadEnvironmentConfig(): AppConfig {
@@ -29,7 +29,7 @@ export function loadEnvironmentConfig(): AppConfig {
       
       return {
         supabaseUrl: envVars.VITE_SUPABASE_URL,
-        supabaseAnonKey: envVars.VITE_SUPABASE_ANON_KEY,
+        supabasePublishableKey: envVars.VITE_SUPABASE_PUBLISHABLE_KEY,
       }
     } catch (error) {
       console.error('Failed to load .env file:', error)
@@ -39,14 +39,14 @@ export function loadEnvironmentConfig(): AppConfig {
   // In production, use build-time environment variables or system env
   return {
     supabaseUrl: process.env.VITE_SUPABASE_URL || process.env.SUPABASE_URL || '',
-    supabaseAnonKey: process.env.VITE_SUPABASE_ANON_KEY || process.env.SUPABASE_ANON_KEY || '',
+    supabasePublishableKey: process.env.VITE_SUPABASE_PUBLISHABLE_KEY || process.env.SUPABASE_PUBLISHABLE_KEY || '',
   }
 }
 
 export function validateConfig(config: AppConfig) {
-  if (!config.supabaseUrl || !config.supabaseAnonKey) {
+  if (!config.supabaseUrl || !config.supabasePublishableKey) {
     throw new Error(
-      'Missing Supabase configuration. Please ensure VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY are set.'
+      'Missing Supabase configuration. Please ensure VITE_SUPABASE_URL and VITE_SUPABASE_PUBLISHABLE_KEY are set.'
     )
   }
   
