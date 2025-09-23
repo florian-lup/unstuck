@@ -114,20 +114,19 @@ class SecurityValidator {
     record.count++;
   }
 }
-class Auth0Service {
-  domain = "";
-  clientId = "";
-  audience;
-  scope = "openid profile email offline_access";
+class TokenManager {
   config;
-  // Will be initialized in initialize() method
-  secureDir = path.join(os.homedir(), ".unstuck-secure");
-  currentSession = null;
-  listeners = /* @__PURE__ */ new Set();
-  currentPollInterval = null;
-  currentPollTimeout = null;
+  domain;
+  clientId;
+  audience;
   refreshAttempts = /* @__PURE__ */ new Map();
-  // Configurable constants from config file
+  constructor(config, domain, clientId, audience) {
+    this.config = config;
+    this.domain = domain;
+    this.clientId = clientId;
+    this.audience = audience;
+  }
+  // Configurable constants
   get REFRESH_RATE_LIMIT() {
     return this.config.rateLimiting.maxRefreshAttempts;
   }
@@ -136,6 +135,321 @@ class Auth0Service {
   }
   get MIN_TOKEN_VALIDITY_BUFFER() {
     return this.config.tokenManagement.minValidityBufferMinutes * 6e4;
+  }
+  get REFRESH_TIMEOUT_SECONDS() {
+    return this.config.tokenManagement.refreshTimeoutSeconds;
+  }
+  get USER_AGENT() {
+    return this.config.appInfo.userAgent;
+  }
+  /**
+   * Check if tokens are expired (with security buffer)
+   */
+  isTokenExpired(tokens) {
+    return tokens.expires_at < Date.now() + this.MIN_TOKEN_VALIDITY_BUFFER;
+  }
+  /**
+   * Refresh access tokens using refresh token
+   */
+  async refreshTokens(currentTokens) {
+    if (!currentTokens.refresh_token) {
+      throw new Error("No refresh token available");
+    }
+    const now = Date.now();
+    const tokenExpiry = currentTokens.expires_at;
+    if (tokenExpiry && tokenExpiry > now + this.MIN_TOKEN_VALIDITY_BUFFER) {
+      throw new Error("Token refresh not needed - token still valid");
+    }
+    if (tokenExpiry && tokenExpiry < now - this.REFRESH_RATE_WINDOW) {
+      throw new Error("Token expired too long ago - re-authentication required");
+    }
+    const refreshKey = currentTokens.refresh_token;
+    this.validateRefreshRateLimit(refreshKey);
+    if (this.config.security.validateDomainOnRefresh) {
+      if (!this.domain || !this.domain.includes(".auth0.com") && !this.domain.includes(".us.auth0.com")) {
+        throw new Error("Invalid Auth0 domain for token refresh");
+      }
+    }
+    const tokenEndpoint = `${this.domain}/oauth/token`;
+    const body = new URLSearchParams({
+      grant_type: "refresh_token",
+      client_id: this.clientId,
+      refresh_token: currentTokens.refresh_token
+    });
+    if (this.audience) {
+      body.append("audience", this.audience);
+    }
+    let response;
+    try {
+      response = await fetch(tokenEndpoint, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/x-www-form-urlencoded",
+          "User-Agent": this.USER_AGENT
+        },
+        body: body.toString(),
+        signal: AbortSignal.timeout(this.REFRESH_TIMEOUT_SECONDS * 1e3)
+      });
+    } catch (error) {
+      this.recordRefreshAttempt(refreshKey);
+      if (error instanceof Error && error.name === "TimeoutError") {
+        throw new Error("Token refresh request timed out");
+      }
+      throw new Error(`Token refresh network error: ${error instanceof Error ? error.message : "Unknown error"}`);
+    }
+    if (!response.ok) {
+      this.recordRefreshAttempt(refreshKey);
+      let errorData = {};
+      try {
+        errorData = await response.json();
+      } catch {
+        errorData = { error: response.statusText };
+      }
+      if (errorData.error === "invalid_grant") {
+        throw new Error("Refresh token invalid - re-authentication required");
+      }
+      if (errorData.error === "invalid_client") {
+        throw new Error("Invalid client credentials - check Auth0 configuration");
+      }
+      throw new Error(`Token refresh failed: ${errorData.error_description || errorData.error || "Unknown error"}`);
+    }
+    let data;
+    try {
+      data = await response.json();
+    } catch {
+      this.recordRefreshAttempt(refreshKey);
+      throw new Error("Invalid response format from token endpoint");
+    }
+    if (!data.access_token || !data.expires_in) {
+      this.recordRefreshAttempt(refreshKey);
+      throw new Error("Invalid token response - missing required fields");
+    }
+    const newExpiry = now + data.expires_in * 1e3;
+    const maxValidityMs = this.config.tokenManagement.maxTokenValidityHours * 60 * 60 * 1e3;
+    if (newExpiry <= now || newExpiry > now + maxValidityMs) {
+      throw new Error(`Invalid token expiry in response (max allowed: ${this.config.tokenManagement.maxTokenValidityHours} hours)`);
+    }
+    const newTokens = {
+      access_token: data.access_token,
+      refresh_token: data.refresh_token || currentTokens.refresh_token,
+      id_token: data.id_token,
+      expires_at: newExpiry,
+      token_type: data.token_type || "Bearer",
+      scope: data.scope
+    };
+    this.clearRefreshAttempts(refreshKey);
+    return newTokens;
+  }
+  /**
+   * Validate rate limiting for token refresh attempts
+   */
+  validateRefreshRateLimit(refreshToken) {
+    const now = Date.now();
+    const attempt = this.refreshAttempts.get(refreshToken);
+    if (!attempt) {
+      return;
+    }
+    if (now - attempt.lastAttempt > this.REFRESH_RATE_WINDOW) {
+      this.refreshAttempts.delete(refreshToken);
+      return;
+    }
+    if (attempt.count >= this.REFRESH_RATE_LIMIT) {
+      throw new Error(`Too many token refresh attempts. Please wait ${Math.ceil(this.REFRESH_RATE_WINDOW / 6e4)} minutes.`);
+    }
+  }
+  /**
+   * Record a failed refresh attempt
+   */
+  recordRefreshAttempt(refreshToken) {
+    const now = Date.now();
+    const attempt = this.refreshAttempts.get(refreshToken);
+    if (!attempt || now - attempt.lastAttempt > this.REFRESH_RATE_WINDOW) {
+      this.refreshAttempts.set(refreshToken, { count: 1, lastAttempt: now });
+    } else {
+      attempt.count++;
+      attempt.lastAttempt = now;
+    }
+  }
+  /**
+   * Clear refresh attempts on successful refresh
+   */
+  clearRefreshAttempts(refreshToken) {
+    this.refreshAttempts.delete(refreshToken);
+  }
+  /**
+   * Revoke a token
+   */
+  async revokeToken(token) {
+    const revokeEndpoint = `${this.domain}/oauth/revoke`;
+    const body = new URLSearchParams({
+      client_id: this.clientId,
+      token
+    });
+    await fetch(revokeEndpoint, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/x-www-form-urlencoded"
+      },
+      body: body.toString()
+    });
+  }
+}
+class SecureStorage {
+  config;
+  secureDir = path.join(os.homedir(), ".unstuck-secure");
+  constructor(config) {
+    this.config = config;
+  }
+  get FALLBACK_STORAGE_EXPIRY_HOURS() {
+    return this.config.tokenManagement.fallbackStorageExpiryHours;
+  }
+  /**
+   * Initialize secure storage directory
+   */
+  async initialize() {
+    await this.ensureSecureDir();
+  }
+  /**
+   * Check if OS-level secure storage is available
+   */
+  async isSecureStorageAvailable() {
+    try {
+      const { safeStorage } = await import("electron");
+      return safeStorage.isEncryptionAvailable();
+    } catch {
+      return false;
+    }
+  }
+  /**
+   * Get an item from secure storage
+   */
+  async getItem(key) {
+    try {
+      const { safeStorage } = await import("electron");
+      if (!safeStorage.isEncryptionAvailable()) {
+        return await this.enhancedFileGetItem(key);
+      }
+      const filePath = path.join(this.secureDir, `${key}.dat`);
+      const encrypted = await fs.readFile(filePath);
+      return safeStorage.decryptString(encrypted);
+    } catch (error) {
+      return null;
+    }
+  }
+  /**
+   * Store an item in secure storage
+   */
+  async setItem(key, value) {
+    try {
+      const { safeStorage } = await import("electron");
+      if (!safeStorage.isEncryptionAvailable()) {
+        console.warn("🔐 OS encryption unavailable - using enhanced fallback");
+        if (key.includes("refresh_token")) {
+          throw new Error("Secure storage required for refresh tokens");
+        }
+        return await this.enhancedFileSetItem(key, value);
+      }
+      const encrypted = safeStorage.encryptString(value);
+      const filePath = path.join(this.secureDir, `${key}.dat`);
+      await fs.writeFile(filePath, encrypted, { mode: 384 });
+    } catch (error) {
+      console.error("Failed to store secure item:", error);
+      throw error;
+    }
+  }
+  /**
+   * Remove an item from secure storage
+   */
+  async removeItem(key) {
+    try {
+      const filePath = path.join(this.secureDir, `${key}.dat`);
+      await fs.unlink(filePath);
+    } catch (error) {
+    }
+  }
+  /**
+   * Enhanced fallback file storage with encryption
+   */
+  async enhancedFileGetItem(key) {
+    try {
+      const filePath = path.join(this.secureDir, `${key}.json`);
+      const data = await fs.readFile(filePath, "utf8");
+      const parsed = JSON.parse(data);
+      if (parsed.expiresAt && Date.now() > parsed.expiresAt) {
+        await fs.unlink(filePath).catch(() => {
+        });
+        return null;
+      }
+      if (parsed.encrypted && parsed.iv && parsed.authTag) {
+        return this.decryptValue(parsed.encrypted, parsed.iv, parsed.authTag);
+      }
+      console.warn("🔒 Found legacy token format - forcing re-authentication for security");
+      await fs.unlink(filePath).catch(() => {
+      });
+      return null;
+    } catch {
+      return null;
+    }
+  }
+  /**
+   * Enhanced fallback file storage with encryption
+   */
+  async enhancedFileSetItem(key, value) {
+    const algorithm = "aes-256-gcm";
+    const keyDerivation = crypto.pbkdf2Sync("unstuck-fallback-key", "unstuck-salt-2024", 1e5, 32, "sha256");
+    const iv = crypto.randomBytes(16);
+    const cipher = crypto.createCipheriv(algorithm, keyDerivation, iv);
+    let encrypted = cipher.update(value, "utf8", "hex");
+    encrypted += cipher.final("hex");
+    const authTag = cipher.getAuthTag();
+    const data = {
+      encrypted,
+      iv: iv.toString("hex"),
+      authTag: authTag.toString("hex"),
+      timestamp: Date.now(),
+      expiresAt: Date.now() + this.FALLBACK_STORAGE_EXPIRY_HOURS * 60 * 60 * 1e3
+    };
+    const filePath = path.join(this.secureDir, `${key}.json`);
+    await fs.writeFile(filePath, JSON.stringify(data), { mode: 384 });
+  }
+  /**
+   * Decrypt a value using AES-256-GCM
+   */
+  decryptValue(encryptedHex, ivHex, authTagHex) {
+    const algorithm = "aes-256-gcm";
+    const keyDerivation = crypto.pbkdf2Sync("unstuck-fallback-key", "unstuck-salt-2024", 1e5, 32, "sha256");
+    const iv = Buffer.from(ivHex, "hex");
+    const decipher = crypto.createDecipheriv(algorithm, keyDerivation, iv);
+    decipher.setAuthTag(Buffer.from(authTagHex, "hex"));
+    let decrypted = decipher.update(encryptedHex, "hex", "utf8");
+    decrypted += decipher.final("utf8");
+    return decrypted;
+  }
+  /**
+   * Ensure secure directory exists with proper permissions
+   */
+  async ensureSecureDir() {
+    try {
+      await fs.mkdir(this.secureDir, { recursive: true, mode: 448 });
+    } catch (error) {
+    }
+  }
+}
+class DeviceFlowManager {
+  config;
+  domain;
+  clientId;
+  audience;
+  scope;
+  currentPollInterval = null;
+  currentPollTimeout = null;
+  eventCallback = null;
+  constructor(config, domain, clientId, audience, scope) {
+    this.config = config;
+    this.domain = domain;
+    this.clientId = clientId;
+    this.audience = audience;
+    this.scope = scope || "openid profile email offline_access";
   }
   get POLLING_INTERVAL() {
     return this.config.deviceFlow.pollingInterval;
@@ -146,33 +460,11 @@ class Auth0Service {
   get TIMEOUT_MINUTES() {
     return this.config.deviceFlow.timeoutMinutes;
   }
-  get REFRESH_TIMEOUT_SECONDS() {
-    return this.config.tokenManagement.refreshTimeoutSeconds;
-  }
-  get FALLBACK_STORAGE_EXPIRY_HOURS() {
-    return this.config.tokenManagement.fallbackStorageExpiryHours;
-  }
-  get USER_AGENT() {
-    return this.config.appInfo.userAgent;
-  }
   /**
-   * Initialize Auth0 client configuration
+   * Set callback for device flow events
    */
-  async initialize(domain, clientId, config) {
-    if (!domain || !clientId) {
-      throw new Error("Missing Auth0 credentials");
-    }
-    this.config = config;
-    if (!domain.includes(".auth0.com") && !domain.includes(".us.auth0.com")) {
-      throw new Error("Invalid Auth0 domain format");
-    }
-    this.domain = domain.startsWith("https://") ? domain : `https://${domain}`;
-    this.clientId = clientId;
-    this.audience = config.audience;
-    this.scope = config.scope;
-    await this.ensureSecureDir();
-    await this.restoreSession();
-    console.log("Auth0 service initialized successfully with enhanced configuration");
+  setEventCallback(callback) {
+    this.eventCallback = callback;
   }
   /**
    * Start Device Authorization Flow
@@ -257,11 +549,7 @@ class Auth0Service {
             token_type: data.token_type || "Bearer",
             scope: data.scope
           };
-          const user = await this.getUserInfo(tokens.access_token);
-          const session = { user, tokens };
-          await this.storeSession(session);
-          this.currentSession = session;
-          this.notifyListeners("SIGNED_IN", session);
+          this.eventCallback?.("SUCCESS", tokens);
         } else if (data.error === "authorization_pending") {
         } else if (data.error === "slow_down") {
           this.cancelDeviceAuthorization();
@@ -271,13 +559,13 @@ class Auth0Service {
           }, newInterval * 1e3);
         } else if (data.error === "expired_token") {
           this.cancelDeviceAuthorization();
-          this.notifyListeners("ERROR", null, "Device code expired. Please try again.");
+          this.eventCallback?.("ERROR", void 0, "Device code expired. Please try again.");
         } else if (data.error === "access_denied") {
           this.cancelDeviceAuthorization();
-          this.notifyListeners("ERROR", null, "Access denied by user.");
+          this.eventCallback?.("ERROR", void 0, "Access denied by user.");
         } else {
           this.cancelDeviceAuthorization();
-          this.notifyListeners("ERROR", null, data.error_description || "Authorization failed");
+          this.eventCallback?.("ERROR", void 0, data.error_description || "Authorization failed");
         }
       } catch (error) {
         console.error("Polling error:", error);
@@ -285,24 +573,80 @@ class Auth0Service {
     }, interval * 1e3);
     this.currentPollTimeout = setTimeout(() => {
       this.cancelDeviceAuthorization();
-      this.notifyListeners("ERROR", null, "Authorization timeout. Please try again.");
+      this.eventCallback?.("ERROR", void 0, "Authorization timeout. Please try again.");
     }, this.TIMEOUT_MINUTES * 60 * 1e3);
+  }
+}
+class Auth0Service {
+  domain = "";
+  clientId = "";
+  audience;
+  scope = "openid profile email offline_access";
+  // Specialized components
+  tokenManager;
+  secureStorage;
+  deviceFlowManager;
+  // Session state
+  currentSession = null;
+  listeners = /* @__PURE__ */ new Set();
+  /**
+   * Initialize Auth0 client configuration and all components
+   */
+  async initialize(domain, clientId, config) {
+    if (!domain || !clientId) {
+      throw new Error("Missing Auth0 credentials");
+    }
+    if (!domain.includes(".auth0.com") && !domain.includes(".us.auth0.com")) {
+      throw new Error("Invalid Auth0 domain format");
+    }
+    this.domain = domain.startsWith("https://") ? domain : `https://${domain}`;
+    this.clientId = clientId;
+    this.audience = config.audience;
+    this.scope = config.scope;
+    this.tokenManager = new TokenManager(config, this.domain, this.clientId, this.audience);
+    this.secureStorage = new SecureStorage(config);
+    this.deviceFlowManager = new DeviceFlowManager(config, this.domain, this.clientId, this.audience, this.scope);
+    await this.secureStorage.initialize();
+    this.deviceFlowManager.setEventCallback((event, tokens, error) => {
+      if (event === "SUCCESS" && tokens) {
+        this.handleDeviceFlowSuccess(tokens);
+      } else if (event === "ERROR") {
+        this.notifyListeners("ERROR", null, error);
+      }
+    });
+    await this.restoreSession();
+    console.log("Auth0 service initialized successfully with modular components");
+  }
+  /**
+   * Start Device Authorization Flow
+   */
+  async startDeviceAuthFlow() {
+    return await this.deviceFlowManager.startDeviceAuthFlow();
+  }
+  /**
+   * Cancel current device authorization flow
+   */
+  cancelDeviceAuthorization() {
+    this.deviceFlowManager.cancelDeviceAuthorization();
   }
   /**
    * Check if user is currently signed in with valid tokens
    */
   isSignedIn() {
     if (!this.currentSession) return false;
-    return !this.isTokenExpired(this.currentSession.tokens);
+    return !this.tokenManager.isTokenExpired(this.currentSession.tokens);
   }
   /**
-   * Get current session
+   * Get current session with automatic token refresh
    */
   async getSession() {
     if (this.currentSession) {
-      if (this.isTokenExpired(this.currentSession.tokens)) {
+      if (this.tokenManager.isTokenExpired(this.currentSession.tokens)) {
         try {
-          await this.refreshTokens();
+          const refreshedTokens = await this.tokenManager.refreshTokens(this.currentSession.tokens);
+          this.currentSession.tokens = refreshedTokens;
+          await this.storeSession(this.currentSession);
+          this.notifyListeners("TOKEN_REFRESHED", this.currentSession);
         } catch (error) {
           console.error("Automatic token refresh failed:", SecurityValidator.sanitizeUserForLogging(error));
           if (error instanceof Error && (error.message.includes("re-authentication required") || error.message.includes("expired too long ago") || error.message.includes("Too many token refresh attempts"))) {
@@ -325,10 +669,11 @@ class Auth0Service {
   async signOut() {
     try {
       if (this.currentSession?.tokens.refresh_token) {
-        await this.revokeToken(this.currentSession.tokens.refresh_token);
+        await this.tokenManager.revokeToken(this.currentSession.tokens.refresh_token);
       }
       await this.clearSession();
       this.currentSession = null;
+      this.deviceFlowManager.cancelDeviceAuthorization();
       this.notifyListeners("SIGNED_OUT", null);
       console.log("🔒 Successfully signed out");
     } catch (error) {
@@ -353,15 +698,27 @@ class Auth0Service {
    * Check if secure storage is available
    */
   async isSecureStorage() {
-    try {
-      const { safeStorage } = await import("electron");
-      return safeStorage.isEncryptionAvailable();
-    } catch {
-      return false;
-    }
+    return await this.secureStorage.isSecureStorageAvailable();
   }
   // Private methods
-  // PKCE methods removed - not needed for Device Authorization Flow
+  /**
+   * Handle successful device flow completion
+   */
+  async handleDeviceFlowSuccess(tokens) {
+    try {
+      const user = await this.getUserInfo(tokens.access_token);
+      const session = { user, tokens };
+      await this.storeSession(session);
+      this.currentSession = session;
+      this.notifyListeners("SIGNED_IN", session);
+    } catch (error) {
+      console.error("Failed to complete device flow:", error);
+      this.notifyListeners("ERROR", null, "Failed to complete authentication");
+    }
+  }
+  /**
+   * Get user information from Auth0
+   */
   async getUserInfo(accessToken) {
     const userInfoEndpoint = `${this.domain}/userinfo`;
     const response = await fetch(userInfoEndpoint, {
@@ -374,156 +731,12 @@ class Auth0Service {
     }
     return await response.json();
   }
-  async refreshTokens() {
-    if (!this.currentSession?.tokens.refresh_token) {
-      throw new Error("No refresh token available");
-    }
-    const now = Date.now();
-    const tokenExpiry = this.currentSession.tokens.expires_at;
-    if (tokenExpiry && tokenExpiry > now + this.MIN_TOKEN_VALIDITY_BUFFER) {
-      throw new Error("Token refresh not needed - token still valid");
-    }
-    if (tokenExpiry && tokenExpiry < now - this.REFRESH_RATE_WINDOW) {
-      throw new Error("Token expired too long ago - re-authentication required");
-    }
-    const refreshKey = this.currentSession.tokens.refresh_token;
-    this.validateRefreshRateLimit(refreshKey);
-    if (this.config.security.validateDomainOnRefresh) {
-      if (!this.domain || !this.domain.includes(".auth0.com") && !this.domain.includes(".us.auth0.com")) {
-        throw new Error("Invalid Auth0 domain for token refresh");
-      }
-    }
-    const tokenEndpoint = `${this.domain}/oauth/token`;
-    const body = new URLSearchParams({
-      grant_type: "refresh_token",
-      client_id: this.clientId,
-      refresh_token: this.currentSession.tokens.refresh_token
-    });
-    if (this.audience) {
-      body.append("audience", this.audience);
-    }
-    let response;
-    try {
-      response = await fetch(tokenEndpoint, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/x-www-form-urlencoded",
-          "User-Agent": this.USER_AGENT
-          // Identify our app
-        },
-        body: body.toString(),
-        // Add configurable timeout to prevent hanging requests
-        signal: AbortSignal.timeout(this.REFRESH_TIMEOUT_SECONDS * 1e3)
-      });
-    } catch (error) {
-      this.recordRefreshAttempt(refreshKey);
-      if (error instanceof Error && error.name === "TimeoutError") {
-        throw new Error("Token refresh request timed out");
-      }
-      throw new Error(`Token refresh network error: ${error instanceof Error ? error.message : "Unknown error"}`);
-    }
-    if (!response.ok) {
-      this.recordRefreshAttempt(refreshKey);
-      let errorData = {};
-      try {
-        errorData = await response.json();
-      } catch {
-        errorData = { error: response.statusText };
-      }
-      if (errorData.error === "invalid_grant") {
-        await this.signOut();
-        throw new Error("Refresh token invalid - re-authentication required");
-      }
-      if (errorData.error === "invalid_client") {
-        throw new Error("Invalid client credentials - check Auth0 configuration");
-      }
-      throw new Error(`Token refresh failed: ${errorData.error_description || errorData.error || "Unknown error"}`);
-    }
-    let data;
-    try {
-      data = await response.json();
-    } catch {
-      this.recordRefreshAttempt(refreshKey);
-      throw new Error("Invalid response format from token endpoint");
-    }
-    if (!data.access_token || !data.expires_in) {
-      this.recordRefreshAttempt(refreshKey);
-      throw new Error("Invalid token response - missing required fields");
-    }
-    const newExpiry = now + data.expires_in * 1e3;
-    const maxValidityMs = this.config.tokenManagement.maxTokenValidityHours * 60 * 60 * 1e3;
-    if (newExpiry <= now || newExpiry > now + maxValidityMs) {
-      throw new Error(`Invalid token expiry in response (max allowed: ${this.config.tokenManagement.maxTokenValidityHours} hours)`);
-    }
-    const newTokens = {
-      access_token: data.access_token,
-      refresh_token: data.refresh_token || this.currentSession.tokens.refresh_token,
-      id_token: data.id_token,
-      expires_at: newExpiry,
-      token_type: data.token_type || "Bearer",
-      scope: data.scope
-    };
-    this.currentSession.tokens = newTokens;
-    await this.storeSession(this.currentSession);
-    this.clearRefreshAttempts(refreshKey);
-    this.notifyListeners("TOKEN_REFRESHED", this.currentSession);
-  }
   /**
-   * Validate rate limiting for token refresh attempts
+   * Store session using secure storage
    */
-  validateRefreshRateLimit(refreshToken) {
-    const now = Date.now();
-    const attempt = this.refreshAttempts.get(refreshToken);
-    if (!attempt) {
-      return;
-    }
-    if (now - attempt.lastAttempt > this.REFRESH_RATE_WINDOW) {
-      this.refreshAttempts.delete(refreshToken);
-      return;
-    }
-    if (attempt.count >= this.REFRESH_RATE_LIMIT) {
-      throw new Error(`Too many token refresh attempts. Please wait ${Math.ceil(this.REFRESH_RATE_WINDOW / 6e4)} minutes.`);
-    }
-  }
-  /**
-   * Record a failed refresh attempt
-   */
-  recordRefreshAttempt(refreshToken) {
-    const now = Date.now();
-    const attempt = this.refreshAttempts.get(refreshToken);
-    if (!attempt || now - attempt.lastAttempt > this.REFRESH_RATE_WINDOW) {
-      this.refreshAttempts.set(refreshToken, { count: 1, lastAttempt: now });
-    } else {
-      attempt.count++;
-      attempt.lastAttempt = now;
-    }
-  }
-  /**
-   * Clear refresh attempts on successful refresh
-   */
-  clearRefreshAttempts(refreshToken) {
-    this.refreshAttempts.delete(refreshToken);
-  }
-  async revokeToken(token) {
-    const revokeEndpoint = `${this.domain}/oauth/revoke`;
-    const body = new URLSearchParams({
-      client_id: this.clientId,
-      token
-    });
-    await fetch(revokeEndpoint, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/x-www-form-urlencoded"
-      },
-      body: body.toString()
-    });
-  }
-  isTokenExpired(tokens) {
-    return tokens.expires_at < Date.now() + this.MIN_TOKEN_VALIDITY_BUFFER;
-  }
   async storeSession(session) {
     try {
-      await this.secureSetItem("auth0_session", JSON.stringify(session));
+      await this.secureStorage.setItem("auth0_session", JSON.stringify(session));
     } catch (error) {
       if (error instanceof Error && error.message.includes("Secure storage required for refresh tokens")) {
         const sessionWithoutRefreshToken = {
@@ -534,22 +747,27 @@ class Auth0Service {
           }
         };
         console.warn("⚠️ Storing session without refresh token due to fallback security limitations");
-        await this.secureSetItem("auth0_session", JSON.stringify(sessionWithoutRefreshToken));
+        await this.secureStorage.setItem("auth0_session", JSON.stringify(sessionWithoutRefreshToken));
       } else {
         throw error;
       }
     }
   }
+  /**
+   * Restore session from secure storage
+   */
   async restoreSession() {
     try {
-      const sessionData = await this.secureGetItem("auth0_session");
+      const sessionData = await this.secureStorage.getItem("auth0_session");
       if (sessionData) {
         const restoredSession = JSON.parse(sessionData);
-        if (this.isTokenExpired(restoredSession.tokens)) {
+        if (this.tokenManager.isTokenExpired(restoredSession.tokens)) {
           console.log("Restored session has expired tokens, attempting refresh...");
           this.currentSession = restoredSession;
           try {
-            await this.refreshTokens();
+            const refreshedTokens = await this.tokenManager.refreshTokens(restoredSession.tokens);
+            this.currentSession.tokens = refreshedTokens;
+            await this.storeSession(this.currentSession);
             console.log("✅ Session restored and tokens refreshed successfully");
             this.notifyListeners("SIGNED_IN", this.currentSession);
           } catch (refreshError) {
@@ -569,9 +787,15 @@ class Auth0Service {
       this.currentSession = null;
     }
   }
+  /**
+   * Clear session from secure storage
+   */
   async clearSession() {
-    await this.secureRemoveItem("auth0_session");
+    await this.secureStorage.removeItem("auth0_session");
   }
+  /**
+   * Notify all listeners of auth events
+   */
   notifyListeners(event, session, error) {
     this.listeners.forEach((listener) => {
       try {
@@ -581,104 +805,6 @@ class Auth0Service {
       }
     });
   }
-  // Secure storage methods (same pattern as original but more robust)
-  async ensureSecureDir() {
-    try {
-      await fs.mkdir(this.secureDir, { recursive: true, mode: 448 });
-    } catch (error) {
-    }
-  }
-  async secureGetItem(key) {
-    try {
-      const { safeStorage } = await import("electron");
-      if (!safeStorage.isEncryptionAvailable()) {
-        return await this.enhancedFileGetItem(key);
-      }
-      const filePath = path.join(this.secureDir, `${key}.dat`);
-      const encrypted = await fs.readFile(filePath);
-      return safeStorage.decryptString(encrypted);
-    } catch (error) {
-      return null;
-    }
-  }
-  async secureSetItem(key, value) {
-    try {
-      const { safeStorage } = await import("electron");
-      if (!safeStorage.isEncryptionAvailable()) {
-        console.warn("🔐 OS encryption unavailable - using enhanced fallback");
-        if (key.includes("refresh_token")) {
-          throw new Error("Secure storage required for refresh tokens");
-        }
-        return await this.enhancedFileSetItem(key, value);
-      }
-      const encrypted = safeStorage.encryptString(value);
-      const filePath = path.join(this.secureDir, `${key}.dat`);
-      await fs.writeFile(filePath, encrypted, { mode: 384 });
-    } catch (error) {
-      console.error("Failed to store secure item:", error);
-      throw error;
-    }
-  }
-  async secureRemoveItem(key) {
-    try {
-      const filePath = path.join(this.secureDir, `${key}.dat`);
-      await fs.unlink(filePath);
-    } catch (error) {
-    }
-  }
-  // Enhanced fallback file storage with basic encryption
-  async enhancedFileGetItem(key) {
-    try {
-      const filePath = path.join(this.secureDir, `${key}.json`);
-      const data = await fs.readFile(filePath, "utf8");
-      const parsed = JSON.parse(data);
-      if (parsed.expiresAt && Date.now() > parsed.expiresAt) {
-        await fs.unlink(filePath).catch(() => {
-        });
-        return null;
-      }
-      if (parsed.encrypted && parsed.iv && parsed.authTag) {
-        return this.decryptValue(parsed.encrypted, parsed.iv, parsed.authTag);
-      }
-      console.warn("🔒 Found legacy token format - forcing re-authentication for security");
-      await fs.unlink(filePath).catch(() => {
-      });
-      return null;
-    } catch {
-      return null;
-    }
-  }
-  async enhancedFileSetItem(key, value) {
-    const algorithm = "aes-256-gcm";
-    const keyDerivation = crypto.pbkdf2Sync("unstuck-fallback-key", "unstuck-salt-2024", 1e5, 32, "sha256");
-    const iv = crypto.randomBytes(16);
-    const cipher = crypto.createCipheriv(algorithm, keyDerivation, iv);
-    let encrypted = cipher.update(value, "utf8", "hex");
-    encrypted += cipher.final("hex");
-    const authTag = cipher.getAuthTag();
-    const data = {
-      encrypted,
-      iv: iv.toString("hex"),
-      authTag: authTag.toString("hex"),
-      timestamp: Date.now(),
-      // Configurable expiry for fallback storage
-      expiresAt: Date.now() + this.FALLBACK_STORAGE_EXPIRY_HOURS * 60 * 60 * 1e3
-    };
-    const filePath = path.join(this.secureDir, `${key}.json`);
-    await fs.writeFile(filePath, JSON.stringify(data), { mode: 384 });
-  }
-  decryptValue(encryptedHex, ivHex, authTagHex) {
-    const algorithm = "aes-256-gcm";
-    const keyDerivation = crypto.pbkdf2Sync("unstuck-fallback-key", "unstuck-salt-2024", 1e5, 32, "sha256");
-    const iv = Buffer.from(ivHex, "hex");
-    const decipher = crypto.createDecipheriv(algorithm, keyDerivation, iv);
-    decipher.setAuthTag(Buffer.from(authTagHex, "hex"));
-    let decrypted = decipher.update(encryptedHex, "hex", "utf8");
-    decrypted += decipher.final("utf8");
-    return decrypted;
-  }
-  // Note: Legacy plain-text methods removed for security.
-  // Only encrypted storage is now supported in fallback mode.
 }
 const auth0Service = new Auth0Service();
 const auth0Config = {

@@ -1,15 +1,17 @@
 /**
- * Secure Auth0 Authentication Service - Main Process Only
+ * Refactored Auth0 Authentication Service - Main Process Only
  * Implements PKCE flow with secure token storage for Electron apps
+ * 
+ * This is the main orchestrator that coordinates the various specialized components:
+ * - TokenManager: Handles token refresh, validation, rate limiting
+ * - SecureStorage: Manages encrypted storage with fallback mechanisms
+ * - DeviceFlowManager: Handles OAuth2 Device Authorization Flow
  */
-
-// shell import removed as not needed in this service
-import fs from 'fs/promises'
-import path from 'path'
-import os from 'os'
-import crypto from 'crypto'
 import { SecurityValidator } from './security-validators'
 import { Auth0Config } from '../../config/auth.config'
+import { TokenManager, Auth0Tokens } from './token-manager'
+import { SecureStorage } from './secure-storage'
+import { DeviceFlowManager, DeviceAuthorizationResult } from './device-flow-manager'
 
 export interface Auth0User {
   sub: string
@@ -19,15 +21,6 @@ export interface Auth0User {
   picture?: string
   email_verified?: boolean
   [key: string]: any
-}
-
-export interface Auth0Tokens {
-  access_token: string
-  refresh_token?: string
-  id_token?: string
-  expires_at: number
-  token_type: string
-  scope?: string
 }
 
 export interface Auth0Session {
@@ -42,55 +35,25 @@ export class Auth0Service {
   private clientId: string = ''
   private audience?: string
   private scope: string = 'openid profile email offline_access'
-  private config!: Auth0Config  // Will be initialized in initialize() method
-  private secureDir = path.join(os.homedir(), '.unstuck-secure')
+  
+  // Specialized components
+  private tokenManager!: TokenManager
+  private secureStorage!: SecureStorage
+  private deviceFlowManager!: DeviceFlowManager
+  
+  // Session state
   private currentSession: Auth0Session | null = null
   private listeners: Set<(event: Auth0Event, session: Auth0Session | null, error?: string) => void> = new Set()
-  private currentPollInterval: NodeJS.Timeout | null = null
-  private currentPollTimeout: NodeJS.Timeout | null = null
-  private refreshAttempts: Map<string, { count: number; lastAttempt: number }> = new Map()
-  
-  // Configurable constants from config file
-  private get REFRESH_RATE_LIMIT() { 
-    return this.config.rateLimiting.maxRefreshAttempts
-  }
-  private get REFRESH_RATE_WINDOW() { 
-    return this.config.rateLimiting.refreshWindowMinutes * 60000 
-  }
-  private get MIN_TOKEN_VALIDITY_BUFFER() { 
-    return this.config.tokenManagement.minValidityBufferMinutes * 60000 
-  }
-  private get POLLING_INTERVAL() {
-    return this.config.deviceFlow.pollingInterval
-  }
-  private get SLOW_DOWN_INCREMENT() {
-    return this.config.deviceFlow.slowDownIncrement
-  }
-  private get TIMEOUT_MINUTES() {
-    return this.config.deviceFlow.timeoutMinutes
-  }
-  private get REFRESH_TIMEOUT_SECONDS() {
-    return this.config.tokenManagement.refreshTimeoutSeconds
-  }
-  private get FALLBACK_STORAGE_EXPIRY_HOURS() {
-    return this.config.tokenManagement.fallbackStorageExpiryHours
-  }
-  private get USER_AGENT() {
-    return this.config.appInfo.userAgent
-  }
 
   /**
-   * Initialize Auth0 client configuration
+   * Initialize Auth0 client configuration and all components
    */
   async initialize(domain: string, clientId: string, config: Auth0Config): Promise<void> {
     if (!domain || !clientId) {
       throw new Error('Missing Auth0 credentials')
     }
 
-    // Store full config for later use
-    this.config = config
-
-    // Validate domain format (enhanced with config-based validation)
+    // Validate domain format
     if (!domain.includes('.auth0.com') && !domain.includes('.us.auth0.com')) {
       throw new Error('Invalid Auth0 domain format')
     }
@@ -100,166 +63,41 @@ export class Auth0Service {
     this.audience = config.audience
     this.scope = config.scope
 
-    // Ensure secure directory exists
-    await this.ensureSecureDir()
+    // Initialize specialized components
+    this.tokenManager = new TokenManager(config, this.domain, this.clientId, this.audience)
+    this.secureStorage = new SecureStorage(config)
+    this.deviceFlowManager = new DeviceFlowManager(config, this.domain, this.clientId, this.audience, this.scope)
+
+    // Initialize secure storage
+    await this.secureStorage.initialize()
+
+    // Set up device flow event handling
+    this.deviceFlowManager.setEventCallback((event, tokens, error) => {
+      if (event === 'SUCCESS' && tokens) {
+        this.handleDeviceFlowSuccess(tokens)
+      } else if (event === 'ERROR') {
+        this.notifyListeners('ERROR', null, error)
+      }
+    })
     
-    // Try to restore existing session - this will emit SIGNED_IN event if session is valid
+    // Try to restore existing session
     await this.restoreSession()
     
-    console.log('Auth0 service initialized successfully with enhanced configuration')
+    console.log('Auth0 service initialized successfully with modular components')
   }
 
   /**
    * Start Device Authorization Flow
    */
-  async startDeviceAuthFlow(): Promise<{ device_code: string; user_code: string; verification_uri: string; expires_in: number }> {
-    const deviceCodeEndpoint = `${this.domain}/oauth/device/code`
-    
-    const body = new URLSearchParams({
-      client_id: this.clientId,
-      scope: this.scope,
-    })
-
-    if (this.audience) {
-      body.append('audience', this.audience)
-    }
-
-
-    const response = await fetch(deviceCodeEndpoint, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/x-www-form-urlencoded',
-      },
-      body: body.toString(),
-    })
-
-    if (!response.ok) {
-      const errorData = await response.json().catch(() => ({}))
-      console.error('Auth0 API Error Response:', {
-        status: response.status,
-        statusText: response.statusText,
-        error: errorData.error,
-        error_description: errorData.error_description
-      })
-      throw new Error(`Device authorization request failed: ${errorData.error_description || errorData.error || response.statusText}`)
-    }
-
-    const deviceData = await response.json()
-    
-    
-    // Start polling for completion with configurable interval
-    const pollingInterval = deviceData.interval || this.POLLING_INTERVAL
-    this.pollForDeviceAuthorization(deviceData.device_code, pollingInterval)
-    
-    return {
-      device_code: deviceData.device_code,
-      user_code: deviceData.user_code,
-      verification_uri: deviceData.verification_uri,
-      expires_in: deviceData.expires_in || 600,
-    }
+  async startDeviceAuthFlow(): Promise<DeviceAuthorizationResult> {
+    return await this.deviceFlowManager.startDeviceAuthFlow()
   }
 
   /**
    * Cancel current device authorization flow
    */
   cancelDeviceAuthorization(): void {
-    if (this.currentPollInterval) {
-      clearInterval(this.currentPollInterval)
-      this.currentPollInterval = null
-    }
-    if (this.currentPollTimeout) {
-      clearTimeout(this.currentPollTimeout)
-      this.currentPollTimeout = null
-    }
-  }
-
-  /**
-   * Poll for device authorization completion
-   */
-  private async pollForDeviceAuthorization(deviceCode: string, interval: number): Promise<void> {
-    const tokenEndpoint = `${this.domain}/oauth/token`
-    
-    // Cancel any existing polling first
-    this.cancelDeviceAuthorization()
-    
-    this.currentPollInterval = setInterval(async () => {
-      try {
-        const body = new URLSearchParams({
-          grant_type: 'urn:ietf:params:oauth:grant-type:device_code',
-          device_code: deviceCode,
-          client_id: this.clientId,
-        })
-
-        const response = await fetch(tokenEndpoint, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/x-www-form-urlencoded',
-          },
-          body: body.toString(),
-        })
-
-        const data = await response.json()
-
-        if (response.ok) {
-          // Success! We got tokens
-          this.cancelDeviceAuthorization()
-          
-          const tokens: Auth0Tokens = {
-            access_token: data.access_token,
-            refresh_token: data.refresh_token,
-            id_token: data.id_token,
-            expires_at: Date.now() + (data.expires_in * 1000),
-            token_type: data.token_type || 'Bearer',
-            scope: data.scope,
-          }
-
-          // Get user info
-          const user = await this.getUserInfo(tokens.access_token)
-          
-          // Create session
-          const session: Auth0Session = { user, tokens }
-          
-          // Store session securely
-          await this.storeSession(session)
-          this.currentSession = session
-          
-          // Notify listeners
-          this.notifyListeners('SIGNED_IN', session)
-          
-          
-        } else if (data.error === 'authorization_pending') {
-          // Still waiting for user to authorize
-        } else if (data.error === 'slow_down') {
-          // Increase polling interval by configured amount
-          this.cancelDeviceAuthorization()
-          const newInterval = interval + this.SLOW_DOWN_INCREMENT
-          setTimeout(() => {
-            this.pollForDeviceAuthorization(deviceCode, newInterval)
-          }, newInterval * 1000)
-        } else if (data.error === 'expired_token') {
-          // Device code expired
-          this.cancelDeviceAuthorization()
-          this.notifyListeners('ERROR', null, 'Device code expired. Please try again.')
-        } else if (data.error === 'access_denied') {
-          // User denied access
-          this.cancelDeviceAuthorization()
-          this.notifyListeners('ERROR', null, 'Access denied by user.')
-        } else {
-          // Other error
-          this.cancelDeviceAuthorization()
-          this.notifyListeners('ERROR', null, data.error_description || 'Authorization failed')
-        }
-      } catch (error) {
-        console.error('Polling error:', error)
-        // Continue polling on network errors
-      }
-    }, interval * 1000)
-
-    // Stop polling after configured timeout
-    this.currentPollTimeout = setTimeout(() => {
-      this.cancelDeviceAuthorization()
-      this.notifyListeners('ERROR', null, 'Authorization timeout. Please try again.')
-    }, this.TIMEOUT_MINUTES * 60 * 1000)
+    this.deviceFlowManager.cancelDeviceAuthorization()
   }
 
   /**
@@ -267,21 +105,25 @@ export class Auth0Service {
    */
   isSignedIn(): boolean {
     if (!this.currentSession) return false
-    return !this.isTokenExpired(this.currentSession.tokens)
+    return !this.tokenManager.isTokenExpired(this.currentSession.tokens)
   }
 
   /**
-   * Get current session
+   * Get current session with automatic token refresh
    */
   async getSession(): Promise<{ user: Auth0User | null; tokens: Auth0Tokens | null }> {
     if (this.currentSession) {
       // Check if tokens are expired and refresh if needed
-      if (this.isTokenExpired(this.currentSession.tokens)) {
+      if (this.tokenManager.isTokenExpired(this.currentSession.tokens)) {
         try {
-          await this.refreshTokens()
+          const refreshedTokens = await this.tokenManager.refreshTokens(this.currentSession.tokens)
+          this.currentSession.tokens = refreshedTokens
+          await this.storeSession(this.currentSession)
+          this.notifyListeners('TOKEN_REFRESHED', this.currentSession)
         } catch (error) {
           console.error('Automatic token refresh failed:', SecurityValidator.sanitizeUserForLogging(error))
-          // If refresh fails due to security checks, force re-authentication
+          
+          // Handle specific refresh errors that require re-authentication
           if (error instanceof Error && (
             error.message.includes('re-authentication required') ||
             error.message.includes('expired too long ago') ||
@@ -290,7 +132,7 @@ export class Auth0Service {
           await this.signOut()
           return { user: null, tokens: null }
           }
-          // For other errors, return current tokens but they may be expired
+          
           console.warn('Continuing with potentially expired tokens')
         }
       }
@@ -311,12 +153,15 @@ export class Auth0Service {
     try {
       // Revoke tokens if available
       if (this.currentSession?.tokens.refresh_token) {
-        await this.revokeToken(this.currentSession.tokens.refresh_token)
+        await this.tokenManager.revokeToken(this.currentSession.tokens.refresh_token)
       }
       
       // Clear stored session
       await this.clearSession()
       this.currentSession = null
+      
+      // Cancel any ongoing device flow
+      this.deviceFlowManager.cancelDeviceAuthorization()
       
       // Notify listeners
       this.notifyListeners('SIGNED_OUT', null)
@@ -348,18 +193,37 @@ export class Auth0Service {
    * Check if secure storage is available
    */
   async isSecureStorage(): Promise<boolean> {
-    try {
-      const { safeStorage } = await import('electron')
-      return safeStorage.isEncryptionAvailable()
-    } catch {
-      return false
-    }
+    return await this.secureStorage.isSecureStorageAvailable()
   }
 
   // Private methods
 
-  // PKCE methods removed - not needed for Device Authorization Flow
+  /**
+   * Handle successful device flow completion
+   */
+  private async handleDeviceFlowSuccess(tokens: Auth0Tokens): Promise<void> {
+    try {
+      // Get user info
+      const user = await this.getUserInfo(tokens.access_token)
+      
+      // Create session
+      const session: Auth0Session = { user, tokens }
+      
+      // Store session securely
+      await this.storeSession(session)
+      this.currentSession = session
+      
+      // Notify listeners
+      this.notifyListeners('SIGNED_IN', session)
+    } catch (error) {
+      console.error('Failed to complete device flow:', error)
+      this.notifyListeners('ERROR', null, 'Failed to complete authentication')
+    }
+  }
 
+  /**
+   * Get user information from Auth0
+   */
   private async getUserInfo(accessToken: string): Promise<Auth0User> {
     const userInfoEndpoint = `${this.domain}/userinfo`
     
@@ -376,208 +240,14 @@ export class Auth0Service {
     return await response.json()
   }
 
-  private async refreshTokens(): Promise<void> {
-    // 1. Basic validation
-    if (!this.currentSession?.tokens.refresh_token) {
-      throw new Error('No refresh token available')
-    }
-
-    // 2. Token expiry validation with buffer
-    const now = Date.now()
-    const tokenExpiry = this.currentSession.tokens.expires_at
-    
-    // Don't refresh if token is still valid with sufficient buffer
-    if (tokenExpiry && tokenExpiry > now + this.MIN_TOKEN_VALIDITY_BUFFER) {
-      throw new Error('Token refresh not needed - token still valid')
-    }
-
-    // Don't refresh if token is already expired for too long (potential replay attack)
-    if (tokenExpiry && tokenExpiry < now - this.REFRESH_RATE_WINDOW) {
-      throw new Error('Token expired too long ago - re-authentication required')
-    }
-
-    // 3. Rate limiting validation
-    const refreshKey = this.currentSession.tokens.refresh_token
-    this.validateRefreshRateLimit(refreshKey)
-
-    // 4. Domain validation (ensure we're still talking to the right Auth0 tenant)
-    if (this.config.security.validateDomainOnRefresh) {
-      if (!this.domain || (!this.domain.includes('.auth0.com') && !this.domain.includes('.us.auth0.com'))) {
-        throw new Error('Invalid Auth0 domain for token refresh')
-      }
-    }
-
-    const tokenEndpoint = `${this.domain}/oauth/token`
-    
-    const body = new URLSearchParams({
-      grant_type: 'refresh_token',
-      client_id: this.clientId,
-      refresh_token: this.currentSession.tokens.refresh_token,
-    })
-
-    if (this.audience) {
-      body.append('audience', this.audience)
-    }
-
-    let response: Response
-    try {
-      response = await fetch(tokenEndpoint, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/x-www-form-urlencoded',
-          'User-Agent': this.USER_AGENT, // Identify our app
-      },
-      body: body.toString(),
-        // Add configurable timeout to prevent hanging requests
-        signal: AbortSignal.timeout(this.REFRESH_TIMEOUT_SECONDS * 1000),
-      })
-    } catch (error) {
-      this.recordRefreshAttempt(refreshKey)
-      if (error instanceof Error && error.name === 'TimeoutError') {
-        throw new Error('Token refresh request timed out')
-      }
-      throw new Error(`Token refresh network error: ${error instanceof Error ? error.message : 'Unknown error'}`)
-    }
-
-    // 5. Enhanced error handling with specific error codes
-    if (!response.ok) {
-      this.recordRefreshAttempt(refreshKey)
-      
-      let errorData: any = {}
-      try {
-        errorData = await response.json()
-      } catch {
-        // If JSON parsing fails, use status text
-        errorData = { error: response.statusText }
-      }
-
-      // Handle specific Auth0 error codes
-      if (errorData.error === 'invalid_grant') {
-        // Refresh token is invalid/expired - force re-authentication
-        await this.signOut()
-        throw new Error('Refresh token invalid - re-authentication required')
-      }
-      
-      if (errorData.error === 'invalid_client') {
-        throw new Error('Invalid client credentials - check Auth0 configuration')
-      }
-
-      throw new Error(`Token refresh failed: ${errorData.error_description || errorData.error || 'Unknown error'}`)
-    }
-
-    let data: any
-    try {
-      data = await response.json()
-    } catch {
-      this.recordRefreshAttempt(refreshKey)
-      throw new Error('Invalid response format from token endpoint')
-    }
-
-    // 6. Validate response data
-    if (!data.access_token || !data.expires_in) {
-      this.recordRefreshAttempt(refreshKey)
-      throw new Error('Invalid token response - missing required fields')
-    }
-
-    // 7. Validate token expiry is reasonable (not in past, not too far in future)
-    const newExpiry = now + (data.expires_in * 1000)
-    const maxValidityMs = this.config.tokenManagement.maxTokenValidityHours * 60 * 60 * 1000
-    if (newExpiry <= now || newExpiry > now + maxValidityMs) {
-      throw new Error(`Invalid token expiry in response (max allowed: ${this.config.tokenManagement.maxTokenValidityHours} hours)`)
-    }
-    
-    const newTokens: Auth0Tokens = {
-      access_token: data.access_token,
-      refresh_token: data.refresh_token || this.currentSession.tokens.refresh_token,
-      id_token: data.id_token,
-      expires_at: newExpiry,
-      token_type: data.token_type || 'Bearer',
-      scope: data.scope,
-    }
-
-    // 8. Update session with new tokens
-    this.currentSession.tokens = newTokens
-    await this.storeSession(this.currentSession)
-    
-    // 9. Clear rate limiting on successful refresh
-    this.clearRefreshAttempts(refreshKey)
-    
-    this.notifyListeners('TOKEN_REFRESHED', this.currentSession)
-  }
-
   /**
-   * Validate rate limiting for token refresh attempts
+   * Store session using secure storage
    */
-  private validateRefreshRateLimit(refreshToken: string): void {
-    const now = Date.now()
-    const attempt = this.refreshAttempts.get(refreshToken)
-    
-    if (!attempt) {
-      return // First attempt
-    }
-    
-    // Clean up old attempts outside the window
-    if (now - attempt.lastAttempt > this.REFRESH_RATE_WINDOW) {
-      this.refreshAttempts.delete(refreshToken)
-      return
-    }
-    
-    // Check rate limit
-    if (attempt.count >= this.REFRESH_RATE_LIMIT) {
-      throw new Error(`Too many token refresh attempts. Please wait ${Math.ceil(this.REFRESH_RATE_WINDOW / 60000)} minutes.`)
-    }
-  }
-
-  /**
-   * Record a failed refresh attempt
-   */
-  private recordRefreshAttempt(refreshToken: string): void {
-    const now = Date.now()
-    const attempt = this.refreshAttempts.get(refreshToken)
-    
-    if (!attempt || now - attempt.lastAttempt > this.REFRESH_RATE_WINDOW) {
-      this.refreshAttempts.set(refreshToken, { count: 1, lastAttempt: now })
-    } else {
-      attempt.count++
-      attempt.lastAttempt = now
-    }
-  }
-
-  /**
-   * Clear refresh attempts on successful refresh
-   */
-  private clearRefreshAttempts(refreshToken: string): void {
-    this.refreshAttempts.delete(refreshToken)
-  }
-
-  private async revokeToken(token: string): Promise<void> {
-    const revokeEndpoint = `${this.domain}/oauth/revoke`
-    
-    const body = new URLSearchParams({
-      client_id: this.clientId,
-      token,
-    })
-
-    await fetch(revokeEndpoint, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/x-www-form-urlencoded',
-      },
-      body: body.toString(),
-    })
-  }
-
-  private isTokenExpired(tokens: Auth0Tokens): boolean {
-    // Use the security buffer we defined for consistency
-    return tokens.expires_at < Date.now() + this.MIN_TOKEN_VALIDITY_BUFFER
-  }
-
   private async storeSession(session: Auth0Session): Promise<void> {
     try {
-      // Try to store the full session first
-      await this.secureSetItem('auth0_session', JSON.stringify(session))
+      await this.secureStorage.setItem('auth0_session', JSON.stringify(session))
     } catch (error) {
-      // If it fails due to refresh token in fallback mode, store without refresh token
+      // Handle fallback storage limitations
       if (error instanceof Error && error.message.includes('Secure storage required for refresh tokens')) {
         const sessionWithoutRefreshToken = {
           ...session,
@@ -587,29 +257,33 @@ export class Auth0Service {
           }
         }
         console.warn('⚠️ Storing session without refresh token due to fallback security limitations')
-        await this.secureSetItem('auth0_session', JSON.stringify(sessionWithoutRefreshToken))
+        await this.secureStorage.setItem('auth0_session', JSON.stringify(sessionWithoutRefreshToken))
       } else {
         throw error
       }
     }
   }
 
+  /**
+   * Restore session from secure storage
+   */
   private async restoreSession(): Promise<void> {
     try {
-      const sessionData = await this.secureGetItem('auth0_session')
+      const sessionData = await this.secureStorage.getItem('auth0_session')
       if (sessionData) {
         const restoredSession: Auth0Session = JSON.parse(sessionData)
         
         // Check if the restored tokens are still valid
-        if (this.isTokenExpired(restoredSession.tokens)) {
+        if (this.tokenManager.isTokenExpired(restoredSession.tokens)) {
           console.log('Restored session has expired tokens, attempting refresh...')
           this.currentSession = restoredSession
           
           try {
             // Try to refresh the tokens
-            await this.refreshTokens()
+            const refreshedTokens = await this.tokenManager.refreshTokens(restoredSession.tokens)
+            this.currentSession.tokens = refreshedTokens
+            await this.storeSession(this.currentSession)
             console.log('✅ Session restored and tokens refreshed successfully')
-            // Notify listeners that user is signed in with refreshed tokens
             this.notifyListeners('SIGNED_IN', this.currentSession)
           } catch (refreshError) {
             console.warn('Failed to refresh restored tokens, clearing session:', SecurityValidator.sanitizeUserForLogging(refreshError))
@@ -620,7 +294,6 @@ export class Auth0Service {
           // Tokens are still valid
           this.currentSession = restoredSession
           console.log('✅ Session restored successfully with valid tokens')
-          // Notify listeners that user is signed in
           this.notifyListeners('SIGNED_IN', this.currentSession)
         }
       }
@@ -631,10 +304,16 @@ export class Auth0Service {
     }
   }
 
+  /**
+   * Clear session from secure storage
+   */
   private async clearSession(): Promise<void> {
-    await this.secureRemoveItem('auth0_session')
+    await this.secureStorage.removeItem('auth0_session')
   }
 
+  /**
+   * Notify all listeners of auth events
+   */
   private notifyListeners(event: Auth0Event, session: Auth0Session | null, error?: string) {
     this.listeners.forEach(listener => {
       try {
@@ -644,137 +323,7 @@ export class Auth0Service {
       }
     })
   }
-
-  // Secure storage methods (same pattern as original but more robust)
-  private async ensureSecureDir() {
-    try {
-      await fs.mkdir(this.secureDir, { recursive: true, mode: 0o700 })
-    } catch (error) {
-      // Directory might already exist
-    }
-  }
-
-  private async secureGetItem(key: string): Promise<string | null> {
-    try {
-      const { safeStorage } = await import('electron')
-      if (!safeStorage.isEncryptionAvailable()) {
-        // Use enhanced file storage for fallback
-        return await this.enhancedFileGetItem(key)
-      }
-
-      const filePath = path.join(this.secureDir, `${key}.dat`)
-      const encrypted = await fs.readFile(filePath)
-      return safeStorage.decryptString(encrypted)
-    } catch (error) {
-      return null // Key not found or decryption failed
-    }
-  }
-
-  private async secureSetItem(key: string, value: string): Promise<void> {
-    try {
-      const { safeStorage } = await import('electron')
-      if (!safeStorage.isEncryptionAvailable()) {
-        // Enhanced fallback with better security
-        console.warn('🔐 OS encryption unavailable - using enhanced fallback')
-        
-        // Refuse to store refresh tokens in fallback mode for security
-        if (key.includes('refresh_token')) {
-          throw new Error('Secure storage required for refresh tokens')
-        }
-        
-        // Use enhanced file storage with basic encryption
-        return await this.enhancedFileSetItem(key, value)
-      }
-
-      const encrypted = safeStorage.encryptString(value)
-      const filePath = path.join(this.secureDir, `${key}.dat`)
-      await fs.writeFile(filePath, encrypted, { mode: 0o600 })
-    } catch (error) {
-      console.error('Failed to store secure item:', error)
-      throw error
-    }
-  }
-
-  private async secureRemoveItem(key: string): Promise<void> {
-    try {
-      const filePath = path.join(this.secureDir, `${key}.dat`)
-      await fs.unlink(filePath)
-    } catch (error) {
-      // File doesn't exist, consider it removed
-    }
-  }
-
-  // Enhanced fallback file storage with basic encryption
-  private async enhancedFileGetItem(key: string): Promise<string | null> {
-    try {
-      const filePath = path.join(this.secureDir, `${key}.json`)
-      const data = await fs.readFile(filePath, 'utf8')
-      const parsed = JSON.parse(data)
-      
-      // Check expiry for enhanced storage
-      if (parsed.expiresAt && Date.now() > parsed.expiresAt) {
-        // Expired, clean up and return null
-        await fs.unlink(filePath).catch(() => {})
-        return null
-      }
-      
-      // If it's encrypted data, decrypt it
-      if (parsed.encrypted && parsed.iv && parsed.authTag) {
-        return this.decryptValue(parsed.encrypted, parsed.iv, parsed.authTag)
-      }
-      
-      // No support for legacy plain-text format for security reasons
-      // Users with old tokens will need to re-authenticate
-      console.warn('🔒 Found legacy token format - forcing re-authentication for security')
-      await fs.unlink(filePath).catch(() => {})
-      return null
-    } catch {
-      return null
-    }
-  }
-
-  private async enhancedFileSetItem(key: string, value: string): Promise<void> {
-    const algorithm = 'aes-256-gcm'
-    const keyDerivation = crypto.pbkdf2Sync('unstuck-fallback-key', 'unstuck-salt-2024', 100000, 32, 'sha256')
-    
-    const iv = crypto.randomBytes(16)
-    const cipher = crypto.createCipheriv(algorithm, keyDerivation, iv)
-    
-    let encrypted = cipher.update(value, 'utf8', 'hex')
-    encrypted += cipher.final('hex')
-    
-    const authTag = cipher.getAuthTag()
-    
-    const data = {
-      encrypted,
-      iv: iv.toString('hex'),
-      authTag: authTag.toString('hex'),
-      timestamp: Date.now(),
-      // Configurable expiry for fallback storage
-      expiresAt: Date.now() + (this.FALLBACK_STORAGE_EXPIRY_HOURS * 60 * 60 * 1000)
-    }
-    
-    const filePath = path.join(this.secureDir, `${key}.json`)
-    await fs.writeFile(filePath, JSON.stringify(data), { mode: 0o600 })
-  }
-
-  private decryptValue(encryptedHex: string, ivHex: string, authTagHex: string): string {
-    const algorithm = 'aes-256-gcm'
-    const keyDerivation = crypto.pbkdf2Sync('unstuck-fallback-key', 'unstuck-salt-2024', 100000, 32, 'sha256')
-    
-    const iv = Buffer.from(ivHex, 'hex')
-    const decipher = crypto.createDecipheriv(algorithm, keyDerivation, iv)
-    decipher.setAuthTag(Buffer.from(authTagHex, 'hex'))
-    
-    let decrypted = decipher.update(encryptedHex, 'hex', 'utf8')
-    decrypted += decipher.final('utf8')
-    
-    return decrypted
-  }
-
-  // Note: Legacy plain-text methods removed for security.
-  // Only encrypted storage is now supported in fallback mode.
 }
 
-// Singleton instance
+// Export both the class and a singleton instance for backward compatibility
 export const auth0Service = new Auth0Service()
