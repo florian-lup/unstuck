@@ -11,6 +11,14 @@ import { AutoLaunchManager } from './auto-launch-manager'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 
+// Set app name for all processes (shows "Unstuck" in Task Manager instead of "Electron")
+app.setName('Unstuck')
+
+// Ensure all child processes also use the app name
+if (process.platform === 'win32') {
+  app.setAppUserModelId('com.unstuck.app')
+}
+
 // Environment and path setup
 process.env.APP_ROOT = path.join(__dirname, '..')
 

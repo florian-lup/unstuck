@@ -45,7 +45,7 @@ export class AppLifecycleManager {
   }
 
   setAppDefaults(): void {
-    // Set the app name as early as possible
-    app.setName('Unstuck')
+    // App name is now set in main.ts for all processes
+    // Any other app-level defaults can be added here
   }
 }

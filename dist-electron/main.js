@@ -1550,7 +1550,6 @@ class AppLifecycleManager {
     return true;
   }
   setAppDefaults() {
-    app.setName("Unstuck");
   }
 }
 class ShortcutsManager {
@@ -2823,6 +2822,10 @@ class AutoLaunchManager {
   }
 }
 const __dirname = path$1.dirname(fileURLToPath(import.meta.url));
+app.setName("Unstuck");
+if (process.platform === "win32") {
+  app.setAppUserModelId("com.unstuck.app");
+}
 process.env.APP_ROOT = path$1.join(__dirname, "..");
 const VITE_DEV_SERVER_URL = process.env.VITE_DEV_SERVER_URL;
 const MAIN_DIST = path$1.join(process.env.APP_ROOT, "dist-electron");
