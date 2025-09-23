@@ -1,6 +1,7 @@
 import React from 'react'
 import { Mic, Type, Search, Settings, Grip } from 'lucide-react'
 import { Button } from './ui/button'
+import { Tooltip } from './ui/tooltip'
 import { SelectGame } from './select-game'
 import { InteractiveArea } from './interactive-area'
 import { Game } from '../lib/games'
@@ -72,15 +73,17 @@ export function NavigationBar({
             {/* Action Buttons */}
             <div className="flex items-center gap-1">
               {/* Speak Button */}
-              <Button
-                onClick={handleSpeakClick}
-                variant="gaming"
-                size="sm"
-                className="gap-1 p-1 h-auto"
-              >
-                <Mic className="w-3 h-3" />
-                <span className="text-xs">Speak</span>
-              </Button>
+              <Tooltip content="Coming Soon">
+                <Button
+                  onClick={handleSpeakClick}
+                  variant="gaming"
+                  size="sm"
+                  className="gap-1 p-1 h-auto"
+                >
+                  <Mic className="w-3 h-3" />
+                  <span className="text-xs">Speak</span>
+                </Button>
+              </Tooltip>
 
               {/* Text Button */}
               <Button
