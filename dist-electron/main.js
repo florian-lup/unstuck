@@ -1,4 +1,4 @@
-import { BrowserWindow, screen, shell, ipcMain, app, globalShortcut, Menu } from "electron";
+import { BrowserWindow, screen, shell, Tray, nativeImage, Menu, app, ipcMain, globalShortcut } from "electron";
 import { fileURLToPath } from "node:url";
 import path$1 from "node:path";
 import fs from "fs/promises";
@@ -987,6 +987,7 @@ class WindowManager {
   }
   overlayWindow = null;
   authWindow = null;
+  tray = null;
   createAuthWindow() {
     this.authWindow = new BrowserWindow({
       title: "Get Unstuck - Authentication",
@@ -1026,6 +1027,7 @@ class WindowManager {
       transparent: true,
       alwaysOnTop: true,
       resizable: false,
+      skipTaskbar: true,
       width: windowWidth,
       height: windowHeight,
       x: Math.round((screenWidth - windowWidth) / 2),
@@ -1175,6 +1177,138 @@ class WindowManager {
         options ?? { forward: true }
       );
     }
+  }
+  // System Tray Management
+  createSystemTray() {
+    const iconPath = path$1.join(this.vitePublic, "unstuck-logo.ico");
+    this.tray = new Tray(nativeImage.createFromPath(iconPath));
+    this.tray.setToolTip("Unstuck");
+    this.setupTrayMenu();
+    this.setupTrayEvents();
+    return this.tray;
+  }
+  setupTrayMenu() {
+    if (!this.tray) return;
+    const contextMenu = Menu.buildFromTemplate([
+      {
+        label: "Show Overlay",
+        type: "normal",
+        click: () => {
+          if (this.overlayWindow) {
+            if (this.overlayWindow.isVisible()) {
+              this.overlayWindow.focus();
+            } else {
+              this.overlayWindow.show();
+            }
+            this.ensureOverlayOnTop();
+          }
+        }
+      },
+      {
+        label: "Hide Overlay",
+        type: "normal",
+        click: () => {
+          if (this.overlayWindow?.isVisible()) {
+            this.overlayWindow.hide();
+          }
+        }
+      },
+      { type: "separator" },
+      {
+        label: "Settings",
+        type: "normal",
+        click: () => {
+          if (this.overlayWindow) {
+            this.overlayWindow.show();
+            this.overlayWindow.focus();
+            this.ensureOverlayOnTop();
+            this.overlayWindow.webContents.send("open-settings-menu");
+          }
+        }
+      },
+      { type: "separator" },
+      {
+        label: "Quit Unstuck",
+        type: "normal",
+        click: () => {
+          app.quit();
+        }
+      }
+    ]);
+    this.tray.setContextMenu(contextMenu);
+  }
+  setupTrayEvents() {
+    if (!this.tray) return;
+    this.tray.on("click", () => {
+      if (this.overlayWindow) {
+        if (this.overlayWindow.isVisible()) {
+          this.overlayWindow.hide();
+        } else {
+          this.overlayWindow.show();
+          this.overlayWindow.focus();
+          this.ensureOverlayOnTop();
+        }
+      }
+    });
+    this.tray.on("double-click", () => {
+      if (this.overlayWindow) {
+        this.overlayWindow.show();
+        this.overlayWindow.focus();
+        this.ensureOverlayOnTop();
+      }
+    });
+  }
+  // Tray management methods
+  getTray() {
+    return this.tray;
+  }
+  destroyTray() {
+    if (this.tray) {
+      this.tray.destroy();
+      this.tray = null;
+    }
+  }
+  updateTrayVisibility(overlayVisible) {
+    if (!this.tray) return;
+    const contextMenu = Menu.buildFromTemplate([
+      {
+        label: overlayVisible ? "Hide Overlay" : "Show Overlay",
+        type: "normal",
+        click: () => {
+          if (this.overlayWindow) {
+            if (overlayVisible) {
+              this.overlayWindow.hide();
+            } else {
+              this.overlayWindow.show();
+              this.overlayWindow.focus();
+              this.ensureOverlayOnTop();
+            }
+          }
+        }
+      },
+      { type: "separator" },
+      {
+        label: "Settings",
+        type: "normal",
+        click: () => {
+          if (this.overlayWindow) {
+            this.overlayWindow.show();
+            this.overlayWindow.focus();
+            this.ensureOverlayOnTop();
+            this.overlayWindow.webContents.send("open-settings-menu");
+          }
+        }
+      },
+      { type: "separator" },
+      {
+        label: "Quit Unstuck",
+        type: "normal",
+        click: () => {
+          app.quit();
+        }
+      }
+    ]);
+    this.tray.setContextMenu(contextMenu);
   }
 }
 class AuthIPCHandlers {
@@ -1400,6 +1534,7 @@ class AppLifecycleManager {
       this.windowManager.focusAuthWindow();
     });
     app.on("before-quit", () => {
+      this.windowManager.destroyTray();
       console.log("App is quitting...");
     });
   }
@@ -1477,6 +1612,7 @@ void app.whenReady().then(async () => {
   ipcMain.handle("update-navigation-shortcut", (_event, shortcut) => {
     shortcutsManager.registerNavigationToggleShortcut(shortcut);
   });
+  windowManager.createSystemTray();
   try {
     validateAuth0Config(auth0Config);
     await auth0Service.initialize(

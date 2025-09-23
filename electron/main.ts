@@ -59,6 +59,9 @@ void app.whenReady().then(async () => {
     shortcutsManager.registerNavigationToggleShortcut(shortcut)
   })
 
+  // Create system tray
+  windowManager.createSystemTray()
+
   // Load and validate Auth0 configuration
   try {
     validateAuth0Config(auth0Config)

@@ -18,6 +18,7 @@ const ALLOWED_INVOKE_CHANNELS = [
 
 const ALLOWED_LISTEN_CHANNELS = [
   'toggle-navigation-bar',
+  'open-settings-menu',
   'auth-success',
   'auth-error',
 ] as const
@@ -79,6 +80,16 @@ contextBridge.exposeInMainWorld('electronAPI', {
   },
   removeNavigationBarToggleListener: () => {
     ipcRenderer.removeAllListeners('toggle-navigation-bar')
+  },
+  onOpenSettingsMenu: (callback: () => void) => {
+    const listener = () => {
+      callback()
+    }
+    ipcRenderer.on('open-settings-menu', listener)
+    return listener
+  },
+  removeOpenSettingsMenuListener: () => {
+    ipcRenderer.removeAllListeners('open-settings-menu')
   },
   updateNavigationShortcut: (shortcut: string) => {
     return ipcRenderer.invoke('update-navigation-shortcut', shortcut)

@@ -1,6 +1,8 @@
 export interface IElectronAPI {
   onNavigationBarToggle: (callback: () => void) => void
   removeNavigationBarToggleListener: () => void
+  onOpenSettingsMenu: (callback: () => void) => void
+  removeOpenSettingsMenuListener: () => void
   updateNavigationShortcut: (shortcut: string) => Promise<void>
   setIgnoreMouseEvents: (
     ignore: boolean,

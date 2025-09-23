@@ -88,6 +88,21 @@ export function useAppLogic() {
     void syncKeybind()
   }, [customKeybind])
 
+  // Listen for settings menu open event from system tray
+  useEffect(() => {
+    const handleOpenSettingsMenu = () => {
+      setShowSettingsMenu(true)
+    }
+
+    // Set up listener
+    window.electronAPI?.onOpenSettingsMenu(handleOpenSettingsMenu)
+
+    // Cleanup listener on unmount
+    return () => {
+      window.electronAPI?.removeOpenSettingsMenuListener()
+    }
+  }, [])
+
   // Global click-through management
   useClickThrough({
     interactiveSelectors:

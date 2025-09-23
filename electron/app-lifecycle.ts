@@ -27,7 +27,8 @@ export class AppLifecycleManager {
 
     // Handle app quit preparation
     app.on('before-quit', () => {
-      // Cleanup logic if needed
+      // Cleanup tray icon
+      this.windowManager.destroyTray()
       console.log('App is quitting...')
     })
   }
