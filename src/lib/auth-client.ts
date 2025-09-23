@@ -10,7 +10,7 @@ export interface AuthUser {
   nickname?: string
   picture?: string
   email_verified?: boolean
-  [key: string]: any
+  [key: string]: unknown
 }
 
 export interface AuthTokens {
@@ -30,10 +30,12 @@ export interface AuthSession {
 export type AuthEvent = 'SIGNED_IN' | 'SIGNED_OUT' | 'TOKEN_REFRESHED' | 'ERROR'
 
 export class SecureAuthClient {
-  private listeners: Set<(event: AuthEvent, session: AuthSession | null, error?: string) => void> = new Set()
+  private listeners = new Set<
+    (event: AuthEvent, session: AuthSession | null, error?: string) => void
+  >()
   private user: AuthUser | null = null
   private session: AuthSession | null = null
-  
+
   constructor() {
     this.setupIpcListeners()
   }
@@ -41,44 +43,62 @@ export class SecureAuthClient {
   /**
    * Start Auth0 Device Authorization Flow
    */
-  async startAuthFlow(): Promise<{ device_code: string; user_code: string; verification_uri: string; expires_in: number }> {
+  async startAuthFlow(): Promise<{
+    device_code: string
+    user_code: string
+    verification_uri: string
+    expires_in: number
+  }> {
     if (!window.electronAPI?.auth) {
       throw new Error('Auth API not available')
     }
 
     const result = await window.electronAPI.auth.startAuthFlow()
     if (!result.success) {
-      throw new Error(result.error || 'Failed to start authentication flow')
+      throw new Error(result.error ?? 'Failed to start authentication flow')
     }
-    
+
+    if (
+      !result.device_code ||
+      !result.user_code ||
+      !result.verification_uri ||
+      !result.expires_in
+    ) {
+      throw new Error('Invalid device authorization response')
+    }
+
     return {
-      device_code: result.device_code!,
-      user_code: result.user_code!,
-      verification_uri: result.verification_uri!,
-      expires_in: result.expires_in!,
+      device_code: result.device_code,
+      user_code: result.user_code,
+      verification_uri: result.verification_uri,
+      expires_in: result.expires_in,
     }
   }
 
   /**
    * Get current session
    */
-  async getSession(): Promise<{ user: AuthUser | null; session: AuthSession | null; tokens: AuthTokens | null }> {
+  async getSession(): Promise<{
+    user: AuthUser | null
+    session: AuthSession | null
+    tokens: AuthTokens | null
+  }> {
     if (!window.electronAPI?.auth) {
       throw new Error('Auth API not available')
     }
 
     const result = await window.electronAPI.auth.getSession()
     if (!result.success) {
-      throw new Error(result.error || 'Failed to get session')
+      throw new Error(result.error ?? 'Failed to get session')
     }
 
-    this.user = result.user || null
-    this.session = result.session || null
+    this.user = result.user ?? null
+    this.session = result.session ?? null
 
     return {
       user: this.user,
       session: this.session,
-      tokens: result.tokens || null,
+      tokens: result.tokens ?? null,
     }
   }
 
@@ -92,12 +112,12 @@ export class SecureAuthClient {
 
     const result = await window.electronAPI.auth.signOut()
     if (!result.success) {
-      throw new Error(result.error || 'Failed to sign out')
+      throw new Error(result.error ?? 'Failed to sign out')
     }
 
     this.user = null
     this.session = null
-    
+
     // Notify listeners
     this.notifyListeners('SIGNED_OUT', null)
   }
@@ -123,21 +143,27 @@ export class SecureAuthClient {
 
     const result = await window.electronAPI.auth.cancelDeviceFlow()
     if (!result.success) {
-      throw new Error(result.error || 'Failed to cancel device flow')
+      throw new Error(result.error ?? 'Failed to cancel device flow')
     }
   }
 
   /**
    * Listen for auth state changes
    */
-  onAuthStateChange(callback: (event: AuthEvent, session: AuthSession | null, error?: string) => void) {
+  onAuthStateChange(
+    callback: (
+      event: AuthEvent,
+      session: AuthSession | null,
+      error?: string
+    ) => void
+  ) {
     this.listeners.add(callback)
-    
+
     // Return unsubscribe function
     return {
       unsubscribe: () => {
         this.listeners.delete(callback)
-      }
+      },
     }
   }
 
@@ -159,7 +185,7 @@ export class SecureAuthClient {
    * Get current tokens
    */
   getCurrentTokens(): AuthTokens | null {
-    return this.session?.tokens || null
+    return this.session?.tokens ?? null
   }
 
   private setupIpcListeners() {
@@ -188,8 +214,12 @@ export class SecureAuthClient {
     })
   }
 
-  private notifyListeners(event: AuthEvent, session: AuthSession | null, error?: string) {
-    this.listeners.forEach(listener => {
+  private notifyListeners(
+    event: AuthEvent,
+    session: AuthSession | null,
+    error?: string
+  ) {
+    this.listeners.forEach((listener) => {
       try {
         listener(event, session, error)
       } catch (err) {

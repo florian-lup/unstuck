@@ -1,7 +1,7 @@
 /**
  * Refactored Auth0 Authentication Service - Main Process Only
  * Implements PKCE flow with secure token storage for Electron apps
- * 
+ *
  * This is the main orchestrator that coordinates the various specialized components:
  * - TokenManager: Handles token refresh, validation, rate limiting
  * - SecureStorage: Manages encrypted storage with fallback mechanisms
@@ -11,7 +11,10 @@ import { SecurityValidator } from './security-validators'
 import { Auth0Config } from '../../config/auth.config'
 import { TokenManager, Auth0Tokens } from './token-manager'
 import { SecureStorage } from './secure-storage'
-import { DeviceFlowManager, DeviceAuthorizationResult } from './device-flow-manager'
+import {
+  DeviceFlowManager,
+  DeviceAuthorizationResult,
+} from './device-flow-manager'
 
 export interface Auth0User {
   sub: string
@@ -20,7 +23,7 @@ export interface Auth0User {
   nickname?: string
   picture?: string
   email_verified?: boolean
-  [key: string]: any
+  [key: string]: unknown
 }
 
 export interface Auth0Session {
@@ -28,27 +31,37 @@ export interface Auth0Session {
   tokens: Auth0Tokens
 }
 
-export type Auth0Event = 'SIGNED_IN' | 'SIGNED_OUT' | 'TOKEN_REFRESHED' | 'ERROR'
+export type Auth0Event =
+  | 'SIGNED_IN'
+  | 'SIGNED_OUT'
+  | 'TOKEN_REFRESHED'
+  | 'ERROR'
 
 export class Auth0Service {
-  private domain: string = ''
-  private clientId: string = ''
+  private domain = ''
+  private clientId = ''
   private audience?: string
-  private scope: string = 'openid profile email offline_access'
-  
+  private scope = 'openid profile email offline_access'
+
   // Specialized components
   private tokenManager!: TokenManager
   private secureStorage!: SecureStorage
   private deviceFlowManager!: DeviceFlowManager
-  
+
   // Session state
   private currentSession: Auth0Session | null = null
-  private listeners: Set<(event: Auth0Event, session: Auth0Session | null, error?: string) => void> = new Set()
+  private listeners = new Set<
+    (event: Auth0Event, session: Auth0Session | null, error?: string) => void
+  >()
 
   /**
    * Initialize Auth0 client configuration and all components
    */
-  async initialize(domain: string, clientId: string, config: Auth0Config): Promise<void> {
+  async initialize(
+    domain: string,
+    clientId: string,
+    config: Auth0Config
+  ): Promise<void> {
     if (!domain || !clientId) {
       throw new Error('Missing Auth0 credentials')
     }
@@ -64,9 +77,20 @@ export class Auth0Service {
     this.scope = config.scope
 
     // Initialize specialized components
-    this.tokenManager = new TokenManager(config, this.domain, this.clientId, this.audience)
+    this.tokenManager = new TokenManager(
+      config,
+      this.domain,
+      this.clientId,
+      this.audience
+    )
     this.secureStorage = new SecureStorage(config)
-    this.deviceFlowManager = new DeviceFlowManager(config, this.domain, this.clientId, this.audience, this.scope)
+    this.deviceFlowManager = new DeviceFlowManager(
+      config,
+      this.domain,
+      this.clientId,
+      this.audience,
+      this.scope
+    )
 
     // Initialize secure storage
     await this.secureStorage.initialize()
@@ -74,16 +98,18 @@ export class Auth0Service {
     // Set up device flow event handling
     this.deviceFlowManager.setEventCallback((event, tokens, error) => {
       if (event === 'SUCCESS' && tokens) {
-        this.handleDeviceFlowSuccess(tokens)
+        void this.handleDeviceFlowSuccess(tokens)
       } else if (event === 'ERROR') {
         this.notifyListeners('ERROR', null, error)
       }
     })
-    
+
     // Try to restore existing session
     await this.restoreSession()
-    
-    console.log('Auth0 service initialized successfully with modular components')
+
+    console.log(
+      'Auth0 service initialized successfully with modular components'
+    )
   }
 
   /**
@@ -111,32 +137,41 @@ export class Auth0Service {
   /**
    * Get current session with automatic token refresh
    */
-  async getSession(): Promise<{ user: Auth0User | null; tokens: Auth0Tokens | null }> {
+  async getSession(): Promise<{
+    user: Auth0User | null
+    tokens: Auth0Tokens | null
+  }> {
     if (this.currentSession) {
       // Check if tokens are expired and refresh if needed
       if (this.tokenManager.isTokenExpired(this.currentSession.tokens)) {
         try {
-          const refreshedTokens = await this.tokenManager.refreshTokens(this.currentSession.tokens)
+          const refreshedTokens = await this.tokenManager.refreshTokens(
+            this.currentSession.tokens
+          )
           this.currentSession.tokens = refreshedTokens
           await this.storeSession(this.currentSession)
           this.notifyListeners('TOKEN_REFRESHED', this.currentSession)
         } catch (error) {
-          console.error('Automatic token refresh failed:', SecurityValidator.sanitizeUserForLogging(error))
-          
+          console.error(
+            'Automatic token refresh failed:',
+            SecurityValidator.sanitizeUserForLogging(error)
+          )
+
           // Handle specific refresh errors that require re-authentication
-          if (error instanceof Error && (
-            error.message.includes('re-authentication required') ||
-            error.message.includes('expired too long ago') ||
-            error.message.includes('Too many token refresh attempts')
-          )) {
-          await this.signOut()
-          return { user: null, tokens: null }
+          if (
+            error instanceof Error &&
+            (error.message.includes('re-authentication required') ||
+              error.message.includes('expired too long ago') ||
+              error.message.includes('Too many token refresh attempts'))
+          ) {
+            await this.signOut()
+            return { user: null, tokens: null }
           }
-          
+
           console.warn('Continuing with potentially expired tokens')
         }
       }
-      
+
       return {
         user: this.currentSession.user,
         tokens: this.currentSession.tokens,
@@ -153,19 +188,21 @@ export class Auth0Service {
     try {
       // Revoke tokens if available
       if (this.currentSession?.tokens.refresh_token) {
-        await this.tokenManager.revokeToken(this.currentSession.tokens.refresh_token)
+        await this.tokenManager.revokeToken(
+          this.currentSession.tokens.refresh_token
+        )
       }
-      
+
       // Clear stored session
       await this.clearSession()
       this.currentSession = null
-      
+
       // Cancel any ongoing device flow
       this.deviceFlowManager.cancelDeviceAuthorization()
-      
+
       // Notify listeners
       this.notifyListeners('SIGNED_OUT', null)
-      
+
       console.log('🔒 Successfully signed out')
     } catch (error) {
       console.error('Sign out error:', error)
@@ -179,13 +216,19 @@ export class Auth0Service {
   /**
    * Listen to auth state changes
    */
-  onAuthStateChange(callback: (event: Auth0Event, session: Auth0Session | null, error?: string) => void) {
+  onAuthStateChange(
+    callback: (
+      event: Auth0Event,
+      session: Auth0Session | null,
+      error?: string
+    ) => void
+  ) {
     this.listeners.add(callback)
-    
+
     return {
       unsubscribe: () => {
         this.listeners.delete(callback)
-      }
+      },
     }
   }
 
@@ -205,14 +248,14 @@ export class Auth0Service {
     try {
       // Get user info
       const user = await this.getUserInfo(tokens.access_token)
-      
+
       // Create session
       const session: Auth0Session = { user, tokens }
-      
+
       // Store session securely
       await this.storeSession(session)
       this.currentSession = session
-      
+
       // Notify listeners
       this.notifyListeners('SIGNED_IN', session)
     } catch (error) {
@@ -226,7 +269,7 @@ export class Auth0Service {
    */
   private async getUserInfo(accessToken: string): Promise<Auth0User> {
     const userInfoEndpoint = `${this.domain}/userinfo`
-    
+
     const response = await fetch(userInfoEndpoint, {
       headers: {
         Authorization: `Bearer ${accessToken}`,
@@ -237,7 +280,7 @@ export class Auth0Service {
       throw new Error(`User info request failed: ${response.statusText}`)
     }
 
-    return await response.json()
+    return (await response.json()) as Auth0User
   }
 
   /**
@@ -248,16 +291,24 @@ export class Auth0Service {
       await this.secureStorage.setItem('auth0_session', JSON.stringify(session))
     } catch (error) {
       // Handle fallback storage limitations
-      if (error instanceof Error && error.message.includes('Secure storage required for refresh tokens')) {
+      if (
+        error instanceof Error &&
+        error.message.includes('Secure storage required for refresh tokens')
+      ) {
         const sessionWithoutRefreshToken = {
           ...session,
           tokens: {
             ...session.tokens,
-            refresh_token: undefined
-          }
+            refresh_token: undefined,
+          },
         }
-        console.warn('⚠️ Storing session without refresh token due to fallback security limitations')
-        await this.secureStorage.setItem('auth0_session', JSON.stringify(sessionWithoutRefreshToken))
+        console.warn(
+          '⚠️ Storing session without refresh token due to fallback security limitations'
+        )
+        await this.secureStorage.setItem(
+          'auth0_session',
+          JSON.stringify(sessionWithoutRefreshToken)
+        )
       } else {
         throw error
       }
@@ -271,22 +322,29 @@ export class Auth0Service {
     try {
       const sessionData = await this.secureStorage.getItem('auth0_session')
       if (sessionData) {
-        const restoredSession: Auth0Session = JSON.parse(sessionData)
-        
+        const restoredSession = JSON.parse(sessionData) as Auth0Session
+
         // Check if the restored tokens are still valid
         if (this.tokenManager.isTokenExpired(restoredSession.tokens)) {
-          console.log('Restored session has expired tokens, attempting refresh...')
+          console.log(
+            'Restored session has expired tokens, attempting refresh...'
+          )
           this.currentSession = restoredSession
-          
+
           try {
             // Try to refresh the tokens
-            const refreshedTokens = await this.tokenManager.refreshTokens(restoredSession.tokens)
+            const refreshedTokens = await this.tokenManager.refreshTokens(
+              restoredSession.tokens
+            )
             this.currentSession.tokens = refreshedTokens
             await this.storeSession(this.currentSession)
             console.log('✅ Session restored and tokens refreshed successfully')
             this.notifyListeners('SIGNED_IN', this.currentSession)
           } catch (refreshError) {
-            console.warn('Failed to refresh restored tokens, clearing session:', SecurityValidator.sanitizeUserForLogging(refreshError))
+            console.warn(
+              'Failed to refresh restored tokens, clearing session:',
+              SecurityValidator.sanitizeUserForLogging(refreshError)
+            )
             await this.clearSession()
             this.currentSession = null
           }
@@ -298,7 +356,10 @@ export class Auth0Service {
         }
       }
     } catch (error) {
-      console.warn('Failed to restore session:', SecurityValidator.sanitizeUserForLogging(error))
+      console.warn(
+        'Failed to restore session:',
+        SecurityValidator.sanitizeUserForLogging(error)
+      )
       await this.clearSession()
       this.currentSession = null
     }
@@ -314,8 +375,12 @@ export class Auth0Service {
   /**
    * Notify all listeners of auth events
    */
-  private notifyListeners(event: Auth0Event, session: Auth0Session | null, error?: string) {
-    this.listeners.forEach(listener => {
+  private notifyListeners(
+    event: Auth0Event,
+    session: Auth0Session | null,
+    error?: string
+  ) {
+    this.listeners.forEach((listener) => {
       try {
         listener(event, session, error)
       } catch (err) {

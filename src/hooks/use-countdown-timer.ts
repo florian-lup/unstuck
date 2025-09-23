@@ -19,10 +19,10 @@ interface UseCountdownTimerProps {
  * Custom hook for managing countdown timers
  * Useful for device code expiration, session timeouts, etc.
  */
-export function useCountdownTimer({ 
-  initialTime, 
-  onComplete, 
-  autoStart = true 
+export function useCountdownTimer({
+  initialTime,
+  onComplete,
+  autoStart = true,
 }: UseCountdownTimerProps = {}) {
   const [timeLeft, setTimeLeft] = useState<number | null>(null)
 
@@ -58,13 +58,15 @@ export function useCountdownTimer({
       })
     }, 1000)
 
-    return () => clearInterval(timer)
+    return () => {
+      clearInterval(timer)
+    }
   }, [timeLeft, onComplete])
 
   return {
     timeLeft,
     startTimer,
     clearTimer,
-    isActive: timeLeft !== null
+    isActive: timeLeft !== null,
   }
 }

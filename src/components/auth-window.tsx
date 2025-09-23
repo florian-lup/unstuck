@@ -12,13 +12,16 @@ interface AuthWindowProps {
 
 export function AuthWindow({ onAuthSuccess }: AuthWindowProps) {
   const { user } = useAuth()
-  const { isLoading, deviceAuth, handleLogin, handleSignUp, clearDeviceAuth } = useAuthFlow()
-  
+  const { isLoading, deviceAuth, handleLogin, handleSignUp, clearDeviceAuth } =
+    useAuthFlow()
+
   // Use custom countdown timer hook
   const { timeLeft } = useCountdownTimer({
     initialTime: deviceAuth?.expires_in,
-    onComplete: clearDeviceAuth,
-    autoStart: true
+    onComplete: () => {
+      void clearDeviceAuth()
+    },
+    autoStart: true,
   })
 
   useEffect(() => {
@@ -37,28 +40,37 @@ export function AuthWindow({ onAuthSuccess }: AuthWindowProps) {
           <div className="space-y-6 p-6 bg-muted rounded-lg">
             <div className="space-y-2">
               <h2 className="text-xl font-semibold">
-                {deviceAuth.flow_type === 'login' ? 'Complete Login in Browser' : 'Complete Sign Up in Browser'}
+                {deviceAuth.flow_type === 'login'
+                  ? 'Complete Login in Browser'
+                  : 'Complete Sign Up in Browser'}
               </h2>
               <p className="text-muted-foreground">
-                A browser window has opened. Enter this code to complete your {deviceAuth.flow_type === 'login' ? 'login' : 'sign up'}:
+                A browser window has opened. Enter this code to complete your{' '}
+                {deviceAuth.flow_type === 'login' ? 'login' : 'sign up'}:
               </p>
             </div>
-            
+
             <div className="space-y-4">
               <div className="p-4 bg-background rounded border-2 border-dashed">
                 <div className="text-3xl font-mono font-bold tracking-widest text-primary">
                   {deviceAuth.user_code}
                 </div>
               </div>
-              
+
               <div className="text-sm text-muted-foreground">
-                Visit: <span className="font-mono text-foreground">{deviceAuth.verification_uri}</span>
+                Visit:{' '}
+                <span className="font-mono text-foreground">
+                  {deviceAuth.verification_uri}
+                </span>
               </div>
             </div>
 
             {timeLeft && (
               <div className="text-sm text-muted-foreground">
-                Code expires in: <span className="font-mono text-foreground">{formatTime(timeLeft)}</span>
+                Code expires in:{' '}
+                <span className="font-mono text-foreground">
+                  {formatTime(timeLeft)}
+                </span>
               </div>
             )}
           </div>
@@ -69,7 +81,7 @@ export function AuthWindow({ onAuthSuccess }: AuthWindowProps) {
               onClick={() => {
                 // Re-open verification URL in browser
                 if (deviceAuth.verification_uri) {
-                  window.open(deviceAuth.verification_uri, '_blank')
+                  void window.open(deviceAuth.verification_uri, '_blank')
                 }
               }}
               variant="outline"
@@ -77,7 +89,7 @@ export function AuthWindow({ onAuthSuccess }: AuthWindowProps) {
             >
               Open Browser Again
             </Button>
-            
+
             <Button
               onClick={clearDeviceAuth}
               variant="ghost"
@@ -104,9 +116,7 @@ export function AuthWindow({ onAuthSuccess }: AuthWindowProps) {
                 className="w-full h-full"
               />
             </div>
-            <h1 className="text-4xl font-bold text-foreground">
-              Get Unstuck
-            </h1>
+            <h1 className="text-4xl font-bold text-foreground">Get Unstuck</h1>
           </div>
           <p className="text-muted-foreground text-lg">
             Ask questions without ever leaving the game screen
@@ -115,14 +125,10 @@ export function AuthWindow({ onAuthSuccess }: AuthWindowProps) {
 
         {/* Auth Buttons */}
         <div className="flex items-center justify-center space-x-4">
-          <Button
-            onClick={handleLogin}
-            disabled={isLoading}
-            className="w-36"
-          >
+          <Button onClick={handleLogin} disabled={isLoading} className="w-36">
             {isLoading ? 'Starting...' : 'Log In'}
           </Button>
-          
+
           <Button
             onClick={handleSignUp}
             disabled={isLoading}

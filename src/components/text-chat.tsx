@@ -17,19 +17,23 @@ interface TextChatProps {
   messages?: Message[]
 }
 
-export function TextChat({ onClose, onSendMessage, messages = [] }: TextChatProps) {
+export function TextChat({
+  onClose,
+  onSendMessage,
+  messages = [],
+}: TextChatProps) {
   const {
     // State
     message,
     messagesEndRef,
     messagesContainerRef,
-    
+
     // Actions
     handleSubmit,
     handleClose,
     handleKeyDown,
     handleMessageChange,
-    
+
     // Computed
     hasMessages,
     canSubmit,
@@ -40,7 +44,7 @@ export function TextChat({ onClose, onSendMessage, messages = [] }: TextChatProp
       {/* Messages Area */}
       {hasMessages && (
         <InteractiveArea className="mb-2 p-3 rounded-3xl border border-overlay-border-primary bg-overlay-bg-primary">
-          <div 
+          <div
             ref={messagesContainerRef}
             className="max-h-120 overflow-y-auto space-y-2 overlay-scrollbar"
           >

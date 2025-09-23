@@ -17,17 +17,18 @@ export function useAuthFlow() {
     try {
       // Start Auth0 Device Authorization Flow
       const authInfo = await secureAuth.startAuthFlow()
-      
+
       setDeviceAuth({
         user_code: authInfo.user_code,
         verification_uri: authInfo.verification_uri,
         expires_in: authInfo.expires_in,
         flow_type: flowType,
       })
-      
-      
     } catch (error) {
-      console.error('Auth0 device flow failed:', error instanceof Error ? error.message : 'Unknown device flow error')
+      console.error(
+        'Auth0 device flow failed:',
+        error instanceof Error ? error.message : 'Unknown device flow error'
+      )
       throw error
     } finally {
       setIsLoading(false)
@@ -39,7 +40,10 @@ export function useAuthFlow() {
       // Cancel the polling in the main process
       await secureAuth.cancelDeviceFlow()
     } catch (error) {
-      console.error('Failed to cancel device flow:', error instanceof Error ? error.message : 'Unknown cancel error')
+      console.error(
+        'Failed to cancel device flow:',
+        error instanceof Error ? error.message : 'Unknown cancel error'
+      )
     }
     // Clear the UI state
     setDeviceAuth(null)

@@ -84,17 +84,23 @@ electron.contextBridge.exposeInMainWorld("electronAPI", {
     cancelDeviceFlow: () => electron.ipcRenderer.invoke("auth0-cancel-device-flow"),
     // Listen for auth events from main process
     onAuthSuccess: (callback) => {
-      const listener = (_event, session) => callback(session);
+      const listener = (_event, session) => {
+        callback(session);
+      };
       electron.ipcRenderer.on("auth0-success", listener);
       return listener;
     },
     onAuthError: (callback) => {
-      const listener = (_event, error) => callback(error);
+      const listener = (_event, error) => {
+        callback(error);
+      };
       electron.ipcRenderer.on("auth0-error", listener);
       return listener;
     },
     onTokenRefresh: (callback) => {
-      const listener = (_event, session) => callback(session);
+      const listener = (_event, session) => {
+        callback(session);
+      };
       electron.ipcRenderer.on("auth0-token-refresh", listener);
       return listener;
     },

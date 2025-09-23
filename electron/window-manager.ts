@@ -89,10 +89,12 @@ export class WindowManager {
     // Block external navigation
     this.authWindow.webContents.on('will-navigate', (event, navigationUrl) => {
       const parsedUrl = new URL(navigationUrl)
-      
-      if (parsedUrl.origin !== 'http://localhost:5173' && 
-          parsedUrl.origin !== 'file://' &&
-          !navigationUrl.includes('auth.html')) {
+
+      if (
+        parsedUrl.origin !== 'http://localhost:5173' &&
+        parsedUrl.origin !== 'file://' &&
+        !navigationUrl.includes('auth.html')
+      ) {
         console.log('Blocked navigation to:', navigationUrl)
         event.preventDefault()
       }
@@ -101,7 +103,7 @@ export class WindowManager {
     // Block new window creation
     this.authWindow.webContents.setWindowOpenHandler(({ url }) => {
       console.log('Blocked new window creation for:', url)
-      shell.openExternal(url)
+      void shell.openExternal(url)
       return { action: 'deny' }
     })
   }
@@ -110,21 +112,26 @@ export class WindowManager {
     if (!this.overlayWindow) return
 
     // Block external navigation
-    this.overlayWindow.webContents.on('will-navigate', (event, navigationUrl) => {
-      const parsedUrl = new URL(navigationUrl)
-      
-      if (parsedUrl.origin !== 'http://localhost:5173' && 
+    this.overlayWindow.webContents.on(
+      'will-navigate',
+      (event, navigationUrl) => {
+        const parsedUrl = new URL(navigationUrl)
+
+        if (
+          parsedUrl.origin !== 'http://localhost:5173' &&
           parsedUrl.origin !== 'file://' &&
-          !navigationUrl.includes('index.html')) {
-        console.log('Blocked navigation to:', navigationUrl)
-        event.preventDefault()
+          !navigationUrl.includes('index.html')
+        ) {
+          console.log('Blocked navigation to:', navigationUrl)
+          event.preventDefault()
+        }
       }
-    })
+    )
 
     // Block new window creation
     this.overlayWindow.webContents.setWindowOpenHandler(({ url }) => {
       console.log('Blocked new window creation for:', url)
-      shell.openExternal(url)
+      void shell.openExternal(url)
       return { action: 'deny' }
     })
   }
@@ -167,7 +174,10 @@ export class WindowManager {
     })
 
     this.overlayWindow.webContents.on('did-finish-load', () => {
-      this.overlayWindow?.webContents.send('main-process-message', new Date().toLocaleString())
+      this.overlayWindow?.webContents.send(
+        'main-process-message',
+        new Date().toLocaleString()
+      )
     })
   }
 
@@ -187,7 +197,9 @@ export class WindowManager {
     if (this.viteDevServerUrl) {
       void this.overlayWindow.loadURL(this.viteDevServerUrl)
     } else {
-      void this.overlayWindow.loadFile(path.join(this.rendererDist, 'index.html'))
+      void this.overlayWindow.loadFile(
+        path.join(this.rendererDist, 'index.html')
+      )
     }
   }
 
@@ -231,9 +243,15 @@ export class WindowManager {
     }
   }
 
-  setOverlayMouseEvents(ignore: boolean, options?: { forward?: boolean }): void {
+  setOverlayMouseEvents(
+    ignore: boolean,
+    options?: { forward?: boolean }
+  ): void {
     if (this.overlayWindow && !this.overlayWindow.isDestroyed()) {
-      this.overlayWindow.setIgnoreMouseEvents(ignore, options ?? { forward: true })
+      this.overlayWindow.setIgnoreMouseEvents(
+        ignore,
+        options ?? { forward: true }
+      )
     }
   }
 }

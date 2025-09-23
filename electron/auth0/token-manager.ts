@@ -18,9 +18,17 @@ export class TokenManager {
   private domain: string
   private clientId: string
   private audience?: string
-  private refreshAttempts: Map<string, { count: number; lastAttempt: number }> = new Map()
+  private refreshAttempts = new Map<
+    string,
+    { count: number; lastAttempt: number }
+  >()
 
-  constructor(config: Auth0Config, domain: string, clientId: string, audience?: string) {
+  constructor(
+    config: Auth0Config,
+    domain: string,
+    clientId: string,
+    audience?: string
+  ) {
     this.config = config
     this.domain = domain
     this.clientId = clientId
@@ -28,14 +36,14 @@ export class TokenManager {
   }
 
   // Configurable constants
-  private get REFRESH_RATE_LIMIT() { 
+  private get REFRESH_RATE_LIMIT() {
     return this.config.rateLimiting.maxRefreshAttempts
   }
-  private get REFRESH_RATE_WINDOW() { 
-    return this.config.rateLimiting.refreshWindowMinutes * 60000 
+  private get REFRESH_RATE_WINDOW() {
+    return this.config.rateLimiting.refreshWindowMinutes * 60000
   }
-  private get MIN_TOKEN_VALIDITY_BUFFER() { 
-    return this.config.tokenManagement.minValidityBufferMinutes * 60000 
+  private get MIN_TOKEN_VALIDITY_BUFFER() {
+    return this.config.tokenManagement.minValidityBufferMinutes * 60000
   }
   private get REFRESH_TIMEOUT_SECONDS() {
     return this.config.tokenManagement.refreshTimeoutSeconds
@@ -63,7 +71,7 @@ export class TokenManager {
     // 2. Token expiry validation with buffer
     const now = Date.now()
     const tokenExpiry = currentTokens.expires_at
-    
+
     // Don't refresh if token is still valid with sufficient buffer
     if (tokenExpiry && tokenExpiry > now + this.MIN_TOKEN_VALIDITY_BUFFER) {
       throw new Error('Token refresh not needed - token still valid')
@@ -80,13 +88,17 @@ export class TokenManager {
 
     // 4. Domain validation (ensure we're still talking to the right Auth0 tenant)
     if (this.config.security.validateDomainOnRefresh) {
-      if (!this.domain || (!this.domain.includes('.auth0.com') && !this.domain.includes('.us.auth0.com'))) {
+      if (
+        !this.domain ||
+        (!this.domain.includes('.auth0.com') &&
+          !this.domain.includes('.us.auth0.com'))
+      ) {
         throw new Error('Invalid Auth0 domain for token refresh')
       }
     }
 
     const tokenEndpoint = `${this.domain}/oauth/token`
-    
+
     const body = new URLSearchParams({
       grant_type: 'refresh_token',
       client_id: this.clientId,
@@ -113,16 +125,21 @@ export class TokenManager {
       if (error instanceof Error && error.name === 'TimeoutError') {
         throw new Error('Token refresh request timed out')
       }
-      throw new Error(`Token refresh network error: ${error instanceof Error ? error.message : 'Unknown error'}`)
+      throw new Error(
+        `Token refresh network error: ${error instanceof Error ? error.message : 'Unknown error'}`
+      )
     }
 
     // 5. Enhanced error handling with specific error codes
     if (!response.ok) {
       this.recordRefreshAttempt(refreshKey)
-      
-      let errorData: any = {}
+
+      let errorData: { error?: string; error_description?: string } = {}
       try {
-        errorData = await response.json()
+        errorData = (await response.json()) as {
+          error?: string
+          error_description?: string
+        }
       } catch {
         errorData = { error: response.statusText }
       }
@@ -131,17 +148,28 @@ export class TokenManager {
       if (errorData.error === 'invalid_grant') {
         throw new Error('Refresh token invalid - re-authentication required')
       }
-      
+
       if (errorData.error === 'invalid_client') {
-        throw new Error('Invalid client credentials - check Auth0 configuration')
+        throw new Error(
+          'Invalid client credentials - check Auth0 configuration'
+        )
       }
 
-      throw new Error(`Token refresh failed: ${errorData.error_description || errorData.error || 'Unknown error'}`)
+      throw new Error(
+        `Token refresh failed: ${errorData.error_description ?? errorData.error ?? 'Unknown error'}`
+      )
     }
 
-    let data: any
+    let data: {
+      access_token?: string
+      refresh_token?: string
+      id_token?: string
+      expires_in?: number
+      token_type?: string
+      scope?: string
+    }
     try {
-      data = await response.json()
+      data = (await response.json()) as typeof data
     } catch {
       this.recordRefreshAttempt(refreshKey)
       throw new Error('Invalid response format from token endpoint')
@@ -154,24 +182,27 @@ export class TokenManager {
     }
 
     // 7. Validate token expiry is reasonable
-    const newExpiry = now + (data.expires_in * 1000)
-    const maxValidityMs = this.config.tokenManagement.maxTokenValidityHours * 60 * 60 * 1000
+    const newExpiry = now + data.expires_in * 1000
+    const maxValidityMs =
+      this.config.tokenManagement.maxTokenValidityHours * 60 * 60 * 1000
     if (newExpiry <= now || newExpiry > now + maxValidityMs) {
-      throw new Error(`Invalid token expiry in response (max allowed: ${this.config.tokenManagement.maxTokenValidityHours} hours)`)
+      throw new Error(
+        `Invalid token expiry in response (max allowed: ${this.config.tokenManagement.maxTokenValidityHours} hours)`
+      )
     }
-    
+
     const newTokens: Auth0Tokens = {
       access_token: data.access_token,
-      refresh_token: data.refresh_token || currentTokens.refresh_token,
+      refresh_token: data.refresh_token ?? currentTokens.refresh_token,
       id_token: data.id_token,
       expires_at: newExpiry,
-      token_type: data.token_type || 'Bearer',
+      token_type: data.token_type ?? 'Bearer',
       scope: data.scope,
     }
 
     // Clear rate limiting on successful refresh
     this.clearRefreshAttempts(refreshKey)
-    
+
     return newTokens
   }
 
@@ -181,20 +212,22 @@ export class TokenManager {
   private validateRefreshRateLimit(refreshToken: string): void {
     const now = Date.now()
     const attempt = this.refreshAttempts.get(refreshToken)
-    
+
     if (!attempt) {
       return // First attempt
     }
-    
+
     // Clean up old attempts outside the window
     if (now - attempt.lastAttempt > this.REFRESH_RATE_WINDOW) {
       this.refreshAttempts.delete(refreshToken)
       return
     }
-    
+
     // Check rate limit
     if (attempt.count >= this.REFRESH_RATE_LIMIT) {
-      throw new Error(`Too many token refresh attempts. Please wait ${Math.ceil(this.REFRESH_RATE_WINDOW / 60000)} minutes.`)
+      throw new Error(
+        `Too many token refresh attempts. Please wait ${Math.ceil(this.REFRESH_RATE_WINDOW / 60000)} minutes.`
+      )
     }
   }
 
@@ -204,7 +237,7 @@ export class TokenManager {
   private recordRefreshAttempt(refreshToken: string): void {
     const now = Date.now()
     const attempt = this.refreshAttempts.get(refreshToken)
-    
+
     if (!attempt || now - attempt.lastAttempt > this.REFRESH_RATE_WINDOW) {
       this.refreshAttempts.set(refreshToken, { count: 1, lastAttempt: now })
     } else {
@@ -225,7 +258,7 @@ export class TokenManager {
    */
   async revokeToken(token: string): Promise<void> {
     const revokeEndpoint = `${this.domain}/oauth/revoke`
-    
+
     const body = new URLSearchParams({
       client_id: this.clientId,
       token,

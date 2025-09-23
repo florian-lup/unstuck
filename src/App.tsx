@@ -15,7 +15,7 @@ function App() {
     showSettingsMenu,
     user,
     customKeybind,
-    
+
     // Actions
     handleSpeakClick,
     handleTextClick,
@@ -46,7 +46,9 @@ function App() {
               user={user}
               isOpen={showSettingsMenu}
               onLogout={handleLogout}
-              onClose={() => setShowSettingsMenu(false)}
+              onClose={() => {
+                setShowSettingsMenu(false)
+              }}
               currentKeybind={customKeybind}
               onKeybindChange={handleKeybindChange}
             />

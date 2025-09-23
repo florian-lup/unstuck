@@ -8,7 +8,12 @@ import { type Message } from '../components/text-chat'
 // Helper function to convert keybind string to useKeyboardToggle format
 function parseKeybind(keybind: string) {
   const parts = keybind.split('+')
-  const modifiers: any = {}
+  const modifiers: {
+    shift?: boolean
+    ctrl?: boolean
+    alt?: boolean
+    meta?: boolean
+  } = {}
   let key = ''
 
   for (const part of parts) {
@@ -41,7 +46,7 @@ function parseKeybind(keybind: string) {
 export function useAppLogic() {
   // Authentication state
   const { user, signOut } = useAuth()
-  
+
   // Core application state
   const [selectedGame, setSelectedGame] = useState<Game | null>(null)
   const [isTextChatVisible, setIsTextChatVisible] = useState(false)
@@ -52,13 +57,16 @@ export function useAppLogic() {
   const [customKeybind, setCustomKeybind] = useState<string>(() => {
     // Load keybind from localStorage or use default
     if (typeof window !== 'undefined') {
-      return localStorage.getItem('navigation-keybind') || 'Shift+\\'
+      return localStorage.getItem('navigation-keybind') ?? 'Shift+\\'
     }
     return 'Shift+\\'
   })
 
   // Parse keybind for useKeyboardToggle
-  const parsedKeybind = useMemo(() => parseKeybind(customKeybind), [customKeybind])
+  const parsedKeybind = useMemo(
+    () => parseKeybind(customKeybind),
+    [customKeybind]
+  )
 
   // Navigation bar visibility toggle with dynamic keybind
   const { isVisible: isNavigationBarVisible } = useKeyboardToggle({
@@ -77,8 +85,8 @@ export function useAppLogic() {
         }
       }
     }
-    syncKeybind()
-  }, []) // Only run once on mount
+    void syncKeybind()
+  }, [customKeybind])
 
   // Global click-through management
   useClickThrough({
@@ -114,9 +122,7 @@ export function useAppLogic() {
     try {
       await signOut()
       // Send message to main process to show auth window again
-      if (window.ipcRenderer) {
-        window.ipcRenderer.send('user-logout')
-      }
+      window.ipcRenderer.send('user-logout')
     } catch (error) {
       console.error('Logout error:', error)
     }
@@ -134,20 +140,20 @@ export function useAppLogic() {
       id: Date.now().toString() + '-user',
       content: messageContent,
       role: 'user',
-      timestamp: new Date()
+      timestamp: new Date(),
     }
-    
-    setMessages(prev => [...prev, userMessage])
-    
+
+    setMessages((prev) => [...prev, userMessage])
+
     // Simulate assistant response (replace with actual AI integration later)
     setTimeout(() => {
       const assistantMessage: Message = {
         id: Date.now().toString() + '-assistant',
         content: `I received your message: "${messageContent}". How can I help you with your game?`,
         role: 'assistant',
-        timestamp: new Date()
+        timestamp: new Date(),
       }
-      setMessages(prev => [...prev, assistantMessage])
+      setMessages((prev) => [...prev, assistantMessage])
     }, 1000)
   }
 
@@ -193,7 +199,7 @@ export function useAppLogic() {
     showSettingsMenu,
     user,
     customKeybind,
-    
+
     // Actions
     handleSpeakClick,
     handleTextClick,

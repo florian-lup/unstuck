@@ -38,43 +38,47 @@ const shortcutsManager = new ShortcutsManager(windowManager)
 void app.whenReady().then(async () => {
   // Set app defaults
   appLifecycle.setAppDefaults()
-  
+
   // Remove the default menu bar
   Menu.setApplicationMenu(null)
-  
+
   // Ensure single instance
   if (!appLifecycle.ensureSingleInstance()) {
     return
   }
-  
+
   // Setup app lifecycle events
   appLifecycle.setupAppEvents()
-  
+
   // Setup shortcuts
   shortcutsManager.registerGlobalShortcuts()
   shortcutsManager.setupShortcutCleanup()
-  
+
   // Setup shortcut IPC handlers
   ipcMain.handle('update-navigation-shortcut', (_event, shortcut: string) => {
     shortcutsManager.registerNavigationToggleShortcut(shortcut)
   })
-  
+
   // Load and validate Auth0 configuration
   try {
     validateAuth0Config(auth0Config)
-    
+
     // Initialize Auth0 service in main process with full config (this will restore any existing session)
-    await auth0Service.initialize(auth0Config.domain, auth0Config.clientId, auth0Config)
-    
+    await auth0Service.initialize(
+      auth0Config.domain,
+      auth0Config.clientId,
+      auth0Config
+    )
+
     // Pass config to IPC handlers for rate limiting
     authIPCHandlers.setConfig(auth0Config)
-    
+
     // Setup auth state listeners
     authIPCHandlers.setupAuthStateListeners()
-    
+
     // Register IPC handlers
     authIPCHandlers.registerHandlers()
-    
+
     // Check if user is already signed in and create appropriate window
     if (auth0Service.isSignedIn()) {
       console.log('User already signed in, opening main application')
@@ -83,7 +87,6 @@ void app.whenReady().then(async () => {
       console.log('No valid session found, showing authentication window')
       windowManager.createAuthWindow()
     }
-    
   } catch (error) {
     console.error('Failed to initialize Auth0 configuration:', error)
     app.quit()

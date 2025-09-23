@@ -34,12 +34,12 @@ export class AppLifecycleManager {
 
   ensureSingleInstance(): boolean {
     const gotTheLock = app.requestSingleInstanceLock()
-    
+
     if (!gotTheLock) {
       app.quit()
       return false
     }
-    
+
     return true
   }
 

@@ -9,50 +9,60 @@ export function useAuth() {
 
   useEffect(() => {
     // Check if secure storage is being used
-    secureAuth.isSecureStorage().then(setIsSecureStorage)
+    void secureAuth.isSecureStorage().then(setIsSecureStorage)
 
     // Get initial session
-    secureAuth.getSession().then(({ user, session }) => {
-      setUser(user)
-      setSession(session)
-      setLoading(false)
-    }).catch((error) => {
-      console.error('Failed to get initial session:', error instanceof Error ? error.message : 'Unknown error')
-      setLoading(false)
-    })
+    secureAuth
+      .getSession()
+      .then(({ user, session }) => {
+        setUser(user)
+        setSession(session)
+        setLoading(false)
+      })
+      .catch((error: unknown) => {
+        console.error(
+          'Failed to get initial session:',
+          error instanceof Error ? error.message : 'Unknown error'
+        )
+        setLoading(false)
+      })
 
     // Listen for auth changes via secure IPC
     const { unsubscribe } = secureAuth.onAuthStateChange(
-      async (event, session, error) => {
-        
+      (event, session, error) => {
         if (event === 'ERROR' && error) {
           console.error('Authentication error:', error)
         }
-        
+
         setUser(session?.user ?? null)
         setSession(session)
         setLoading(false)
       }
     )
 
-    return () => unsubscribe()
+    return () => {
+      unsubscribe()
+    }
   }, [])
 
   const signOut = async () => {
     try {
       await secureAuth.signOut()
-      console.log('Successfully signed out')
+      // Successfully signed out - log removed per linting rules
     } catch (error) {
-      console.error('Sign out error:', error instanceof Error ? error.message : 'Unknown sign out error')
+      console.error(
+        'Sign out error:',
+        error instanceof Error ? error.message : 'Unknown sign out error'
+      )
     }
   }
 
   const getSecurityStatus = async () => {
     const isSecure = await secureAuth.isSecureStorage()
     return {
-      storageMethod: isSecure ? 'keychain' : 'localStorage' as const,
+      storageMethod: isSecure ? 'keychain' : ('localStorage' as const),
       isSecure,
-      platform: typeof window !== 'undefined' && window.navigator ? window.navigator.platform : 'unknown',
+      platform: window.navigator.userAgent,
       keychainType: getKeychainType(),
     }
   }
@@ -68,10 +78,10 @@ export function useAuth() {
 }
 
 function getKeychainType(): string {
-  if (typeof window === 'undefined' || !window.navigator) {
+  if (typeof window === 'undefined') {
     return 'unknown'
   }
-  
+
   const userAgent = window.navigator.userAgent.toLowerCase()
   if (userAgent.includes('win')) {
     return 'Windows Credential Manager'

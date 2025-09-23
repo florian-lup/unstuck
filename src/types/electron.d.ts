@@ -9,14 +9,27 @@ export interface IElectronAPI {
   ensureAlwaysOnTop: () => void
   windowInteraction: () => void
   auth: {
-    startAuthFlow: () => Promise<{ success: boolean; device_code?: string; user_code?: string; verification_uri?: string; expires_in?: number; error?: string }>
-    getSession: () => Promise<{ success: boolean; user?: any; session?: any; tokens?: any; error?: string }>
+    startAuthFlow: () => Promise<{
+      success: boolean
+      device_code?: string
+      user_code?: string
+      verification_uri?: string
+      expires_in?: number
+      error?: string
+    }>
+    getSession: () => Promise<{
+      success: boolean
+      user?: unknown
+      session?: unknown
+      tokens?: unknown
+      error?: string
+    }>
     signOut: () => Promise<{ success: boolean; error?: string }>
     isSecureStorage: () => Promise<boolean>
     cancelDeviceFlow: () => Promise<{ success: boolean; error?: string }>
-    onAuthSuccess: (callback: (session: any) => void) => any
-    onAuthError: (callback: (error: string) => void) => any
-    onTokenRefresh?: (callback: (session: any) => void) => any
+    onAuthSuccess: (callback: (session: unknown) => void) => unknown
+    onAuthError: (callback: (error: string) => void) => unknown
+    onTokenRefresh?: (callback: (session: unknown) => void) => unknown
     removeAuthListeners: () => void
   }
 }

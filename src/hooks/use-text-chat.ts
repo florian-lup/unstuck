@@ -10,11 +10,11 @@ interface UseTextChatProps {
 export function useTextChat({
   onClose,
   onSendMessage,
-  messages = []
+  messages = [],
 }: UseTextChatProps) {
   // Local state for message input
   const [message, setMessage] = useState('')
-  
+
   // Refs for scroll management
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const messagesContainerRef = useRef<HTMLDivElement>(null)
@@ -63,13 +63,13 @@ export function useTextChat({
     message,
     messagesEndRef,
     messagesContainerRef,
-    
+
     // Actions
     handleSubmit,
     handleClose,
     handleKeyDown,
     handleMessageChange,
-    
+
     // Computed
     hasMessages: messages.length > 0,
     canSubmit: message.trim().length > 0,

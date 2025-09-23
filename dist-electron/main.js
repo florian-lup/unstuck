@@ -5,24 +5,26 @@ import fs from "fs/promises";
 import path from "path";
 import os from "os";
 import crypto from "crypto";
-class SecurityValidator {
+const SecurityValidator = {
   /**
    * Validate OAuth provider
    */
-  static validateOAuthProvider(provider) {
+  validateOAuthProvider(provider) {
     const validProviders = ["google", "github", "discord"];
     if (typeof provider !== "string") {
       throw new Error("OAuth provider must be a string");
     }
     if (!validProviders.includes(provider)) {
-      throw new Error(`Invalid OAuth provider: ${provider}. Must be one of: ${validProviders.join(", ")}`);
+      throw new Error(
+        `Invalid OAuth provider: ${provider}. Must be one of: ${validProviders.join(", ")}`
+      );
     }
     return provider;
-  }
+  },
   /**
    * Validate URL string
    */
-  static validateUrl(url) {
+  validateUrl(url) {
     if (typeof url !== "string") {
       throw new Error("URL must be a string");
     }
@@ -36,11 +38,11 @@ class SecurityValidator {
       throw new Error("URL must use https:// protocol");
     }
     return url;
-  }
+  },
   /**
    * Validate mouse event options
    */
-  static validateMouseEventOptions(options) {
+  validateMouseEventOptions(options) {
     if (options === void 0 || options === null) {
       return void 0;
     }
@@ -52,20 +54,20 @@ class SecurityValidator {
       throw new Error("Mouse event forward option must be a boolean");
     }
     return { forward: opts.forward };
-  }
+  },
   /**
    * Validate boolean value
    */
-  static validateBoolean(value, fieldName) {
+  validateBoolean(value, fieldName) {
     if (typeof value !== "boolean") {
       throw new Error(`${fieldName} must be a boolean`);
     }
     return value;
-  }
+  },
   /**
    * Validate string with length limits
    */
-  static validateString(value, fieldName, maxLength = 255) {
+  validateString(value, fieldName, maxLength = 255) {
     if (typeof value !== "string") {
       throw new Error(`${fieldName} must be a string`);
     }
@@ -73,11 +75,11 @@ class SecurityValidator {
       throw new Error(`${fieldName} too long (max ${maxLength} characters)`);
     }
     return value;
-  }
+  },
   /**
    * Sanitize user object for logging (remove sensitive fields)
    */
-  static sanitizeUserForLogging(user) {
+  sanitizeUserForLogging(user) {
     if (!user || typeof user !== "object") {
       return user;
     }
@@ -87,17 +89,18 @@ class SecurityValidator {
     delete sanitized.session;
     delete sanitized.raw_app_meta_data;
     delete sanitized.raw_user_meta_data;
+    const typedSanitized = sanitized;
     return {
-      id: sanitized.id,
-      email: sanitized.email,
-      created_at: sanitized.created_at
+      id: typedSanitized.id,
+      email: typedSanitized.email,
+      created_at: typedSanitized.created_at
     };
-  }
+  },
   /**
    * Rate limiting for IPC calls
    */
-  static rateLimitMap = /* @__PURE__ */ new Map();
-  static checkRateLimit(channel, maxRequests, windowMs) {
+  rateLimitMap: /* @__PURE__ */ new Map(),
+  checkRateLimit(channel, maxRequests, windowMs) {
     const now = Date.now();
     const key = channel;
     const record = this.rateLimitMap.get(key);
@@ -113,7 +116,7 @@ class SecurityValidator {
     }
     record.count++;
   }
-}
+};
 class TokenManager {
   config;
   domain;
@@ -195,7 +198,9 @@ class TokenManager {
       if (error instanceof Error && error.name === "TimeoutError") {
         throw new Error("Token refresh request timed out");
       }
-      throw new Error(`Token refresh network error: ${error instanceof Error ? error.message : "Unknown error"}`);
+      throw new Error(
+        `Token refresh network error: ${error instanceof Error ? error.message : "Unknown error"}`
+      );
     }
     if (!response.ok) {
       this.recordRefreshAttempt(refreshKey);
@@ -209,9 +214,13 @@ class TokenManager {
         throw new Error("Refresh token invalid - re-authentication required");
       }
       if (errorData.error === "invalid_client") {
-        throw new Error("Invalid client credentials - check Auth0 configuration");
+        throw new Error(
+          "Invalid client credentials - check Auth0 configuration"
+        );
       }
-      throw new Error(`Token refresh failed: ${errorData.error_description || errorData.error || "Unknown error"}`);
+      throw new Error(
+        `Token refresh failed: ${errorData.error_description ?? errorData.error ?? "Unknown error"}`
+      );
     }
     let data;
     try {
@@ -227,14 +236,16 @@ class TokenManager {
     const newExpiry = now + data.expires_in * 1e3;
     const maxValidityMs = this.config.tokenManagement.maxTokenValidityHours * 60 * 60 * 1e3;
     if (newExpiry <= now || newExpiry > now + maxValidityMs) {
-      throw new Error(`Invalid token expiry in response (max allowed: ${this.config.tokenManagement.maxTokenValidityHours} hours)`);
+      throw new Error(
+        `Invalid token expiry in response (max allowed: ${this.config.tokenManagement.maxTokenValidityHours} hours)`
+      );
     }
     const newTokens = {
       access_token: data.access_token,
-      refresh_token: data.refresh_token || currentTokens.refresh_token,
+      refresh_token: data.refresh_token ?? currentTokens.refresh_token,
       id_token: data.id_token,
       expires_at: newExpiry,
-      token_type: data.token_type || "Bearer",
+      token_type: data.token_type ?? "Bearer",
       scope: data.scope
     };
     this.clearRefreshAttempts(refreshKey);
@@ -254,7 +265,9 @@ class TokenManager {
       return;
     }
     if (attempt.count >= this.REFRESH_RATE_LIMIT) {
-      throw new Error(`Too many token refresh attempts. Please wait ${Math.ceil(this.REFRESH_RATE_WINDOW / 6e4)} minutes.`);
+      throw new Error(
+        `Too many token refresh attempts. Please wait ${Math.ceil(this.REFRESH_RATE_WINDOW / 6e4)} minutes.`
+      );
     }
   }
   /**
@@ -332,7 +345,7 @@ class SecureStorage {
       const filePath = path.join(this.secureDir, `${key}.dat`);
       const encrypted = await fs.readFile(filePath);
       return safeStorage.decryptString(encrypted);
-    } catch (error) {
+    } catch {
       return null;
     }
   }
@@ -347,7 +360,8 @@ class SecureStorage {
         if (key.includes("refresh_token")) {
           throw new Error("Secure storage required for refresh tokens");
         }
-        return await this.enhancedFileSetItem(key, value);
+        await this.enhancedFileSetItem(key, value);
+        return;
       }
       const encrypted = safeStorage.encryptString(value);
       const filePath = path.join(this.secureDir, `${key}.dat`);
@@ -364,7 +378,7 @@ class SecureStorage {
     try {
       const filePath = path.join(this.secureDir, `${key}.dat`);
       await fs.unlink(filePath);
-    } catch (error) {
+    } catch {
     }
   }
   /**
@@ -383,7 +397,9 @@ class SecureStorage {
       if (parsed.encrypted && parsed.iv && parsed.authTag) {
         return this.decryptValue(parsed.encrypted, parsed.iv, parsed.authTag);
       }
-      console.warn("🔒 Found legacy token format - forcing re-authentication for security");
+      console.warn(
+        "🔒 Found legacy token format - forcing re-authentication for security"
+      );
       await fs.unlink(filePath).catch(() => {
       });
       return null;
@@ -396,7 +412,13 @@ class SecureStorage {
    */
   async enhancedFileSetItem(key, value) {
     const algorithm = "aes-256-gcm";
-    const keyDerivation = crypto.pbkdf2Sync("unstuck-fallback-key", "unstuck-salt-2024", 1e5, 32, "sha256");
+    const keyDerivation = crypto.pbkdf2Sync(
+      "unstuck-fallback-key",
+      "unstuck-salt-2024",
+      1e5,
+      32,
+      "sha256"
+    );
     const iv = crypto.randomBytes(16);
     const cipher = crypto.createCipheriv(algorithm, keyDerivation, iv);
     let encrypted = cipher.update(value, "utf8", "hex");
@@ -417,7 +439,13 @@ class SecureStorage {
    */
   decryptValue(encryptedHex, ivHex, authTagHex) {
     const algorithm = "aes-256-gcm";
-    const keyDerivation = crypto.pbkdf2Sync("unstuck-fallback-key", "unstuck-salt-2024", 1e5, 32, "sha256");
+    const keyDerivation = crypto.pbkdf2Sync(
+      "unstuck-fallback-key",
+      "unstuck-salt-2024",
+      1e5,
+      32,
+      "sha256"
+    );
     const iv = Buffer.from(ivHex, "hex");
     const decipher = crypto.createDecipheriv(algorithm, keyDerivation, iv);
     decipher.setAuthTag(Buffer.from(authTagHex, "hex"));
@@ -431,7 +459,7 @@ class SecureStorage {
   async ensureSecureDir() {
     try {
       await fs.mkdir(this.secureDir, { recursive: true, mode: 448 });
-    } catch (error) {
+    } catch {
     }
   }
 }
@@ -449,7 +477,7 @@ class DeviceFlowManager {
     this.domain = domain;
     this.clientId = clientId;
     this.audience = audience;
-    this.scope = scope || "openid profile email offline_access";
+    this.scope = scope ?? "openid profile email offline_access";
   }
   get POLLING_INTERVAL() {
     return this.config.deviceFlow.pollingInterval;
@@ -493,16 +521,18 @@ class DeviceFlowManager {
         error: errorData.error,
         error_description: errorData.error_description
       });
-      throw new Error(`Device authorization request failed: ${errorData.error_description || errorData.error || response.statusText}`);
+      throw new Error(
+        `Device authorization request failed: ${errorData.error_description ?? errorData.error ?? response.statusText}`
+      );
     }
     const deviceData = await response.json();
-    const pollingInterval = deviceData.interval || this.POLLING_INTERVAL;
+    const pollingInterval = deviceData.interval ?? this.POLLING_INTERVAL;
     this.pollForDeviceAuthorization(deviceData.device_code, pollingInterval);
     return {
       device_code: deviceData.device_code,
       user_code: deviceData.user_code,
       verification_uri: deviceData.verification_uri,
-      expires_in: deviceData.expires_in || 600
+      expires_in: deviceData.expires_in ?? 600
     };
   }
   /**
@@ -521,60 +551,82 @@ class DeviceFlowManager {
   /**
    * Poll for device authorization completion
    */
-  async pollForDeviceAuthorization(deviceCode, interval) {
+  pollForDeviceAuthorization(deviceCode, interval) {
     const tokenEndpoint = `${this.domain}/oauth/token`;
     this.cancelDeviceAuthorization();
-    this.currentPollInterval = setInterval(async () => {
-      try {
-        const body = new URLSearchParams({
-          grant_type: "urn:ietf:params:oauth:grant-type:device_code",
-          device_code: deviceCode,
-          client_id: this.clientId
-        });
-        const response = await fetch(tokenEndpoint, {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/x-www-form-urlencoded"
-          },
-          body: body.toString()
-        });
-        const data = await response.json();
-        if (response.ok) {
-          this.cancelDeviceAuthorization();
-          const tokens = {
-            access_token: data.access_token,
-            refresh_token: data.refresh_token,
-            id_token: data.id_token,
-            expires_at: Date.now() + data.expires_in * 1e3,
-            token_type: data.token_type || "Bearer",
-            scope: data.scope
-          };
-          this.eventCallback?.("SUCCESS", tokens);
-        } else if (data.error === "authorization_pending") {
-        } else if (data.error === "slow_down") {
-          this.cancelDeviceAuthorization();
-          const newInterval = interval + this.SLOW_DOWN_INCREMENT;
-          setTimeout(() => {
-            this.pollForDeviceAuthorization(deviceCode, newInterval);
-          }, newInterval * 1e3);
-        } else if (data.error === "expired_token") {
-          this.cancelDeviceAuthorization();
-          this.eventCallback?.("ERROR", void 0, "Device code expired. Please try again.");
-        } else if (data.error === "access_denied") {
-          this.cancelDeviceAuthorization();
-          this.eventCallback?.("ERROR", void 0, "Access denied by user.");
-        } else {
-          this.cancelDeviceAuthorization();
-          this.eventCallback?.("ERROR", void 0, data.error_description || "Authorization failed");
+    this.currentPollInterval = setInterval(() => {
+      void (async () => {
+        try {
+          const body = new URLSearchParams({
+            grant_type: "urn:ietf:params:oauth:grant-type:device_code",
+            device_code: deviceCode,
+            client_id: this.clientId
+          });
+          const response = await fetch(tokenEndpoint, {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/x-www-form-urlencoded"
+            },
+            body: body.toString()
+          });
+          const data = await response.json();
+          if (response.ok) {
+            this.cancelDeviceAuthorization();
+            if (!data.access_token) {
+              throw new Error(
+                "Missing access_token in successful token response"
+              );
+            }
+            const tokens = {
+              access_token: data.access_token,
+              refresh_token: data.refresh_token,
+              id_token: data.id_token,
+              expires_at: Date.now() + (data.expires_in ?? 3600) * 1e3,
+              token_type: data.token_type ?? "Bearer",
+              scope: data.scope
+            };
+            this.eventCallback?.("SUCCESS", tokens);
+          } else if (data.error === "authorization_pending") {
+          } else if (data.error === "slow_down") {
+            this.cancelDeviceAuthorization();
+            const newInterval = interval + this.SLOW_DOWN_INCREMENT;
+            setTimeout(() => {
+              this.pollForDeviceAuthorization(deviceCode, newInterval);
+            }, newInterval * 1e3);
+          } else if (data.error === "expired_token") {
+            this.cancelDeviceAuthorization();
+            this.eventCallback?.(
+              "ERROR",
+              void 0,
+              "Device code expired. Please try again."
+            );
+          } else if (data.error === "access_denied") {
+            this.cancelDeviceAuthorization();
+            this.eventCallback?.("ERROR", void 0, "Access denied by user.");
+          } else {
+            this.cancelDeviceAuthorization();
+            this.eventCallback?.(
+              "ERROR",
+              void 0,
+              data.error_description ?? "Authorization failed"
+            );
+          }
+        } catch (error) {
+          console.error("Polling error:", error);
         }
-      } catch (error) {
-        console.error("Polling error:", error);
-      }
+      })();
     }, interval * 1e3);
-    this.currentPollTimeout = setTimeout(() => {
-      this.cancelDeviceAuthorization();
-      this.eventCallback?.("ERROR", void 0, "Authorization timeout. Please try again.");
-    }, this.TIMEOUT_MINUTES * 60 * 1e3);
+    this.currentPollTimeout = setTimeout(
+      () => {
+        this.cancelDeviceAuthorization();
+        this.eventCallback?.(
+          "ERROR",
+          void 0,
+          "Authorization timeout. Please try again."
+        );
+      },
+      this.TIMEOUT_MINUTES * 60 * 1e3
+    );
   }
 }
 class Auth0Service {
@@ -603,19 +655,32 @@ class Auth0Service {
     this.clientId = clientId;
     this.audience = config.audience;
     this.scope = config.scope;
-    this.tokenManager = new TokenManager(config, this.domain, this.clientId, this.audience);
+    this.tokenManager = new TokenManager(
+      config,
+      this.domain,
+      this.clientId,
+      this.audience
+    );
     this.secureStorage = new SecureStorage(config);
-    this.deviceFlowManager = new DeviceFlowManager(config, this.domain, this.clientId, this.audience, this.scope);
+    this.deviceFlowManager = new DeviceFlowManager(
+      config,
+      this.domain,
+      this.clientId,
+      this.audience,
+      this.scope
+    );
     await this.secureStorage.initialize();
     this.deviceFlowManager.setEventCallback((event, tokens, error) => {
       if (event === "SUCCESS" && tokens) {
-        this.handleDeviceFlowSuccess(tokens);
+        void this.handleDeviceFlowSuccess(tokens);
       } else if (event === "ERROR") {
         this.notifyListeners("ERROR", null, error);
       }
     });
     await this.restoreSession();
-    console.log("Auth0 service initialized successfully with modular components");
+    console.log(
+      "Auth0 service initialized successfully with modular components"
+    );
   }
   /**
    * Start Device Authorization Flow
@@ -643,12 +708,17 @@ class Auth0Service {
     if (this.currentSession) {
       if (this.tokenManager.isTokenExpired(this.currentSession.tokens)) {
         try {
-          const refreshedTokens = await this.tokenManager.refreshTokens(this.currentSession.tokens);
+          const refreshedTokens = await this.tokenManager.refreshTokens(
+            this.currentSession.tokens
+          );
           this.currentSession.tokens = refreshedTokens;
           await this.storeSession(this.currentSession);
           this.notifyListeners("TOKEN_REFRESHED", this.currentSession);
         } catch (error) {
-          console.error("Automatic token refresh failed:", SecurityValidator.sanitizeUserForLogging(error));
+          console.error(
+            "Automatic token refresh failed:",
+            SecurityValidator.sanitizeUserForLogging(error)
+          );
           if (error instanceof Error && (error.message.includes("re-authentication required") || error.message.includes("expired too long ago") || error.message.includes("Too many token refresh attempts"))) {
             await this.signOut();
             return { user: null, tokens: null };
@@ -669,7 +739,9 @@ class Auth0Service {
   async signOut() {
     try {
       if (this.currentSession?.tokens.refresh_token) {
-        await this.tokenManager.revokeToken(this.currentSession.tokens.refresh_token);
+        await this.tokenManager.revokeToken(
+          this.currentSession.tokens.refresh_token
+        );
       }
       await this.clearSession();
       this.currentSession = null;
@@ -746,8 +818,13 @@ class Auth0Service {
             refresh_token: void 0
           }
         };
-        console.warn("⚠️ Storing session without refresh token due to fallback security limitations");
-        await this.secureStorage.setItem("auth0_session", JSON.stringify(sessionWithoutRefreshToken));
+        console.warn(
+          "⚠️ Storing session without refresh token due to fallback security limitations"
+        );
+        await this.secureStorage.setItem(
+          "auth0_session",
+          JSON.stringify(sessionWithoutRefreshToken)
+        );
       } else {
         throw error;
       }
@@ -762,16 +839,23 @@ class Auth0Service {
       if (sessionData) {
         const restoredSession = JSON.parse(sessionData);
         if (this.tokenManager.isTokenExpired(restoredSession.tokens)) {
-          console.log("Restored session has expired tokens, attempting refresh...");
+          console.log(
+            "Restored session has expired tokens, attempting refresh..."
+          );
           this.currentSession = restoredSession;
           try {
-            const refreshedTokens = await this.tokenManager.refreshTokens(restoredSession.tokens);
+            const refreshedTokens = await this.tokenManager.refreshTokens(
+              restoredSession.tokens
+            );
             this.currentSession.tokens = refreshedTokens;
             await this.storeSession(this.currentSession);
             console.log("✅ Session restored and tokens refreshed successfully");
             this.notifyListeners("SIGNED_IN", this.currentSession);
           } catch (refreshError) {
-            console.warn("Failed to refresh restored tokens, clearing session:", SecurityValidator.sanitizeUserForLogging(refreshError));
+            console.warn(
+              "Failed to refresh restored tokens, clearing session:",
+              SecurityValidator.sanitizeUserForLogging(refreshError)
+            );
             await this.clearSession();
             this.currentSession = null;
           }
@@ -782,7 +866,10 @@ class Auth0Service {
         }
       }
     } catch (error) {
-      console.warn("Failed to restore session:", SecurityValidator.sanitizeUserForLogging(error));
+      console.warn(
+        "Failed to restore session:",
+        SecurityValidator.sanitizeUserForLogging(error)
+      );
       await this.clearSession();
       this.currentSession = null;
     }
@@ -872,19 +959,23 @@ function validateAuth0Config(config) {
     );
   }
   if (config.scope && !config.scope.includes("openid")) {
-    console.warn('Auth0 scope should include "openid" for proper authentication');
+    console.warn(
+      'Auth0 scope should include "openid" for proper authentication'
+    );
   }
   if (config.audience && !config.audience.startsWith("https://")) {
     console.warn("Auth0 audience should be a valid HTTPS URL");
   }
-  if (config.deviceFlow?.pollingInterval && config.deviceFlow.pollingInterval < 1) {
+  if (config.deviceFlow.pollingInterval && config.deviceFlow.pollingInterval < 1) {
     throw new Error("Device flow polling interval must be at least 1 second");
   }
-  if (config.tokenManagement?.minValidityBufferMinutes && config.tokenManagement.minValidityBufferMinutes < 1) {
+  if (config.tokenManagement.minValidityBufferMinutes && config.tokenManagement.minValidityBufferMinutes < 1) {
     throw new Error("Token validity buffer must be at least 1 minute");
   }
-  if (config.environment === "production" && config.security?.allowInsecureConnections) {
-    throw new Error("Insecure connections cannot be allowed in production environment");
+  if (config.environment === "production" && config.security.allowInsecureConnections) {
+    throw new Error(
+      "Insecure connections cannot be allowed in production environment"
+    );
   }
 }
 class WindowManager {
@@ -967,22 +1058,25 @@ class WindowManager {
     });
     this.authWindow.webContents.setWindowOpenHandler(({ url }) => {
       console.log("Blocked new window creation for:", url);
-      shell.openExternal(url);
+      void shell.openExternal(url);
       return { action: "deny" };
     });
   }
   setupOverlayWindowSecurity() {
     if (!this.overlayWindow) return;
-    this.overlayWindow.webContents.on("will-navigate", (event, navigationUrl) => {
-      const parsedUrl = new URL(navigationUrl);
-      if (parsedUrl.origin !== "http://localhost:5173" && parsedUrl.origin !== "file://" && !navigationUrl.includes("index.html")) {
-        console.log("Blocked navigation to:", navigationUrl);
-        event.preventDefault();
+    this.overlayWindow.webContents.on(
+      "will-navigate",
+      (event, navigationUrl) => {
+        const parsedUrl = new URL(navigationUrl);
+        if (parsedUrl.origin !== "http://localhost:5173" && parsedUrl.origin !== "file://" && !navigationUrl.includes("index.html")) {
+          console.log("Blocked navigation to:", navigationUrl);
+          event.preventDefault();
+        }
       }
-    });
+    );
     this.overlayWindow.webContents.setWindowOpenHandler(({ url }) => {
       console.log("Blocked new window creation for:", url);
-      shell.openExternal(url);
+      void shell.openExternal(url);
       return { action: "deny" };
     });
   }
@@ -1016,7 +1110,10 @@ class WindowManager {
       }
     });
     this.overlayWindow.webContents.on("did-finish-load", () => {
-      this.overlayWindow?.webContents.send("main-process-message", (/* @__PURE__ */ new Date()).toLocaleString());
+      this.overlayWindow?.webContents.send(
+        "main-process-message",
+        (/* @__PURE__ */ new Date()).toLocaleString()
+      );
     });
   }
   loadAuthWindow() {
@@ -1032,7 +1129,9 @@ class WindowManager {
     if (this.viteDevServerUrl) {
       void this.overlayWindow.loadURL(this.viteDevServerUrl);
     } else {
-      void this.overlayWindow.loadFile(path$1.join(this.rendererDist, "index.html"));
+      void this.overlayWindow.loadFile(
+        path$1.join(this.rendererDist, "index.html")
+      );
     }
   }
   // Getters
@@ -1071,7 +1170,10 @@ class WindowManager {
   }
   setOverlayMouseEvents(ignore, options) {
     if (this.overlayWindow && !this.overlayWindow.isDestroyed()) {
-      this.overlayWindow.setIgnoreMouseEvents(ignore, options ?? { forward: true });
+      this.overlayWindow.setIgnoreMouseEvents(
+        ignore,
+        options ?? { forward: true }
+      );
     }
   }
 }
@@ -1093,7 +1195,11 @@ class AuthIPCHandlers {
     ipcMain.handle("auth0-start-flow", async () => {
       try {
         const rateLimitConfig = this.config.rateLimiting.ipcRateLimits.startFlow;
-        SecurityValidator.checkRateLimit("auth0-start-flow", rateLimitConfig.requests, rateLimitConfig.windowMs);
+        SecurityValidator.checkRateLimit(
+          "auth0-start-flow",
+          rateLimitConfig.requests,
+          rateLimitConfig.windowMs
+        );
         const deviceAuth = await auth0Service.startDeviceAuthFlow();
         await shell.openExternal(deviceAuth.verification_uri);
         return { success: true, ...deviceAuth };
@@ -1105,45 +1211,69 @@ class AuthIPCHandlers {
     ipcMain.handle("auth0-get-session", async () => {
       try {
         const rateLimitConfig = this.config.rateLimiting.ipcRateLimits.getSession;
-        SecurityValidator.checkRateLimit("auth0-get-session", rateLimitConfig.requests, rateLimitConfig.windowMs);
-        const { user, tokens } = await auth0Service.getSession();
+        SecurityValidator.checkRateLimit(
+          "auth0-get-session",
+          rateLimitConfig.requests,
+          rateLimitConfig.windowMs
+        );
+        const sessionResult = await auth0Service.getSession();
+        const user = sessionResult.user;
+        const tokens = sessionResult.tokens;
         const sanitizedUser = user ? SecurityValidator.sanitizeUserForLogging(user) : null;
         return {
           success: true,
           user: sanitizedUser,
           session: user && tokens ? { user: sanitizedUser, tokens } : null,
-          tokens: tokens || null
+          tokens: tokens ?? null
         };
       } catch (error) {
-        console.error("Get Auth0 session error:", SecurityValidator.sanitizeUserForLogging(error));
+        console.error(
+          "Get Auth0 session error:",
+          SecurityValidator.sanitizeUserForLogging(error)
+        );
         return { success: false, error: error.message };
       }
     });
     ipcMain.handle("auth0-sign-out", async () => {
       try {
         const rateLimitConfig = this.config.rateLimiting.ipcRateLimits.signOut;
-        SecurityValidator.checkRateLimit("auth0-sign-out", rateLimitConfig.requests, rateLimitConfig.windowMs);
+        SecurityValidator.checkRateLimit(
+          "auth0-sign-out",
+          rateLimitConfig.requests,
+          rateLimitConfig.windowMs
+        );
         await auth0Service.signOut();
         return { success: true };
       } catch (error) {
-        console.error("Auth0 sign out error:", SecurityValidator.sanitizeUserForLogging(error));
+        console.error(
+          "Auth0 sign out error:",
+          SecurityValidator.sanitizeUserForLogging(error)
+        );
         return { success: false, error: error.message };
       }
     });
     ipcMain.handle("auth0-is-secure-storage", async () => {
       try {
         const rateLimitConfig = this.config.rateLimiting.ipcRateLimits.isSecureStorage;
-        SecurityValidator.checkRateLimit("auth0-is-secure-storage", rateLimitConfig.requests, rateLimitConfig.windowMs);
+        SecurityValidator.checkRateLimit(
+          "auth0-is-secure-storage",
+          rateLimitConfig.requests,
+          rateLimitConfig.windowMs
+        );
         return await auth0Service.isSecureStorage();
       } catch (error) {
         console.error("Secure storage check error:", error);
         return false;
       }
     });
-    ipcMain.handle("auth0-cancel-device-flow", async () => {
+    ipcMain.handle("auth0-cancel-device-flow", () => {
       try {
         const rateLimitConfig = this.config.rateLimiting.ipcRateLimits.cancelDeviceFlow;
-        SecurityValidator.checkRateLimit("auth0-cancel-device-flow", rateLimitConfig.requests, rateLimitConfig.windowMs);
+        SecurityValidator.checkRateLimit(
+          "auth0-cancel-device-flow",
+          rateLimitConfig.requests,
+          rateLimitConfig.windowMs
+        );
         auth0Service.cancelDeviceAuthorization();
         return { success: true };
       } catch (error) {
@@ -1154,7 +1284,11 @@ class AuthIPCHandlers {
     ipcMain.handle("open-external-url", async (_event, url) => {
       try {
         const rateLimitConfig = this.config.rateLimiting.ipcRateLimits.openExternalUrl;
-        SecurityValidator.checkRateLimit("open-external-url", rateLimitConfig.requests, rateLimitConfig.windowMs);
+        SecurityValidator.checkRateLimit(
+          "open-external-url",
+          rateLimitConfig.requests,
+          rateLimitConfig.windowMs
+        );
         const validUrl = SecurityValidator.validateUrl(url);
         await shell.openExternal(validUrl);
         return { success: true };
@@ -1185,15 +1319,24 @@ class AuthIPCHandlers {
     });
   }
   registerMouseEventHandlers() {
-    ipcMain.on("set-ignore-mouse-events", (_event, ignore, options) => {
-      try {
-        const validIgnore = SecurityValidator.validateBoolean(ignore, "ignore");
-        const validOptions = SecurityValidator.validateMouseEventOptions(options);
-        this.windowManager.setOverlayMouseEvents(validIgnore, validOptions ?? { forward: true });
-      } catch (error) {
-        console.error("Mouse events error:", error);
+    ipcMain.on(
+      "set-ignore-mouse-events",
+      (_event, ignore, options) => {
+        try {
+          const validIgnore = SecurityValidator.validateBoolean(
+            ignore,
+            "ignore"
+          );
+          const validOptions = SecurityValidator.validateMouseEventOptions(options);
+          this.windowManager.setOverlayMouseEvents(
+            validIgnore,
+            validOptions ?? { forward: true }
+          );
+        } catch (error) {
+          console.error("Mouse events error:", error);
+        }
       }
-    });
+    );
   }
   // Setup auth state change listeners
   setupAuthStateListeners() {
@@ -1229,7 +1372,10 @@ class AuthIPCHandlers {
         }
       } else if (event === "ERROR") {
         if (authWindow && !authWindow.isDestroyed()) {
-          authWindow.webContents.send("auth0-error", error || "Authentication error");
+          authWindow.webContents.send(
+            "auth0-error",
+            error ?? "Authentication error"
+          );
         }
       }
     });
@@ -1333,7 +1479,11 @@ void app.whenReady().then(async () => {
   });
   try {
     validateAuth0Config(auth0Config);
-    await auth0Service.initialize(auth0Config.domain, auth0Config.clientId, auth0Config);
+    await auth0Service.initialize(
+      auth0Config.domain,
+      auth0Config.clientId,
+      auth0Config
+    );
     authIPCHandlers.setConfig(auth0Config);
     authIPCHandlers.setupAuthStateListeners();
     authIPCHandlers.registerHandlers();
