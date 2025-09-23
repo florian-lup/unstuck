@@ -197,10 +197,10 @@ export function SettingsMenu({
             onClick={handleLogout}
             variant="gaming"
             size="sm"
-            className="justify-center items-center text-sm py-2 px-3 h-auto"
+            className="justify-center items-center text-xs py-2 px-3 h-auto border border-overlay-border-primary"
           >
             <span>Sign Out</span>
-            <LogOut className="w-4 h-4 ml-2" />
+            <LogOut className="ml-2" />
           </Button>
         </div>
       </div>
