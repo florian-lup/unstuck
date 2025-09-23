@@ -13,9 +13,14 @@ export class AutoLaunchManager {
     this.isDevelopment = process.env.NODE_ENV === 'development' || !app.isPackaged
     
     // Initialize auto-launcher with app details
+    // In development, use a dummy path to prevent errors, but we won't actually use it
+    const appPath = this.isDevelopment 
+      ? process.execPath  // Use Node.js executable path as dummy in dev
+      : app.getPath('exe') // Use actual app executable in production
+    
     this.autoLauncher = new AutoLaunch({
       name: appName,
-      path: this.isDevelopment ? '' : app.getPath('exe'), // Empty path in dev to prevent issues
+      path: appPath,
       isHidden: false, // Show the app window when launched
     })
 
