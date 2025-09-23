@@ -14,6 +14,7 @@ function App() {
     isNavigationBarVisible,
     showSettingsMenu,
     user,
+    customKeybind,
     
     // Actions
     handleSpeakClick,
@@ -24,6 +25,7 @@ function App() {
     handleTextChatClose,
     handleDropdownOpenChange,
     handleLogout,
+    handleKeybindChange,
     setShowSettingsMenu,
   } = useAppLogic()
 
@@ -45,6 +47,8 @@ function App() {
               isOpen={showSettingsMenu}
               onLogout={handleLogout}
               onClose={() => setShowSettingsMenu(false)}
+              currentKeybind={customKeybind}
+              onKeybindChange={handleKeybindChange}
             />
           )}
         </div>

@@ -77,6 +77,9 @@ contextBridge.exposeInMainWorld('electronAPI', {
   removeNavigationBarToggleListener: () => {
     ipcRenderer.removeAllListeners('toggle-navigation-bar')
   },
+  updateNavigationShortcut: (shortcut: string) => {
+    return ipcRenderer.invoke('update-navigation-shortcut', shortcut)
+  },
   setIgnoreMouseEvents: (ignore: boolean, options?: { forward?: boolean }) => {
     ipcRenderer.send('set-ignore-mouse-events', ignore, options)
   },

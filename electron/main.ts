@@ -1,4 +1,4 @@
-import { app, Menu } from 'electron'
+import { app, Menu, ipcMain } from 'electron'
 import { fileURLToPath } from 'node:url'
 import path from 'node:path'
 import { auth0Service } from './auth0/auth0-service'
@@ -53,6 +53,11 @@ void app.whenReady().then(async () => {
   // Setup shortcuts
   shortcutsManager.registerGlobalShortcuts()
   shortcutsManager.setupShortcutCleanup()
+  
+  // Setup shortcut IPC handlers
+  ipcMain.handle('update-navigation-shortcut', (_event, shortcut: string) => {
+    shortcutsManager.registerNavigationToggleShortcut(shortcut)
+  })
   
   // Load and validate Auth0 configuration
   try {

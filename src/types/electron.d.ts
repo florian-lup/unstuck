@@ -1,6 +1,7 @@
 export interface IElectronAPI {
   onNavigationBarToggle: (callback: () => void) => void
   removeNavigationBarToggleListener: () => void
+  updateNavigationShortcut: (shortcut: string) => Promise<void>
   setIgnoreMouseEvents: (
     ignore: boolean,
     options?: { forward?: boolean }

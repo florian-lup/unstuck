@@ -2,11 +2,18 @@ import { globalShortcut, app } from 'electron'
 import { WindowManager } from './window-manager'
 
 export class ShortcutsManager {
+  private currentShortcut: string | null = null
+
   constructor(private readonly windowManager: WindowManager) {}
 
-  registerGlobalShortcuts(): void {
-    // Register global shortcut for navigation bar toggle
-    const shortcutRegistered = globalShortcut.register('Shift+\\', () => {
+  registerNavigationToggleShortcut(shortcut: string): void {
+    // Unregister existing shortcut first
+    if (this.currentShortcut) {
+      globalShortcut.unregister(this.currentShortcut)
+    }
+
+    // Register new shortcut
+    const shortcutRegistered = globalShortcut.register(shortcut, () => {
       const overlayWindow = this.windowManager.getOverlayWindow()
       if (overlayWindow && !overlayWindow.isDestroyed()) {
         overlayWindow.webContents.send('toggle-navigation-bar')
@@ -14,14 +21,21 @@ export class ShortcutsManager {
     })
 
     if (!shortcutRegistered) {
-      console.warn('Failed to register global shortcut Shift+\\')
+      console.warn(`Failed to register global shortcut ${shortcut}`)
     } else {
-      console.log('Global shortcut Shift+\\ registered successfully')
+      console.log(`Global shortcut ${shortcut} registered successfully`)
+      this.currentShortcut = shortcut
     }
+  }
+
+  registerGlobalShortcuts(): void {
+    // Register default shortcut for navigation bar toggle
+    this.registerNavigationToggleShortcut('Shift+\\')
   }
 
   unregisterAllShortcuts(): void {
     globalShortcut.unregisterAll()
+    this.currentShortcut = null
   }
 
   setupShortcutCleanup(): void {

@@ -1273,21 +1273,30 @@ class ShortcutsManager {
   constructor(windowManager2) {
     this.windowManager = windowManager2;
   }
-  registerGlobalShortcuts() {
-    const shortcutRegistered = globalShortcut.register("Shift+\\", () => {
+  currentShortcut = null;
+  registerNavigationToggleShortcut(shortcut) {
+    if (this.currentShortcut) {
+      globalShortcut.unregister(this.currentShortcut);
+    }
+    const shortcutRegistered = globalShortcut.register(shortcut, () => {
       const overlayWindow = this.windowManager.getOverlayWindow();
       if (overlayWindow && !overlayWindow.isDestroyed()) {
         overlayWindow.webContents.send("toggle-navigation-bar");
       }
     });
     if (!shortcutRegistered) {
-      console.warn("Failed to register global shortcut Shift+\\");
+      console.warn(`Failed to register global shortcut ${shortcut}`);
     } else {
-      console.log("Global shortcut Shift+\\ registered successfully");
+      console.log(`Global shortcut ${shortcut} registered successfully`);
+      this.currentShortcut = shortcut;
     }
+  }
+  registerGlobalShortcuts() {
+    this.registerNavigationToggleShortcut("Shift+\\");
   }
   unregisterAllShortcuts() {
     globalShortcut.unregisterAll();
+    this.currentShortcut = null;
   }
   setupShortcutCleanup() {
     app.on("will-quit", () => {
@@ -1319,6 +1328,9 @@ void app.whenReady().then(async () => {
   appLifecycle.setupAppEvents();
   shortcutsManager.registerGlobalShortcuts();
   shortcutsManager.setupShortcutCleanup();
+  ipcMain.handle("update-navigation-shortcut", (_event, shortcut) => {
+    shortcutsManager.registerNavigationToggleShortcut(shortcut);
+  });
   try {
     validateAuth0Config(auth0Config);
     await auth0Service.initialize(auth0Config.domain, auth0Config.clientId, auth0Config);
