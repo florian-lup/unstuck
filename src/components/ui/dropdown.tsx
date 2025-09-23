@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react'
 import { ChevronDown } from 'lucide-react'
 import { InteractiveArea } from '../interactive-area'
-import '../../App.css'
+import '../../overlay.css'
 
 // Internal hook for dropdown functionality
 interface UseDropdownOptions {

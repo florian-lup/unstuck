@@ -3,7 +3,7 @@ import { TextChat } from './components/text-chat'
 import { SettingsMenu } from './components/settings-menu'
 import { useAppLogic } from './hooks/use-app-logic'
 import './index.css'
-import './App.css'
+import './overlay.css'
 
 function App() {
   const {

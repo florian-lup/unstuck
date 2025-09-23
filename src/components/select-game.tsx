@@ -5,7 +5,7 @@ import {
   getActiveGames,
   getGameDisplayNameWithVersion,
 } from '../lib/games'
-import '../App.css'
+import '../overlay.css'
 
 interface SelectGameProps {
   onGameSelect?: (game: Game) => void

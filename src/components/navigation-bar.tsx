@@ -4,7 +4,7 @@ import { Button } from './ui/button'
 import { SelectGame } from './select-game'
 import { InteractiveArea } from './interactive-area'
 import { Game } from '../lib/games'
-import '../App.css'
+import '../overlay.css'
 
 interface NavigationBarProps {
   onSpeakClick?: () => void
