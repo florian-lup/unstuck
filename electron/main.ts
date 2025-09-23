@@ -19,6 +19,17 @@ if (process.platform === 'win32') {
   app.setAppUserModelId('com.unstuck.app')
 }
 
+// V8 Memory Optimizations - Reduce memory usage at slight performance cost
+app.commandLine.appendSwitch('--max-old-space-size', '512') // Limit V8 heap to 512MB
+app.commandLine.appendSwitch('--optimize-for-size') // Optimize for memory over speed
+app.commandLine.appendSwitch('--gc-interval', '100') // More frequent garbage collection
+
+// Development-specific memory optimizations
+if (process.env.NODE_ENV === 'development') {
+  app.commandLine.appendSwitch('--disable-dev-shm-usage') // Reduce dev tools memory overhead
+  app.commandLine.appendSwitch('--disable-gpu-sandbox') // Reduce GPU process memory
+}
+
 // Environment and path setup
 process.env.APP_ROOT = path.join(__dirname, '..')
 

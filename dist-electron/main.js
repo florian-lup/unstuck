@@ -2816,6 +2816,13 @@ app.setName("Unstuck");
 if (process.platform === "win32") {
   app.setAppUserModelId("com.unstuck.app");
 }
+app.commandLine.appendSwitch("--max-old-space-size", "512");
+app.commandLine.appendSwitch("--optimize-for-size");
+app.commandLine.appendSwitch("--gc-interval", "100");
+if (process.env.NODE_ENV === "development") {
+  app.commandLine.appendSwitch("--disable-dev-shm-usage");
+  app.commandLine.appendSwitch("--disable-gpu-sandbox");
+}
 process.env.APP_ROOT = path$1.join(__dirname, "..");
 const VITE_DEV_SERVER_URL = process.env.VITE_DEV_SERVER_URL;
 const MAIN_DIST = path$1.join(process.env.APP_ROOT, "dist-electron");
