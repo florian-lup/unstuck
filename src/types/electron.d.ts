@@ -34,6 +34,12 @@ export interface IElectronAPI {
     onTokenRefresh?: (callback: (session: unknown) => void) => unknown
     removeAuthListeners: () => void
   }
+  autoLaunch: {
+    getStatus: () => Promise<boolean>
+    enable: () => Promise<boolean>
+    disable: () => Promise<boolean>
+    toggle: () => Promise<boolean>
+  }
 }
 
 declare global {

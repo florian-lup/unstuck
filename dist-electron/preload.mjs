@@ -11,7 +11,11 @@ const ALLOWED_INVOKE_CHANNELS = [
   "auth-get-oauth-url",
   "auth-get-session",
   "auth-sign-out",
-  "auth-is-secure-storage"
+  "auth-is-secure-storage",
+  "auto-launch:get-status",
+  "auto-launch:enable",
+  "auto-launch:disable",
+  "auto-launch:toggle"
 ];
 const ALLOWED_LISTEN_CHANNELS = [
   "toggle-navigation-bar",
@@ -120,5 +124,11 @@ electron.contextBridge.exposeInMainWorld("electronAPI", {
       electron.ipcRenderer.removeAllListeners("auth0-error");
       electron.ipcRenderer.removeAllListeners("auth0-token-refresh");
     }
+  },
+  autoLaunch: {
+    getStatus: () => electron.ipcRenderer.invoke("auto-launch:get-status"),
+    enable: () => electron.ipcRenderer.invoke("auto-launch:enable"),
+    disable: () => electron.ipcRenderer.invoke("auto-launch:disable"),
+    toggle: () => electron.ipcRenderer.invoke("auto-launch:toggle")
   }
 });

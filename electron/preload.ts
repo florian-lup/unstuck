@@ -14,6 +14,10 @@ const ALLOWED_INVOKE_CHANNELS = [
   'auth-get-session',
   'auth-sign-out',
   'auth-is-secure-storage',
+  'auto-launch:get-status',
+  'auto-launch:enable',
+  'auto-launch:disable',
+  'auto-launch:toggle',
 ] as const
 
 const ALLOWED_LISTEN_CHANNELS = [
@@ -143,5 +147,11 @@ contextBridge.exposeInMainWorld('electronAPI', {
       ipcRenderer.removeAllListeners('auth0-error')
       ipcRenderer.removeAllListeners('auth0-token-refresh')
     },
+  },
+  autoLaunch: {
+    getStatus: () => ipcRenderer.invoke('auto-launch:get-status'),
+    enable: () => ipcRenderer.invoke('auto-launch:enable'),
+    disable: () => ipcRenderer.invoke('auto-launch:disable'),
+    toggle: () => ipcRenderer.invoke('auto-launch:toggle'),
   },
 })

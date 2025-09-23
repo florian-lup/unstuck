@@ -7,6 +7,7 @@ import { WindowManager } from './window-manager'
 import { AuthIPCHandlers } from './auth0/auth-ipc-handlers'
 import { AppLifecycleManager } from './app-lifecycle'
 import { ShortcutsManager } from './shortcuts-manager'
+import { AutoLaunchManager } from './auto-launch-manager'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 
@@ -33,6 +34,7 @@ const windowManager = new WindowManager(
 const authIPCHandlers = new AuthIPCHandlers(windowManager)
 const appLifecycle = new AppLifecycleManager(windowManager)
 const shortcutsManager = new ShortcutsManager(windowManager)
+const autoLaunchManager = new AutoLaunchManager('Unstuck')
 
 // App initialization
 void app.whenReady().then(async () => {
@@ -58,6 +60,9 @@ void app.whenReady().then(async () => {
   ipcMain.handle('update-navigation-shortcut', (_event, shortcut: string) => {
     shortcutsManager.registerNavigationToggleShortcut(shortcut)
   })
+
+  // Initialize auto-launch functionality
+  await autoLaunchManager.initializeAutoLaunch()
 
   // Create system tray
   windowManager.createSystemTray()
