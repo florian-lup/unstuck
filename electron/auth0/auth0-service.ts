@@ -9,7 +9,7 @@ import path from 'path'
 import os from 'os'
 import crypto from 'crypto'
 import { SecurityValidator } from './security-validators'
-import { Auth0Config } from '../config/auth.config'
+import { Auth0Config } from '../../config/auth.config'
 
 export interface Auth0User {
   sub: string
