@@ -253,4 +253,27 @@ export class AuthIPCHandlers {
       }
     })
   }
+
+  /**
+   * Clean up all IPC handlers to prevent memory leaks
+   */
+  cleanup(): void {
+    console.log('Cleaning up Auth IPC handlers...')
+    
+    // Remove all IPC handlers
+    ipcMain.removeHandler('auth0-start-flow')
+    ipcMain.removeHandler('auth0-get-session')
+    ipcMain.removeHandler('auth0-sign-out')
+    ipcMain.removeHandler('auth0-is-secure-storage')
+    ipcMain.removeHandler('auth0-cancel-device-flow')
+    ipcMain.removeHandler('open-external-url')
+    
+    // Remove all IPC listeners
+    ipcMain.removeAllListeners('auth-success')
+    ipcMain.removeAllListeners('user-logout')
+    ipcMain.removeAllListeners('overlay-interaction')
+    ipcMain.removeAllListeners('ensure-always-on-top')
+    ipcMain.removeAllListeners('set-ignore-mouse-events')
+    ipcMain.removeAllListeners('window-interaction')
+  }
 }

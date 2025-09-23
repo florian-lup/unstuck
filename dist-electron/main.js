@@ -1527,13 +1527,54 @@ class AuthIPCHandlers {
       }
     });
   }
+  /**
+   * Clean up all IPC handlers to prevent memory leaks
+   */
+  cleanup() {
+    console.log("Cleaning up Auth IPC handlers...");
+    ipcMain.removeHandler("auth0-start-flow");
+    ipcMain.removeHandler("auth0-get-session");
+    ipcMain.removeHandler("auth0-sign-out");
+    ipcMain.removeHandler("auth0-is-secure-storage");
+    ipcMain.removeHandler("auth0-cancel-device-flow");
+    ipcMain.removeHandler("open-external-url");
+    ipcMain.removeAllListeners("auth-success");
+    ipcMain.removeAllListeners("user-logout");
+    ipcMain.removeAllListeners("overlay-interaction");
+    ipcMain.removeAllListeners("ensure-always-on-top");
+    ipcMain.removeAllListeners("set-ignore-mouse-events");
+    ipcMain.removeAllListeners("window-interaction");
+  }
 }
 class AppLifecycleManager {
   constructor(windowManager2) {
     this.windowManager = windowManager2;
   }
+  authIPCHandlers;
+  shortcutsManager;
+  autoLaunchManager;
+  /**
+   * Register managers for proper cleanup
+   */
+  registerManagers(authIPCHandlers2, shortcutsManager2, autoLaunchManager2) {
+    this.authIPCHandlers = authIPCHandlers2;
+    this.shortcutsManager = shortcutsManager2;
+    this.autoLaunchManager = autoLaunchManager2;
+  }
+  /**
+   * Clean up all IPC handlers and resources
+   */
+  cleanupAllResources() {
+    console.log("Cleaning up all app resources...");
+    ipcMain.removeHandler("update-navigation-shortcut");
+    this.authIPCHandlers?.cleanup();
+    this.shortcutsManager?.unregisterAllShortcuts();
+    this.autoLaunchManager?.cleanup();
+    this.windowManager.destroyTray();
+  }
   setupAppEvents() {
     app.on("window-all-closed", () => {
+      this.cleanupAllResources();
       if (process.platform !== "darwin") {
         app.quit();
       }
@@ -1547,8 +1588,11 @@ class AppLifecycleManager {
       this.windowManager.focusAuthWindow();
     });
     app.on("before-quit", () => {
-      this.windowManager.destroyTray();
+      this.cleanupAllResources();
       console.log("App is quitting...");
+    });
+    app.on("will-quit", () => {
+      this.cleanupAllResources();
     });
   }
   ensureSingleInstance() {
@@ -2845,6 +2889,7 @@ void app.whenReady().then(async () => {
     return;
   }
   appLifecycle.setupAppEvents();
+  appLifecycle.registerManagers(authIPCHandlers, shortcutsManager, autoLaunchManager);
   shortcutsManager.registerGlobalShortcuts();
   shortcutsManager.setupShortcutCleanup();
   ipcMain.handle("update-navigation-shortcut", (_event, shortcut) => {
