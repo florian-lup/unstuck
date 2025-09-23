@@ -6,22 +6,12 @@ import fs from 'fs'
 export class AutoLaunchManager {
   private autoLauncher: AutoLaunch
   private settingsPath: string
-  private isDevelopment: boolean
 
   constructor(appName = 'Unstuck') {
-    // Check if we're in development mode
-    this.isDevelopment = process.env.NODE_ENV === 'development' || !app.isPackaged
-    
     // Initialize auto-launcher with app details
-    // In development, use a dummy path to prevent errors, but we won't actually use it
-    const appPath = this.isDevelopment 
-      ? process.execPath  // Use Node.js executable path as dummy in dev
-      : app.getPath('exe') // Use actual app executable in production
-    
     this.autoLauncher = new AutoLaunch({
       name: appName,
-      path: appPath,
-      isHidden: false, // Show the app window when launched
+      path: app.getPath('exe'),
     })
 
     // Path to store settings
@@ -34,11 +24,6 @@ export class AutoLaunchManager {
    * Enable auto-launch on system startup
    */
   async enableAutoLaunch(): Promise<boolean> {
-    if (this.isDevelopment) {
-      console.log('Auto-launch disabled in development mode')
-      return false
-    }
-    
     try {
       const isEnabled = await this.autoLauncher.isEnabled()
       if (!isEnabled) {
@@ -57,11 +42,6 @@ export class AutoLaunchManager {
    * Disable auto-launch on system startup
    */
   async disableAutoLaunch(): Promise<boolean> {
-    if (this.isDevelopment) {
-      console.log('Auto-launch disabled in development mode')
-      return true // Return true since it's "disabled" conceptually
-    }
-    
     try {
       const isEnabled = await this.autoLauncher.isEnabled()
       if (isEnabled) {
@@ -80,10 +60,6 @@ export class AutoLaunchManager {
    * Check if auto-launch is currently enabled
    */
   async isAutoLaunchEnabled(): Promise<boolean> {
-    if (this.isDevelopment) {
-      return false // Always disabled in development
-    }
-    
     try {
       return await this.autoLauncher.isEnabled()
     } catch (error) {
@@ -108,11 +84,6 @@ export class AutoLaunchManager {
    * Initialize auto-launch based on saved settings
    */
   async initializeAutoLaunch(): Promise<void> {
-    if (this.isDevelopment) {
-      console.log('Auto-launch initialization skipped in development mode')
-      return
-    }
-    
     try {
       const isFirstRun = !fs.existsSync(this.settingsPath)
       const savedSetting = await this.loadAutoLaunchSetting()

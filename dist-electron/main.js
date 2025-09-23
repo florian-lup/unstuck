@@ -2670,15 +2670,10 @@ const AutoLaunch = /* @__PURE__ */ getDefaultExportFromCjs(distExports);
 class AutoLaunchManager {
   autoLauncher;
   settingsPath;
-  isDevelopment;
   constructor(appName = "Unstuck") {
-    this.isDevelopment = process.env.NODE_ENV === "development" || !app.isPackaged;
-    const appPath = this.isDevelopment ? process.execPath : app.getPath("exe");
     this.autoLauncher = new AutoLaunch({
       name: appName,
-      path: appPath,
-      isHidden: false
-      // Show the app window when launched
+      path: app.getPath("exe")
     });
     this.settingsPath = path.join(app.getPath("userData"), "auto-launch-settings.json");
     this.setupIpcHandlers();
@@ -2687,10 +2682,6 @@ class AutoLaunchManager {
    * Enable auto-launch on system startup
    */
   async enableAutoLaunch() {
-    if (this.isDevelopment) {
-      console.log("Auto-launch disabled in development mode");
-      return false;
-    }
     try {
       const isEnabled = await this.autoLauncher.isEnabled();
       if (!isEnabled) {
@@ -2708,10 +2699,6 @@ class AutoLaunchManager {
    * Disable auto-launch on system startup
    */
   async disableAutoLaunch() {
-    if (this.isDevelopment) {
-      console.log("Auto-launch disabled in development mode");
-      return true;
-    }
     try {
       const isEnabled = await this.autoLauncher.isEnabled();
       if (isEnabled) {
@@ -2729,9 +2716,6 @@ class AutoLaunchManager {
    * Check if auto-launch is currently enabled
    */
   async isAutoLaunchEnabled() {
-    if (this.isDevelopment) {
-      return false;
-    }
     try {
       return await this.autoLauncher.isEnabled();
     } catch (error) {
@@ -2754,10 +2738,6 @@ class AutoLaunchManager {
    * Initialize auto-launch based on saved settings
    */
   async initializeAutoLaunch() {
-    if (this.isDevelopment) {
-      console.log("Auto-launch initialization skipped in development mode");
-      return;
-    }
     try {
       const isFirstRun = !fs$1.existsSync(this.settingsPath);
       const savedSetting = await this.loadAutoLaunchSetting();
