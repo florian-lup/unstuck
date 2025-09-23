@@ -1,5 +1,5 @@
 import React from 'react'
-import { Mic, Type, Settings, Grip } from 'lucide-react'
+import { Mic, Type, Search, Settings, Grip } from 'lucide-react'
 import { Button } from './ui/button'
 import { SelectGame } from './select-game'
 import { InteractiveArea } from './interactive-area'
@@ -9,6 +9,7 @@ import '../overlay.css'
 interface NavigationBarProps {
   onSpeakClick?: () => void
   onTextClick?: () => void
+  onSearchClick?: () => void
   onSettingsClick?: () => void
   onGameSelect?: (game: Game) => void
   selectedGame?: Game | null
@@ -18,6 +19,7 @@ interface NavigationBarProps {
 export function NavigationBar({
   onSpeakClick,
   onTextClick,
+  onSearchClick,
   onSettingsClick,
   onGameSelect,
   selectedGame,
@@ -33,6 +35,12 @@ export function NavigationBar({
     // Ensure window stays on top when button is clicked
     window.electronAPI?.windowInteraction()
     onTextClick?.()
+  }
+
+  const handleSearchClick = () => {
+    // Ensure window stays on top when button is clicked
+    window.electronAPI?.windowInteraction()
+    onSearchClick?.()
   }
 
   const handleSettingsClick = () => {
@@ -71,7 +79,7 @@ export function NavigationBar({
                 className="gap-1 p-1 h-auto"
               >
                 <Mic className="w-3 h-3" />
-                <span className="text-xs">Listen</span>
+                <span className="text-xs">Speak</span>
               </Button>
 
               {/* Text Button */}
@@ -83,6 +91,17 @@ export function NavigationBar({
               >
                 <Type className="w-3 h-3" />
                 <span className="text-xs">Ask</span>
+              </Button>
+
+              {/* Search Button */}
+              <Button
+                onClick={handleSearchClick}
+                variant="gaming"
+                size="sm"
+                className="gap-1 p-1 h-auto"
+              >
+                <Search className="w-3 h-3" />
+                <span className="text-xs">Search</span>
               </Button>
 
               {/* Settings Button */}

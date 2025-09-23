@@ -164,7 +164,7 @@ export function DropdownContent({
   className = '',
   isOpen,
   close,
-  maxWidth = 'max-w-[200px]',
+  maxWidth = 'max-w-[250px]',
 }: DropdownContentProps & {
   isOpen?: boolean
   close?: () => void
