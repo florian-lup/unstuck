@@ -1011,7 +1011,11 @@ class WindowManager {
         allowRunningInsecureContent: false,
         experimentalFeatures: false,
         devTools: process.env.NODE_ENV === "development",
-        webSecurity: true
+        webSecurity: true,
+        // Safe memory optimization
+        spellcheck: false,
+        // Disable spellcheck to save memory
+        offscreen: false
       }
     });
     this.setupAuthWindowSecurity();
@@ -1042,7 +1046,13 @@ class WindowManager {
         allowRunningInsecureContent: false,
         experimentalFeatures: false,
         devTools: process.env.NODE_ENV === "development",
-        webSecurity: true
+        webSecurity: true,
+        // Safe memory optimization
+        spellcheck: false,
+        // Disable spellcheck to save memory
+        offscreen: false,
+        webgl: false,
+        plugins: false
       }
     });
     this.setupOverlayWindowSecurity();

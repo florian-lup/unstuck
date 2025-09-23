@@ -34,6 +34,9 @@ export class WindowManager {
         experimentalFeatures: false,
         devTools: process.env.NODE_ENV === 'development',
         webSecurity: true,
+        // Safe memory optimization
+        spellcheck: false, // Disable spellcheck to save memory
+        offscreen: false,
       },
     })
 
@@ -69,6 +72,11 @@ export class WindowManager {
         experimentalFeatures: false,
         devTools: process.env.NODE_ENV === 'development',
         webSecurity: true,
+        // Safe memory optimization
+        spellcheck: false, // Disable spellcheck to save memory
+        offscreen: false,
+        webgl: false,
+        plugins: false,
       },
     })
 
