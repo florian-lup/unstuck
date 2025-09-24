@@ -92,13 +92,13 @@ export class SecureAuthClient {
       throw new Error(result.error ?? 'Failed to get session')
     }
 
-    this.user = result.user ?? null
-    this.session = result.session ?? null
+    this.user = (result.user && typeof result.user === 'object' && 'sub' in result.user) ? result.user as AuthUser : null
+    this.session = (result.session && typeof result.session === 'object' && 'user' in result.session && 'tokens' in result.session) ? result.session as AuthSession : null
 
     return {
       user: this.user,
       session: this.session,
-      tokens: result.tokens ?? null,
+      tokens: (result.tokens && typeof result.tokens === 'object' && 'access_token' in result.tokens) ? result.tokens as AuthTokens : null,
     }
   }
 
@@ -195,10 +195,13 @@ export class SecureAuthClient {
     }
 
     // Listen for successful authentication from main process
-    window.electronAPI.auth.onAuthSuccess((session: AuthSession) => {
-      this.user = session.user
-      this.session = session
-      this.notifyListeners('SIGNED_IN', session)
+    window.electronAPI.auth.onAuthSuccess((session: unknown) => {
+      if (session && typeof session === 'object' && 'user' in session && 'tokens' in session) {
+        const authSession = session as AuthSession
+        this.user = authSession.user
+        this.session = authSession
+        this.notifyListeners('SIGNED_IN', authSession)
+      }
     })
 
     // Listen for authentication errors
@@ -208,9 +211,12 @@ export class SecureAuthClient {
     })
 
     // Listen for token refresh events
-    window.electronAPI.auth.onTokenRefresh?.((session: AuthSession) => {
-      this.session = session
-      this.notifyListeners('TOKEN_REFRESHED', session)
+    window.electronAPI.auth.onTokenRefresh?.((session: unknown) => {
+      if (session && typeof session === 'object' && 'user' in session && 'tokens' in session) {
+        const authSession = session as AuthSession
+        this.session = authSession
+        this.notifyListeners('TOKEN_REFRESHED', authSession)
+      }
     })
   }
 
