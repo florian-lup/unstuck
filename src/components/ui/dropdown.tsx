@@ -173,7 +173,7 @@ export function DropdownContent({
   if (!isOpen) return null
 
   return (
-    <div className={`absolute top-full left-0 mt-1 w-full ${maxWidth} z-50`}>
+    <div className={`absolute top-full left-0 mt-3 w-full ${maxWidth} z-50`}>
       <InteractiveArea
         className={`bg-overlay-bg-primary border border-overlay-border-primary rounded-2xl p-1 ${className}`}
       >
