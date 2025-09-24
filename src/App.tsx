@@ -27,6 +27,8 @@ function App() {
     handleLogout,
     handleKeybindChange,
     setShowSettingsMenu,
+    isLoadingMessage,
+    handleStartNewConversation,
   } = useAppLogic()
 
   return (
@@ -59,7 +61,9 @@ function App() {
         <TextChat
           onClose={handleTextChatClose}
           onSendMessage={handleSendMessage}
+          onStartNewConversation={handleStartNewConversation}
           messages={messages}
+          isLoading={isLoadingMessage}
         />
       )}
     </>

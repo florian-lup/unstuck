@@ -4,13 +4,17 @@ import type { Message } from '../components/text-chat'
 interface UseTextChatProps {
   onClose?: () => void
   onSendMessage?: (message: string) => void
+  onStartNewConversation?: () => void
   messages?: Message[]
+  isLoading?: boolean
 }
 
 export function useTextChat({
   onClose,
   onSendMessage,
+  onStartNewConversation,
   messages = [],
+  isLoading = false,
 }: UseTextChatProps) {
   // Local state for message input
   const [message, setMessage] = useState('')
@@ -58,6 +62,12 @@ export function useTextChat({
     setMessage(e.target.value)
   }
 
+  const handleNewConversation = () => {
+    // Ensure window stays on top when starting new conversation
+    window.electronAPI?.windowInteraction()
+    onStartNewConversation?.()
+  }
+
   return {
     // State
     message,
@@ -69,9 +79,10 @@ export function useTextChat({
     handleClose,
     handleKeyDown,
     handleMessageChange,
+    handleNewConversation,
 
     // Computed
     hasMessages: messages.length > 0,
-    canSubmit: message.trim().length > 0,
+    canSubmit: message.trim().length > 0 && !isLoading,
   }
 }

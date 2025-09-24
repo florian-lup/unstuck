@@ -4,6 +4,7 @@ import { useClickThrough } from './use-click-through'
 import { useAuth } from './use-auth'
 import { type Game } from '../lib/games'
 import { type Message } from '../components/text-chat'
+import { chatService } from '../lib/chat-service'
 
 // Helper function to convert keybind string to useKeyboardToggle format
 function parseKeybind(keybind: string) {
@@ -52,6 +53,7 @@ export function useAppLogic() {
   const [isTextChatVisible, setIsTextChatVisible] = useState(false)
   const [messages, setMessages] = useState<Message[]>([])
   const [showSettingsMenu, setShowSettingsMenu] = useState(false)
+  const [isLoadingMessage, setIsLoadingMessage] = useState(false)
 
   // Keybind management
   const [customKeybind, setCustomKeybind] = useState<string>(() => {
@@ -149,33 +151,52 @@ export function useAppLogic() {
     // TODO: Implement game-specific initialization
   }
 
-  const handleSendMessage = (messageContent: string) => {
-    // Add user message
-    const userMessage: Message = {
-      id: Date.now().toString() + '-user',
-      content: messageContent,
-      role: 'user',
-      timestamp: new Date(),
-    }
+  const handleSendMessage = async (messageContent: string) => {
+    // Set loading state
+    setIsLoadingMessage(true)
 
-    setMessages((prev) => [...prev, userMessage])
+    try {
+      // Send message through chat service
+      // Let the backend handle JWT verification
+      const { userMessage, assistantMessage } = await chatService.sendMessage(
+        messageContent
+      )
 
-    // Simulate assistant response (replace with actual AI integration later)
-    setTimeout(() => {
-      const assistantMessage: Message = {
-        id: Date.now().toString() + '-assistant',
-        content: `I received your message: "${messageContent}". How can I help you with your game?`,
+      // Add both messages to state
+      setMessages((prev) => [...prev, userMessage, assistantMessage])
+    } catch (error) {
+      // Handle errors (including auth errors from backend)
+      const errorMessage: Message = {
+        id: `${Date.now()}-error`,
+        content: error instanceof Error ? error.message : 'Unknown error',
         role: 'assistant',
         timestamp: new Date(),
       }
-      setMessages((prev) => [...prev, assistantMessage])
-    }, 1000)
+      
+      // Add user message first, then error message
+      const userMessage: Message = {
+        id: `${Date.now()}-user`,
+        content: messageContent,
+        role: 'user',
+        timestamp: new Date(),
+      }
+      
+      setMessages((prev) => [...prev, userMessage, errorMessage])
+      console.error('Error sending message:', error)
+    } finally {
+      setIsLoadingMessage(false)
+    }
   }
 
   const handleTextChatClose = () => {
     setIsTextChatVisible(false)
     // Optionally clear messages when closing chat
     // setMessages([])
+  }
+
+  const handleStartNewConversation = () => {
+    chatService.startNewConversation()
+    setMessages([])
   }
 
   const handleDropdownOpenChange = (open: boolean) => {
@@ -214,6 +235,7 @@ export function useAppLogic() {
     showSettingsMenu,
     user,
     customKeybind,
+    isLoadingMessage,
 
     // Actions
     handleSpeakClick,
@@ -222,6 +244,7 @@ export function useAppLogic() {
     handleGameSelect,
     handleSendMessage,
     handleTextChatClose,
+    handleStartNewConversation,
     handleDropdownOpenChange,
     handleLogout,
     handleKeybindChange,

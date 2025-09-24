@@ -1,4 +1,4 @@
-import { BrowserWindow, screen, shell, Tray, nativeImage, Menu, app, ipcMain, globalShortcut } from "electron";
+import { BrowserWindow, screen, shell, Menu, Tray, nativeImage, app, ipcMain, globalShortcut } from "electron";
 import { fileURLToPath } from "node:url";
 import path$1 from "node:path";
 import fs from "fs/promises";
@@ -902,8 +902,8 @@ const auth0Config = {
   clientId: "vVv9ZUVlCqxZQemAwrOGve0HSrK5rTlO",
   // Request access to user profile and enable refresh tokens
   scope: "openid profile email offline_access",
-  // Optional: Add if you have an API to access
-  // audience: 'https://your-api.example.com',
+  // Audience for your gaming search API
+  audience: "https://unstuck-search-api/",
   deviceFlow: {
     pollingInterval: 5,
     // Poll every 5 seconds
@@ -1130,6 +1130,32 @@ class WindowManager {
         (/* @__PURE__ */ new Date()).toLocaleString()
       );
     });
+    if (process.env.NODE_ENV === "development") {
+      this.overlayWindow.webContents.on("context-menu", () => {
+        const menu = Menu.buildFromTemplate([
+          {
+            label: "Open DevTools",
+            click: () => {
+              this.overlayWindow?.webContents.openDevTools({ mode: "detach" });
+            }
+          },
+          {
+            label: "Close DevTools",
+            click: () => {
+              this.overlayWindow?.webContents.closeDevTools();
+            }
+          },
+          { type: "separator" },
+          {
+            label: "Reload",
+            click: () => {
+              this.overlayWindow?.webContents.reload();
+            }
+          }
+        ]);
+        menu.popup();
+      });
+    }
   }
   loadAuthWindow() {
     if (!this.authWindow) return;

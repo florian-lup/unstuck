@@ -70,8 +70,8 @@ export const auth0Config: Auth0Config = {
   // Request access to user profile and enable refresh tokens
   scope: 'openid profile email offline_access',
 
-  // Optional: Add if you have an API to access
-  // audience: 'https://your-api.example.com',
+  // Audience for your gaming search API
+  audience: 'https://unstuck-search-api/',
 
   deviceFlow: {
     pollingInterval: 5, // Poll every 5 seconds

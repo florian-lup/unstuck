@@ -189,6 +189,34 @@ export class WindowManager {
         new Date().toLocaleString()
       )
     })
+
+    // Add context menu for DevTools in development
+    if (process.env.NODE_ENV === 'development') {
+      this.overlayWindow.webContents.on('context-menu', () => {
+        const menu = Menu.buildFromTemplate([
+          {
+            label: 'Open DevTools',
+            click: () => {
+              this.overlayWindow?.webContents.openDevTools({ mode: 'detach' })
+            }
+          },
+          {
+            label: 'Close DevTools', 
+            click: () => {
+              this.overlayWindow?.webContents.closeDevTools()
+            }
+          },
+          { type: 'separator' },
+          {
+            label: 'Reload',
+            click: () => {
+              this.overlayWindow?.webContents.reload()
+            }
+          }
+        ])
+        menu.popup()
+      })
+    }
   }
 
   private loadAuthWindow(): void {

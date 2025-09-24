@@ -1,6 +1,6 @@
 import { Input } from './ui/input'
 import { InteractiveArea } from './interactive-area'
-import { CornerDownLeft, X } from 'lucide-react'
+import { CornerDownLeft, X, RotateCcw, Loader2 } from 'lucide-react'
 import { Button } from './ui/button'
 import { useTextChat } from '../hooks/use-text-chat'
 
@@ -14,13 +14,17 @@ export interface Message {
 interface TextChatProps {
   onClose?: () => void
   onSendMessage?: (message: string) => void
+  onStartNewConversation?: () => void
   messages?: Message[]
+  isLoading?: boolean
 }
 
 export function TextChat({
   onClose,
   onSendMessage,
+  onStartNewConversation,
   messages = [],
+  isLoading = false,
 }: TextChatProps) {
   const {
     // State
@@ -33,14 +37,38 @@ export function TextChat({
     handleClose,
     handleKeyDown,
     handleMessageChange,
+    handleNewConversation,
 
     // Computed
     hasMessages,
     canSubmit,
-  } = useTextChat({ onClose, onSendMessage, messages })
+  } = useTextChat({ 
+    onClose, 
+    onSendMessage, 
+    onStartNewConversation,
+    messages, 
+    isLoading 
+  })
 
   return (
     <div className="w-full mx-auto mt-2">
+      {/* Header with New Conversation Button */}
+      {hasMessages && (
+        <div className="mb-2 flex justify-end">
+          <InteractiveArea className="p-1">
+            <Button
+              onClick={handleNewConversation}
+              variant="gaming"
+              size="sm"
+              className="h-6 px-2 text-xs"
+            >
+              <RotateCcw className="w-3 h-3 mr-1" />
+              New Chat
+            </Button>
+          </InteractiveArea>
+        </div>
+      )}
+      
       {/* Messages Area */}
       {hasMessages && (
         <InteractiveArea className="mb-2 p-3 rounded-3xl border border-overlay-border-primary bg-overlay-bg-primary">
@@ -57,13 +85,24 @@ export function TextChat({
                   className={`px-3 py-2 text-sm break-words whitespace-pre-wrap ${
                     msg.role === 'user'
                       ? 'max-w-[70%] text-overlay-text-primary'
-                      : 'w-full text-overlay-text-secondary font-bold'
+                      : 'w-full text-overlay-text-secondary'
                   }`}
                 >
                   {msg.content}
                 </div>
               </div>
             ))}
+            
+            {/* Loading indicator */}
+            {isLoading && (
+              <div className="flex justify-start">
+                <div className="px-3 py-2 text-sm text-overlay-text-secondary">
+                  <Loader2 className="w-4 h-4 animate-spin inline mr-2" />
+                  Getting response...
+                </div>
+              </div>
+            )}
+            
             <div ref={messagesEndRef} />
           </div>
         </InteractiveArea>
@@ -76,9 +115,10 @@ export function TextChat({
             value={message}
             onChange={handleMessageChange}
             onKeyDown={handleKeyDown}
-            placeholder="Ask about your game..."
+            placeholder={isLoading ? "Getting response..." : "Ask about your game..."}
             className="w-full pr-20" // Add right padding for buttons
             autoFocus
+            disabled={isLoading}
           />
           <div className="absolute right-2 top-1/2 -translate-y-1/2 flex items-center gap-1">
             <Button
@@ -86,9 +126,13 @@ export function TextChat({
               variant="gaming"
               size="icon"
               className="size-6 p-0 rounded-full"
-              disabled={!canSubmit}
+              disabled={!canSubmit || isLoading}
             >
-              <CornerDownLeft className="w-3 h-3" />
+              {isLoading ? (
+                <Loader2 className="w-3 h-3 animate-spin" />
+              ) : (
+                <CornerDownLeft className="w-3 h-3" />
+              )}
             </Button>
             <Button
               type="button"
