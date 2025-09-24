@@ -53,9 +53,9 @@ export function TextChat({
   return (
     <div className="w-full mx-auto mt-2">
       {/* Header with New Conversation Button */}
-      {hasMessages && (
-        <div className="mb-2 flex justify-end">
-          <InteractiveArea className="p-1">
+      <div className="mb-2">
+        <InteractiveArea className="p-0 rounded-3xl border border-overlay-border-primary bg-overlay-bg-primary">
+          <div className="flex justify-end items-center h-9 px-3">
             <Button
               onClick={handleNewConversation}
               variant="gaming"
@@ -65,9 +65,9 @@ export function TextChat({
               <RotateCcw className="w-3 h-3 mr-1" />
               New Chat
             </Button>
-          </InteractiveArea>
-        </div>
-      )}
+          </div>
+        </InteractiveArea>
+      </div>
       
       {/* Messages Area */}
       {hasMessages && (
