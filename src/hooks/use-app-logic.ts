@@ -152,18 +152,25 @@ export function useAppLogic() {
   }
 
   const handleSendMessage = async (messageContent: string) => {
+    // Immediately add user message to show it right away
+    const userMessage: Message = {
+      id: `${Date.now()}-user`,
+      content: messageContent,
+      role: 'user',
+      timestamp: new Date(),
+    }
+    setMessages((prev) => [...prev, userMessage])
+    
     // Set loading state
     setIsLoadingMessage(true)
 
     try {
       // Send message through chat service
-      // Let the backend handle JWT verification
-      const { userMessage, assistantMessage } = await chatService.sendMessage(
-        messageContent
-      )
+      // Let the backend handle JWT verification  
+      const { assistantMessage } = await chatService.sendMessage(messageContent)
 
-      // Add both messages to state
-      setMessages((prev) => [...prev, userMessage, assistantMessage])
+      // Add assistant message to state
+      setMessages((prev) => [...prev, assistantMessage])
     } catch (error) {
       // Handle errors (including auth errors from backend)
       const errorMessage: Message = {
@@ -173,15 +180,7 @@ export function useAppLogic() {
         timestamp: new Date(),
       }
       
-      // Add user message first, then error message
-      const userMessage: Message = {
-        id: `${Date.now()}-user`,
-        content: messageContent,
-        role: 'user',
-        timestamp: new Date(),
-      }
-      
-      setMessages((prev) => [...prev, userMessage, errorMessage])
+      setMessages((prev) => [...prev, errorMessage])
       console.error('Error sending message:', error)
     } finally {
       setIsLoadingMessage(false)
