@@ -64,6 +64,9 @@ export function useAppLogic() {
     return 'Shift+\\'
   })
 
+  // Transparency management (0-100, where 100 is fully opaque)
+  const [transparency, setTransparency] = useState<number>(90)
+
   // Parse keybind for useKeyboardToggle
   const parsedKeybind = useMemo(
     () => parseKeybind(customKeybind),
@@ -75,6 +78,23 @@ export function useAppLogic() {
     key: parsedKeybind.key,
     modifiers: parsedKeybind.modifiers,
   })
+
+  // Load saved transparency from localStorage on mount
+  useEffect(() => {
+    const loadSavedTransparency = () => {
+      if (typeof window !== 'undefined') {
+        const savedTransparency = localStorage.getItem('overlay-transparency')
+        if (savedTransparency) {
+          const parsedTransparency = parseInt(savedTransparency, 10)
+          if (!isNaN(parsedTransparency) && parsedTransparency >= 10 && parsedTransparency <= 100) {
+            setTransparency(parsedTransparency)
+          }
+        }
+      }
+    }
+    
+    loadSavedTransparency()
+  }, [])
 
   // Sync initial keybind with Electron on app start
   useEffect(() => {
@@ -89,6 +109,77 @@ export function useAppLogic() {
     }
     void syncKeybind()
   }, [customKeybind])
+
+  // Apply transparency changes to CSS custom properties
+  useEffect(() => {
+    const root = document.documentElement
+    const colorVars = [
+      '--overlay-bg-primary',
+      '--overlay-bg-secondary', 
+      '--overlay-bg-hover',
+      '--overlay-text-primary',
+      '--overlay-text-secondary',
+      '--overlay-text-muted',
+      '--overlay-border-primary',
+      '--overlay-border-accent',
+      '--overlay-accent-primary',
+      '--overlay-accent-secondary',
+      '--overlay-accent-successs'
+    ]
+
+    // Store original CSS values on first run (when transparency is 100%)
+    const originalValues: Record<string, string> = {}
+    
+    const storeOriginalValues = () => {
+      const computedStyles = getComputedStyle(root)
+      colorVars.forEach(cssVar => {
+        // Remove any existing inline styles to get CSS file values
+        root.style.removeProperty(cssVar)
+        originalValues[cssVar] = computedStyles.getPropertyValue(cssVar).trim()
+      })
+    }
+    
+    const applyTransparency = () => {
+      const transparencyMultiplier = transparency / 100
+      
+      // Helper function to parse rgba and apply transparency
+      const applyTransparencyToColor = (originalValue: string) => {
+        // Parse rgba(r, g, b, a) format
+        const rgbaRegex = /rgba?\(([^)]+)\)/
+        const rgbaMatch = rgbaRegex.exec(originalValue)
+        if (rgbaMatch) {
+          const values = rgbaMatch[1].split(',').map(v => v.trim())
+          const [r, g, b, originalAlpha = '1'] = values
+          const newAlpha = parseFloat(originalAlpha) * transparencyMultiplier
+          
+          return `rgba(${r}, ${g}, ${b}, ${newAlpha})`
+        }
+        
+        // If not rgba format, return original
+        return originalValue
+      }
+      
+      // Apply transparency to all overlay colors using stored original values
+      colorVars.forEach(cssVar => {
+        const originalValue = originalValues[cssVar]
+        if (originalValue) {
+          const newValue = applyTransparencyToColor(originalValue)
+          root.style.setProperty(cssVar, newValue)
+        }
+      })
+    }
+    
+    // Store original values then apply transparency
+    storeOriginalValues()
+    applyTransparency()
+    
+    // Cleanup function to reset to original CSS values
+    return () => {
+      colorVars.forEach(cssVar => {
+        root.style.removeProperty(cssVar)
+      })
+    }
+  }, [transparency])
 
   // Listen for settings menu open event from system tray
   useEffect(() => {
@@ -225,6 +316,14 @@ export function useAppLogic() {
     }
   }
 
+  const handleTransparencyChange = (newTransparency: number) => {
+    setTransparency(newTransparency)
+    // Persist to localStorage
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('overlay-transparency', newTransparency.toString())
+    }
+  }
+
   return {
     // State
     selectedGame,
@@ -234,6 +333,7 @@ export function useAppLogic() {
     showSettingsMenu,
     user,
     customKeybind,
+    transparency,
     isLoadingMessage,
 
     // Actions
@@ -247,6 +347,7 @@ export function useAppLogic() {
     handleDropdownOpenChange,
     handleLogout,
     handleKeybindChange,
+    handleTransparencyChange,
     setShowSettingsMenu,
   }
 }

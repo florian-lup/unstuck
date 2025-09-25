@@ -6,9 +6,10 @@
 
 :root {
   /* Gaming Overlay Color Palette */
-  --overlay-bg-primary: rgba(5, 5, 8, 0.55);
-  --overlay-bg-secondary: rgba(8, 8, 12, 0.5);
+  --overlay-bg-primary: rgba(5, 5, 8, 0.65);
+  --overlay-bg-secondary: rgba(8, 8, 12, 0.6);
   --overlay-bg-hover: rgba(255, 255, 255, 0.05);
+  --overlay-bg-solid: rgb(255, 255, 255);
 
   /* Gaming Accent Colors */
   --overlay-accent-primary: rgba(0, 255, 255, 0.65); /* Cyan */
@@ -18,7 +19,7 @@
   /* Gaming Text Colors */
   --overlay-text-primary: rgba(255, 255, 255, 0.85);
   --overlay-text-secondary: rgba(255, 255, 255, 0.65);
-  --overlay-text-muted: rgba(255, 255, 255, 0.4);
+  --overlay-text-muted: rgba(255, 255, 255, 0.5);
 
   /* Gaming Border Colors */
   --overlay-border-primary: rgba(255, 255, 255, 0.12);
@@ -30,6 +31,7 @@
 @theme {
   --color-overlay-bg-primary: var(--overlay-bg-primary);
   --color-overlay-bg-secondary: var(--overlay-bg-secondary);
+  --color-overlay-bg-solid: var(--overlay-bg-solid);
   --color-overlay-bg-hover: var(--overlay-bg-hover);
   --color-overlay-accent-primary: var(--overlay-accent-primary);
   --color-overlay-accent-secondary: var(--overlay-accent-secondary);

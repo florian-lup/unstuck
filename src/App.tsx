@@ -15,6 +15,7 @@ function App() {
     showSettingsMenu,
     user,
     customKeybind,
+    transparency,
 
     // Actions
     handleSpeakClick,
@@ -26,6 +27,7 @@ function App() {
     handleDropdownOpenChange,
     handleLogout,
     handleKeybindChange,
+    handleTransparencyChange,
     setShowSettingsMenu,
     isLoadingMessage,
     handleStartNewConversation,
@@ -53,6 +55,8 @@ function App() {
               }}
               currentKeybind={customKeybind}
               onKeybindChange={handleKeybindChange}
+              currentTransparency={transparency}
+              onTransparencyChange={handleTransparencyChange}
             />
           )}
         </div>
