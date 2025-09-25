@@ -146,7 +146,7 @@ export function DropdownTrigger({
   return (
     <button
       onClick={toggle}
-      className={`border border-overlay-border-primary rounded-3xl px-3 py-1.5 flex items-center gap-2 text-sm font-medium text-overlay-text-primary hover:border-overlay-accent-primary transition-all duration-200 w-full justify-between ${className}`}
+      className={`border border-overlay-border-primary rounded-3xl px-3 py-1.5 flex items-center gap-2 text-sm font-medium text-overlay-text-primary hover:border-overlay-accent-primary focus:outline-none transition-all duration-200 w-full justify-between ${className}`}
       aria-haspopup="listbox"
       aria-expanded={isOpen}
     >
