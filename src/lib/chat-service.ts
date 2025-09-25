@@ -6,6 +6,7 @@
 import { apiClient, type GamingSearchRequest } from './api-client'
 import { secureAuth } from './auth-client'
 import type { Message } from '../components/text-chat'
+import type { Game } from './games'
 
 export interface ConversationState {
   conversationId?: string
@@ -22,7 +23,8 @@ export class ChatService {
    * Send a message and get AI response
    */
   async sendMessage(
-    message: string
+    message: string,
+    selectedGame?: Game | null
   ): Promise<{
     userMessage: Message
     assistantMessage: Message
@@ -47,9 +49,16 @@ export class ChatService {
         timestamp: new Date(),
       }
 
+      // Check if a game is selected (required for API)
+      if (!selectedGame) {
+        throw new Error('Please select a game before sending a message.')
+      }
+
       // Prepare API request
       const request: GamingSearchRequest = {
         query: message,
+        game: selectedGame.gameName,
+        ...(selectedGame.version && { version: selectedGame.version }),
         ...(this.conversationId && { conversation_id: this.conversationId }),
       }
 

@@ -5,6 +5,8 @@
 
 export interface GamingSearchRequest {
   query: string
+  game: string
+  version?: string
   conversation_id?: string
 }
 

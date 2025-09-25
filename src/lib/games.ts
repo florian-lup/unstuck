@@ -2,11 +2,11 @@ import React from 'react'
 
 export interface Game {
   id: string
-  name: string
+  gameName: string
   displayName: string
   version?: string
   icon?: React.ReactNode
-  category?: 'fps' | 'moba' | 'battle-royale' | 'strategy' | 'other'
+  category?: 'fps' | 'moba' | 'battle-royale' | 'strategy' | 'mmorpg' | 'other'
   isActive?: boolean
 }
 
@@ -14,22 +14,23 @@ export interface Game {
 export const GAMES: Game[] = [
   {
     id: 'valorant',
-    name: 'valorant',
+    gameName: 'valorant',
     displayName: 'Valorant',
     version: '8.11',
     category: 'fps',
     isActive: true,
   },
   {
-    id: 'cs2',
-    name: 'cs2',
-    displayName: 'CS2',
-    category: 'fps',
+    id: 'wow',
+    gameName: 'world of warcraft',
+    displayName: 'World of Warcraft',
+    version: '11.2',
+    category: 'mmorpg',
     isActive: true,
   },
   {
     id: 'lol',
-    name: 'lol',
+    gameName: 'lol',
     displayName: 'League of Legends',
     version: '14.18',
     category: 'moba',
@@ -37,7 +38,7 @@ export const GAMES: Game[] = [
   },
   {
     id: 'apex',
-    name: 'apex',
+    gameName: 'apex',
     displayName: 'Apex Legends',
     version: 'Season 22',
     category: 'battle-royale',
@@ -45,7 +46,7 @@ export const GAMES: Game[] = [
   },
   {
     id: 'overwatch',
-    name: 'overwatch',
+    gameName: 'overwatch',
     displayName: 'Overwatch 2',
     version: 'Season 12',
     category: 'fps',
@@ -71,7 +72,7 @@ export const searchGames = (query: string): Game[] => {
   return GAMES.filter(
     (game) =>
       game.isActive &&
-      (game.name.toLowerCase().includes(lowercaseQuery) ||
+      (game.gameName.toLowerCase().includes(lowercaseQuery) ||
         game.displayName.toLowerCase().includes(lowercaseQuery) ||
         game.version?.toLowerCase().includes(lowercaseQuery))
   )

@@ -258,7 +258,7 @@ export function useAppLogic() {
     try {
       // Send message through chat service
       // Let the backend handle JWT verification  
-      const { assistantMessage } = await chatService.sendMessage(messageContent)
+      const { assistantMessage } = await chatService.sendMessage(messageContent, selectedGame)
 
       // Add assistant message to state
       setMessages((prev) => [...prev, assistantMessage])
