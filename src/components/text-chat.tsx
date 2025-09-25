@@ -80,13 +80,13 @@ export function TextChat({
             {messages.map((msg) => (
               <div
                 key={msg.id}
-                className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}
+                className="flex justify-start"
               >
                 <div
-                  className={`px-3 py-2 text-sm break-words ${
+                  className={`px-3 py-2 text-sm break-words w-full ${
                     msg.role === 'user'
-                      ? 'max-w-[70%] text-overlay-text-primary whitespace-pre-wrap'
-                      : 'w-full text-overlay-text-secondary'
+                      ? 'text-overlay-text-primary whitespace-pre-wrap border-b border-overlay-border-primary pb-4 mb-2 mr-2'
+                      : 'text-overlay-text-secondary'
                   }`}
                 >
                   {msg.role === 'assistant' ? (
