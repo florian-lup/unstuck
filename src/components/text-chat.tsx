@@ -3,6 +3,7 @@ import { InteractiveArea } from './interactive-area'
 import { CornerDownLeft, X, RotateCcw, Loader2 } from 'lucide-react'
 import { Button } from './ui/button'
 import { useTextChat } from '../hooks/use-text-chat'
+import { MarkdownContent } from '../utils/markdown-content'
 
 export interface Message {
   id: string
@@ -82,13 +83,17 @@ export function TextChat({
                 className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}
               >
                 <div
-                  className={`px-3 py-2 text-sm break-words whitespace-pre-wrap ${
+                  className={`px-3 py-2 text-sm break-words ${
                     msg.role === 'user'
-                      ? 'max-w-[70%] text-overlay-text-primary'
+                      ? 'max-w-[70%] text-overlay-text-primary whitespace-pre-wrap'
                       : 'w-full text-overlay-text-secondary'
                   }`}
                 >
-                  {msg.content}
+                  {msg.role === 'assistant' ? (
+                    <MarkdownContent content={msg.content} />
+                  ) : (
+                    msg.content
+                  )}
                 </div>
               </div>
             ))}
