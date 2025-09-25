@@ -94,9 +94,16 @@ const SecurityValidator = {
     delete sanitized.raw_user_meta_data;
     const typedSanitized = sanitized;
     return {
-      id: typedSanitized.id,
+      sub: typedSanitized.sub,
       email: typedSanitized.email,
-      created_at: typedSanitized.created_at
+      name: typedSanitized.name,
+      nickname: typedSanitized.nickname,
+      picture: typedSanitized.picture,
+      email_verified: typedSanitized.email_verified,
+      created_at: typedSanitized.created_at,
+      updated_at: typedSanitized.updated_at,
+      id: typedSanitized.id
+      // Keep for backward compatibility
     };
   },
   /**
