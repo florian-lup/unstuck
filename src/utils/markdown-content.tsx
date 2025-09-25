@@ -21,7 +21,7 @@ function cleanCitations(content: string): string {
  */
 export const MarkdownContent = memo(({ 
   content, 
-  className = "text-overlay-text-secondary" 
+  className = "text-overlay-text-primary" 
 }: MarkdownContentProps) => {
   // Clean up citation references before rendering
   const cleanedContent = cleanCitations(content)

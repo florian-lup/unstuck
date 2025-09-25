@@ -85,8 +85,8 @@ export function TextChat({
                 <div
                   className={`px-3 py-2 text-sm break-words w-full ${
                     msg.role === 'user'
-                      ? 'text-overlay-text-primary whitespace-pre-wrap border-b border-overlay-border-primary pb-4 mb-2 mr-2'
-                      : 'text-overlay-text-secondary'
+                      ? 'text-overlay-text-secondary whitespace-pre-wrap border-b border-overlay-border-primary pb-4 mb-2 mr-2'
+                      : 'text-overlay-text-primary'
                   }`}
                 >
                   {msg.role === 'assistant' ? (
