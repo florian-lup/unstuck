@@ -18,6 +18,9 @@ export function useTextChat({
 }: UseTextChatProps) {
   // Local state for message input
   const [message, setMessage] = useState('')
+  
+  // Local state for toggle buttons (only one can be active at a time)
+  const [activeToggle, setActiveToggle] = useState<'guides' | 'builds' | 'lore' | 'help' | null>(null)
 
   // Refs for scroll management
   const messagesEndRef = useRef<HTMLDivElement>(null)
@@ -68,11 +71,17 @@ export function useTextChat({
     onStartNewConversation?.()
   }
 
+  const handleToggleClick = (toggleName: 'guides' | 'builds' | 'lore' | 'help') => {
+    // If the same toggle is clicked, deactivate it, otherwise set it as active
+    setActiveToggle(activeToggle === toggleName ? null : toggleName)
+  }
+
   return {
     // State
     message,
     messagesEndRef,
     messagesContainerRef,
+    activeToggle,
 
     // Actions
     handleSubmit,
@@ -80,6 +89,7 @@ export function useTextChat({
     handleKeyDown,
     handleMessageChange,
     handleNewConversation,
+    handleToggleClick,
 
     // Computed
     hasMessages: messages.length > 0,

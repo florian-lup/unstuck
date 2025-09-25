@@ -1,7 +1,8 @@
 import { Input } from './ui/input'
 import { InteractiveArea } from './interactive-area'
-import { CornerDownLeft, X, RotateCcw, Loader2 } from 'lucide-react'
+import { CornerDownLeft, X, RotateCcw, Loader2, BookOpen, Wrench, Scroll, AlertTriangle } from 'lucide-react'
 import { Button } from './ui/button'
+import { Toggle } from './ui/toggle'
 import { useTextChat } from '../hooks/use-text-chat'
 import { MarkdownContent } from '../utils/markdown-content'
 
@@ -32,6 +33,7 @@ export function TextChat({
     message,
     messagesEndRef,
     messagesContainerRef,
+    activeToggle,
 
     // Actions
     handleSubmit,
@@ -39,6 +41,7 @@ export function TextChat({
     handleKeyDown,
     handleMessageChange,
     handleNewConversation,
+    handleToggleClick,
 
     // Computed
     hasMessages,
@@ -56,7 +59,49 @@ export function TextChat({
       {/* Header with New Conversation Button */}
       <div className="mb-2">
         <InteractiveArea className="p-0 rounded-3xl border border-overlay-border-primary bg-overlay-bg-primary">
-          <div className="flex justify-end items-center h-9 px-3">
+          <div className="flex justify-between items-center h-9 px-3">
+            <div className="flex items-center gap-2">
+              <Toggle 
+                variant="gaming" 
+                size="sm" 
+                className="h-6 px-2 text-xs"
+                pressed={activeToggle === 'guides'}
+                onPressedChange={() => { handleToggleClick('guides') }}
+              >
+                <BookOpen className="w-3 h-3 mr-1" />
+                Guides
+              </Toggle>
+              <Toggle 
+                variant="gaming" 
+                size="sm" 
+                className="h-6 px-2 text-xs"
+                pressed={activeToggle === 'builds'}
+                onPressedChange={() => { handleToggleClick('builds') }}
+              >
+                <Wrench className="w-3 h-3 mr-1" />
+                Builds
+              </Toggle>
+              <Toggle 
+                variant="gaming" 
+                size="sm" 
+                className="h-6 px-2 text-xs"
+                pressed={activeToggle === 'lore'}
+                onPressedChange={() => { handleToggleClick('lore') }}
+              >
+                <Scroll className="w-3 h-3 mr-1" />
+                Lore
+              </Toggle>
+              <Toggle 
+                variant="gaming" 
+                size="sm" 
+                className="h-6 px-2 text-xs"
+                pressed={activeToggle === 'help'}
+                onPressedChange={() => { handleToggleClick('help') }}
+              >
+                <AlertTriangle className="w-3 h-3 mr-1" />
+                Help
+              </Toggle>
+            </div>
             <Button
               onClick={handleNewConversation}
               variant="gaming"
