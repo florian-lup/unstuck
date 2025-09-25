@@ -52,10 +52,10 @@ export const MarkdownContent = memo(({
           h4: ({children}) => <h4 className="text-base font-semibold mt-3 mb-2 text-white">{children}</h4>,
           // Paragraphs
           p: ({children}) => <p className="mb-3 leading-relaxed">{children}</p>,
-          // Lists
-          ul: ({children}) => <ul className="list-disc list-inside mb-3 space-y-1">{children}</ul>,
-          ol: ({children}) => <ol className="list-decimal list-inside mb-3 space-y-1">{children}</ol>,
-          li: ({children}) => <li className="text-sm">{children}</li>,
+          // Lists - using list-outside with proper padding for consistent bullet placement
+          ul: ({children}) => <ul className="list-disc list-outside ml-4 mb-3 space-y-1 pl-2">{children}</ul>,
+          ol: ({children}) => <ol className="list-decimal list-outside ml-4 mb-3 space-y-1 pl-2">{children}</ol>,
+          li: ({children}) => <li className="text-sm leading-relaxed">{children}</li>,
           // Text formatting
           strong: ({children}) => <strong className="font-semibold text-white">{children}</strong>,
           em: ({children}) => <em className="italic">{children}</em>,
