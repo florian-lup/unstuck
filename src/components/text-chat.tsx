@@ -1,6 +1,6 @@
 import { Input } from './ui/input'
 import { InteractiveArea } from './interactive-area'
-import { CornerDownLeft, X, RotateCcw, Loader2, BookOpen, Wrench, Scroll, AlertTriangle } from 'lucide-react'
+import { CornerDownLeft, X, RotateCcw, Loader2, BookOpen, Wrench, Scroll, ClipboardList } from 'lucide-react'
 import { Button } from './ui/button'
 import { Toggle } from './ui/toggle'
 import { useTextChat } from '../hooks/use-text-chat'
@@ -78,7 +78,7 @@ export function TextChat({
                 pressed={activeToggle === 'builds'}
                 onPressedChange={() => { handleToggleClick('builds') }}
               >
-                <Wrench className="w-3 h-3 mr-1" />
+                <ClipboardList className="w-3 h-3 mr-1" />
                 Builds
               </Toggle>
               <Toggle 
@@ -98,7 +98,7 @@ export function TextChat({
                 pressed={activeToggle === 'help'}
                 onPressedChange={() => { handleToggleClick('help') }}
               >
-                <AlertTriangle className="w-3 h-3 mr-1" />
+                <Wrench className="w-3 h-3 mr-1" />
                 Help
               </Toggle>
             </div>
