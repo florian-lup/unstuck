@@ -1,4 +1,4 @@
-import { LogOut, User, Edit, Power } from 'lucide-react'
+import { LogOut, User, Pencil, Power } from 'lucide-react'
 import { Button } from './ui/button'
 import { Slider } from './ui/slider'
 import { InteractiveArea } from './interactive-area'
@@ -149,7 +149,7 @@ export function SettingsMenu({
                     size="icon"
                     className="px-2 py-1 h-auto hover:!border-transparent"
                   >
-                    <Edit className="w-3 h-3" />
+                    <Pencil className="w-3 h-3" />
                   </Button>
                 </>
               )}

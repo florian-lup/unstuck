@@ -1,5 +1,5 @@
 import React from 'react'
-import { Mic, Type, Settings, Grip } from 'lucide-react'
+import { Mic, Type, Menu, Settings, Grip } from 'lucide-react'
 import { Button } from './ui/button'
 import { Tooltip } from './ui/tooltip'
 import { SelectGame } from './select-game'
@@ -10,6 +10,7 @@ import '../overlay.css'
 interface NavigationBarProps {
   onSpeakClick?: () => void
   onTextClick?: () => void
+  onHistoryClick?: () => void
   onSettingsClick?: () => void
   onGameSelect?: (game: Game) => void
   selectedGame?: Game | null
@@ -19,6 +20,7 @@ interface NavigationBarProps {
 export function NavigationBar({
   onSpeakClick,
   onTextClick,
+  onHistoryClick,
   onSettingsClick,
   onGameSelect,
   selectedGame,
@@ -34,6 +36,12 @@ export function NavigationBar({
     // Ensure window stays on top when button is clicked
     window.electronAPI?.windowInteraction()
     onTextClick?.()
+  }
+
+  const handleHistoryClick = () => {
+    // Ensure window stays on top when button is clicked
+    window.electronAPI?.windowInteraction()
+    onHistoryClick?.()
   }
 
   const handleSettingsClick = () => {
@@ -86,6 +94,16 @@ export function NavigationBar({
               >
                 <Type className="w-3 h-3" />
                 <span className="text-xs">Ask</span>
+              </Button>
+
+              {/* History Button */}
+              <Button
+                onClick={handleHistoryClick}
+                variant="gaming"
+                size="icon"
+                className="p-1 h-auto w-auto"
+              >
+                <Menu className="w-3 h-3" />
               </Button>
 
               {/* Settings Button */}
