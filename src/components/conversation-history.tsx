@@ -268,7 +268,6 @@ export function ConversationHistory({
                               void handleDeleteClick(e, conversation.id)
                             }}
                             className="flex items-center justify-center w-5 h-5 hover:bg-destructive/20 hover:text-destructive rounded transition-all duration-200 text-overlay-text-muted"
-                            title="Delete conversation"
                           >
                             <Trash2 className="w-3 h-3" />
                           </button>

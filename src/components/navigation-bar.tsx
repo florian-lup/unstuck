@@ -93,7 +93,7 @@ export function NavigationBar({
                 className="gap-1 p-1 h-auto"
               >
                 <Type className="w-3 h-3" />
-                <span className="text-xs">Ask</span>
+                <span className="text-xs">Chat</span>
               </Button>
 
               {/* History Button */}
