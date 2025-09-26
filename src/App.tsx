@@ -1,6 +1,7 @@
 import { NavigationBar } from './components/navigation-bar'
 import { TextChat } from './components/text-chat'
 import { SettingsMenu } from './components/settings-menu'
+import { ConversationHistory } from './components/conversation-history'
 import { useAppLogic } from './hooks/use-app-logic'
 import './index.css'
 import './overlay.css'
@@ -13,6 +14,7 @@ function App() {
     messages,
     isNavigationBarVisible,
     showSettingsMenu,
+    showHistoryPanel,
     user,
     customKeybind,
     transparency,
@@ -20,6 +22,7 @@ function App() {
     // Actions
     handleSpeakClick,
     handleTextClick,
+    handleHistoryClick,
     handleSettingsClick,
     handleGameSelect,
     handleSendMessage,
@@ -29,6 +32,7 @@ function App() {
     handleKeybindChange,
     handleTransparencyChange,
     setShowSettingsMenu,
+    setShowHistoryPanel,
     isLoadingMessage,
     handleStartNewConversation,
   } = useAppLogic()
@@ -40,6 +44,7 @@ function App() {
           <NavigationBar
             onSpeakClick={handleSpeakClick}
             onTextClick={handleTextClick}
+            onHistoryClick={handleHistoryClick}
             onSettingsClick={handleSettingsClick}
             onGameSelect={handleGameSelect}
             selectedGame={selectedGame}
@@ -57,6 +62,18 @@ function App() {
               onKeybindChange={handleKeybindChange}
               currentTransparency={transparency}
               onTransparencyChange={handleTransparencyChange}
+            />
+          )}
+          {showHistoryPanel && (
+            <ConversationHistory
+              isOpen={showHistoryPanel}
+              onClose={() => {
+                setShowHistoryPanel(false)
+              }}
+              onConversationSelect={(conversation) => {
+                // TODO: Handle conversation selection - could load the conversation
+                console.warn('Selected conversation:', conversation)
+              }}
             />
           )}
         </div>

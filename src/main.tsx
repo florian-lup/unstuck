@@ -12,9 +12,4 @@ ReactDOM.createRoot(rootElement).render(
   </React.StrictMode>
 )
 
-// Use contextBridge
-window.ipcRenderer.on('main-process-message', (_event, message) => {
-  // Debug message from main process
-  // eslint-disable-next-line no-console
-  console.log(message)
-})
+// IPC listeners are handled through electronAPI in preload script

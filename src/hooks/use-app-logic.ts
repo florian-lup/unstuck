@@ -53,6 +53,7 @@ export function useAppLogic() {
   const [isTextChatVisible, setIsTextChatVisible] = useState(false)
   const [messages, setMessages] = useState<Message[]>([])
   const [showSettingsMenu, setShowSettingsMenu] = useState(false)
+  const [showHistoryPanel, setShowHistoryPanel] = useState(false)
   const [isLoadingMessage, setIsLoadingMessage] = useState(false)
 
   // Keybind management
@@ -199,7 +200,7 @@ export function useAppLogic() {
   // Global click-through management
   useClickThrough({
     interactiveSelectors:
-      isNavigationBarVisible || isTextChatVisible
+      isNavigationBarVisible || isTextChatVisible || showSettingsMenu || showHistoryPanel
         ? ['[data-interactive-area]']
         : [],
   })
@@ -212,17 +213,40 @@ export function useAppLogic() {
 
   const handleTextClick = () => {
     setIsTextChatVisible(!isTextChatVisible)
-    // Close settings menu when text chat opens
-    if (!isTextChatVisible && showSettingsMenu) {
-      setShowSettingsMenu(false)
+    // Close other panels when text chat opens
+    if (!isTextChatVisible) {
+      if (showSettingsMenu) {
+        setShowSettingsMenu(false)
+      }
+      if (showHistoryPanel) {
+        setShowHistoryPanel(false)
+      }
+    }
+  }
+
+  const handleHistoryClick = () => {
+    setShowHistoryPanel(!showHistoryPanel)
+    // Close other panels when history opens
+    if (!showHistoryPanel) {
+      if (isTextChatVisible) {
+        setIsTextChatVisible(false)
+      }
+      if (showSettingsMenu) {
+        setShowSettingsMenu(false)
+      }
     }
   }
 
   const handleSettingsClick = () => {
     setShowSettingsMenu(!showSettingsMenu)
-    // Close text chat when settings opens
-    if (!showSettingsMenu && isTextChatVisible) {
-      setIsTextChatVisible(false)
+    // Close other panels when settings opens
+    if (!showSettingsMenu) {
+      if (isTextChatVisible) {
+        setIsTextChatVisible(false)
+      }
+      if (showHistoryPanel) {
+        setShowHistoryPanel(false)
+      }
     }
   }
 
@@ -291,13 +315,15 @@ export function useAppLogic() {
 
   const handleDropdownOpenChange = (open: boolean) => {
     if (open) {
-      // Close text chat when dropdown opens
+      // Close all panels when dropdown opens
       if (isTextChatVisible) {
         setIsTextChatVisible(false)
       }
-      // Close settings menu when dropdown opens
       if (showSettingsMenu) {
         setShowSettingsMenu(false)
+      }
+      if (showHistoryPanel) {
+        setShowHistoryPanel(false)
       }
     }
   }
@@ -331,6 +357,7 @@ export function useAppLogic() {
     messages,
     isNavigationBarVisible,
     showSettingsMenu,
+    showHistoryPanel,
     user,
     customKeybind,
     transparency,
@@ -339,6 +366,7 @@ export function useAppLogic() {
     // Actions
     handleSpeakClick,
     handleTextClick,
+    handleHistoryClick,
     handleSettingsClick,
     handleGameSelect,
     handleSendMessage,
@@ -349,5 +377,6 @@ export function useAppLogic() {
     handleKeybindChange,
     handleTransparencyChange,
     setShowSettingsMenu,
+    setShowHistoryPanel,
   }
 }
