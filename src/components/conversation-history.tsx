@@ -171,7 +171,7 @@ export function ConversationHistory({
 
   return (
     <InteractiveArea className="w-full">
-      <div className="w-full bg-overlay-bg-primary border border-overlay-border-primary rounded-3xl p-4 mt-2 max-h-96 flex flex-col">
+      <div className="w-full bg-overlay-bg-primary border border-overlay-border-primary rounded-3xl p-4 mt-2 max-h-120 flex flex-col">
         {/* Header */}
         <div className="flex items-center justify-between mb-3">
           <h3 className="text-sm font-medium text-overlay-text-primary">
@@ -183,7 +183,7 @@ export function ConversationHistory({
         </div>
 
         {/* Content */}
-        <div className="flex-1 overflow-y-auto">
+        <div className="flex-1 overflow-y-auto overlay-scrollbar pr-2">
           {/* Loading State */}
           {isLoading && (
             <div className="flex items-center justify-center py-8">
