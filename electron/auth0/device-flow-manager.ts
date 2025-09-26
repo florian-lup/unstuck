@@ -78,6 +78,7 @@ export class DeviceFlowManager {
       body.append('audience', this.audience)
     }
 
+
     const response = await fetch(deviceCodeEndpoint, {
       method: 'POST',
       headers: {

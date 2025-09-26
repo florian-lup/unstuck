@@ -4,129 +4,9 @@ import path$1 from "node:path";
 import fs from "fs/promises";
 import path from "path";
 import os from "os";
-import crypto from "crypto";
 import fs$1 from "fs";
 import require$$0 from "util";
 import require$$2 from "child_process";
-const SecurityValidator = {
-  /**
-   * Validate OAuth provider
-   */
-  validateOAuthProvider(provider) {
-    const validProviders = ["google", "github", "discord"];
-    if (typeof provider !== "string") {
-      throw new Error("OAuth provider must be a string");
-    }
-    if (!validProviders.includes(provider)) {
-      throw new Error(
-        `Invalid OAuth provider: ${provider}. Must be one of: ${validProviders.join(", ")}`
-      );
-    }
-    return provider;
-  },
-  /**
-   * Validate URL string
-   */
-  validateUrl(url) {
-    if (typeof url !== "string") {
-      throw new Error("URL must be a string");
-    }
-    if (url.length === 0) {
-      throw new Error("URL cannot be empty");
-    }
-    if (url.length > 2048) {
-      throw new Error("URL too long (max 2048 characters)");
-    }
-    if (!url.startsWith("https://")) {
-      throw new Error("URL must use https:// protocol");
-    }
-    return url;
-  },
-  /**
-   * Validate mouse event options
-   */
-  validateMouseEventOptions(options) {
-    if (options === void 0 || options === null) {
-      return void 0;
-    }
-    if (typeof options !== "object") {
-      throw new Error("Mouse event options must be an object");
-    }
-    const opts = options;
-    if ("forward" in opts && typeof opts.forward !== "boolean") {
-      throw new Error("Mouse event forward option must be a boolean");
-    }
-    return { forward: opts.forward };
-  },
-  /**
-   * Validate boolean value
-   */
-  validateBoolean(value, fieldName) {
-    if (typeof value !== "boolean") {
-      throw new Error(`${fieldName} must be a boolean`);
-    }
-    return value;
-  },
-  /**
-   * Validate string with length limits
-   */
-  validateString(value, fieldName, maxLength = 255) {
-    if (typeof value !== "string") {
-      throw new Error(`${fieldName} must be a string`);
-    }
-    if (value.length > maxLength) {
-      throw new Error(`${fieldName} too long (max ${maxLength} characters)`);
-    }
-    return value;
-  },
-  /**
-   * Sanitize user object for logging (remove sensitive fields)
-   */
-  sanitizeUserForLogging(user) {
-    if (!user || typeof user !== "object") {
-      return user;
-    }
-    const sanitized = { ...user };
-    delete sanitized.access_token;
-    delete sanitized.refresh_token;
-    delete sanitized.session;
-    delete sanitized.raw_app_meta_data;
-    delete sanitized.raw_user_meta_data;
-    const typedSanitized = sanitized;
-    return {
-      sub: typedSanitized.sub,
-      email: typedSanitized.email,
-      name: typedSanitized.name,
-      nickname: typedSanitized.nickname,
-      picture: typedSanitized.picture,
-      email_verified: typedSanitized.email_verified,
-      created_at: typedSanitized.created_at,
-      updated_at: typedSanitized.updated_at,
-      id: typedSanitized.id
-      // Keep for backward compatibility
-    };
-  },
-  /**
-   * Rate limiting for IPC calls
-   */
-  rateLimitMap: /* @__PURE__ */ new Map(),
-  checkRateLimit(channel, maxRequests, windowMs) {
-    const now = Date.now();
-    const key = channel;
-    const record = this.rateLimitMap.get(key);
-    if (!record || now > record.resetTime) {
-      this.rateLimitMap.set(key, {
-        count: 1,
-        resetTime: now + windowMs
-      });
-      return;
-    }
-    if (record.count >= maxRequests) {
-      throw new Error(`Rate limit exceeded for channel: ${channel}`);
-    }
-    record.count++;
-  }
-};
 class TokenManager {
   config;
   domain;
@@ -318,14 +198,7 @@ class TokenManager {
   }
 }
 class SecureStorage {
-  config;
   secureDir = path.join(os.homedir(), ".unstuck-secure");
-  constructor(config) {
-    this.config = config;
-  }
-  get FALLBACK_STORAGE_EXPIRY_HOURS() {
-    return this.config.tokenManagement.fallbackStorageExpiryHours;
-  }
   /**
    * Initialize secure storage directory
    */
@@ -350,7 +223,8 @@ class SecureStorage {
     try {
       const { safeStorage } = await import("electron");
       if (!safeStorage.isEncryptionAvailable()) {
-        return await this.enhancedFileGetItem(key);
+        console.error("OS-level encryption is required but not available");
+        return null;
       }
       const filePath = path.join(this.secureDir, `${key}.dat`);
       const encrypted = await fs.readFile(filePath);
@@ -366,12 +240,7 @@ class SecureStorage {
     try {
       const { safeStorage } = await import("electron");
       if (!safeStorage.isEncryptionAvailable()) {
-        console.warn("🔐 OS encryption unavailable - using enhanced fallback");
-        if (key.includes("refresh_token")) {
-          throw new Error("Secure storage required for refresh tokens");
-        }
-        await this.enhancedFileSetItem(key, value);
-        return;
+        throw new Error("OS-level encryption is required but not available. Please ensure Windows Credential Manager is working properly.");
       }
       const encrypted = safeStorage.encryptString(value);
       const filePath = path.join(this.secureDir, `${key}.dat`);
@@ -390,78 +259,6 @@ class SecureStorage {
       await fs.unlink(filePath);
     } catch {
     }
-  }
-  /**
-   * Enhanced fallback file storage with encryption
-   */
-  async enhancedFileGetItem(key) {
-    try {
-      const filePath = path.join(this.secureDir, `${key}.json`);
-      const data = await fs.readFile(filePath, "utf8");
-      const parsed = JSON.parse(data);
-      if (parsed.expiresAt && Date.now() > parsed.expiresAt) {
-        await fs.unlink(filePath).catch(() => {
-        });
-        return null;
-      }
-      if (parsed.encrypted && parsed.iv && parsed.authTag) {
-        return this.decryptValue(parsed.encrypted, parsed.iv, parsed.authTag);
-      }
-      console.warn(
-        "🔒 Found legacy token format - forcing re-authentication for security"
-      );
-      await fs.unlink(filePath).catch(() => {
-      });
-      return null;
-    } catch {
-      return null;
-    }
-  }
-  /**
-   * Enhanced fallback file storage with encryption
-   */
-  async enhancedFileSetItem(key, value) {
-    const algorithm = "aes-256-gcm";
-    const keyDerivation = crypto.pbkdf2Sync(
-      "unstuck-fallback-key",
-      "unstuck-salt-2024",
-      1e5,
-      32,
-      "sha256"
-    );
-    const iv = crypto.randomBytes(16);
-    const cipher = crypto.createCipheriv(algorithm, keyDerivation, iv);
-    let encrypted = cipher.update(value, "utf8", "hex");
-    encrypted += cipher.final("hex");
-    const authTag = cipher.getAuthTag();
-    const data = {
-      encrypted,
-      iv: iv.toString("hex"),
-      authTag: authTag.toString("hex"),
-      timestamp: Date.now(),
-      expiresAt: Date.now() + this.FALLBACK_STORAGE_EXPIRY_HOURS * 60 * 60 * 1e3
-    };
-    const filePath = path.join(this.secureDir, `${key}.json`);
-    await fs.writeFile(filePath, JSON.stringify(data), { mode: 384 });
-  }
-  /**
-   * Decrypt a value using AES-256-GCM
-   */
-  decryptValue(encryptedHex, ivHex, authTagHex) {
-    const algorithm = "aes-256-gcm";
-    const keyDerivation = crypto.pbkdf2Sync(
-      "unstuck-fallback-key",
-      "unstuck-salt-2024",
-      1e5,
-      32,
-      "sha256"
-    );
-    const iv = Buffer.from(ivHex, "hex");
-    const decipher = crypto.createDecipheriv(algorithm, keyDerivation, iv);
-    decipher.setAuthTag(Buffer.from(authTagHex, "hex"));
-    let decrypted = decipher.update(encryptedHex, "hex", "utf8");
-    decrypted += decipher.final("utf8");
-    return decrypted;
   }
   /**
    * Ensure secure directory exists with proper permissions
@@ -671,7 +468,7 @@ class Auth0Service {
       this.clientId,
       this.audience
     );
-    this.secureStorage = new SecureStorage(config);
+    this.secureStorage = new SecureStorage();
     this.deviceFlowManager = new DeviceFlowManager(
       config,
       this.domain,
@@ -727,7 +524,7 @@ class Auth0Service {
         } catch (error) {
           console.error(
             "Automatic token refresh failed:",
-            SecurityValidator.sanitizeUserForLogging(error)
+            error instanceof Error ? error.message : "Unknown error"
           );
           if (error instanceof Error && (error.message.includes("re-authentication required") || error.message.includes("expired too long ago") || error.message.includes("Too many token refresh attempts"))) {
             await this.signOut();
@@ -817,28 +614,7 @@ class Auth0Service {
    * Store session using secure storage
    */
   async storeSession(session) {
-    try {
-      await this.secureStorage.setItem("auth0_session", JSON.stringify(session));
-    } catch (error) {
-      if (error instanceof Error && error.message.includes("Secure storage required for refresh tokens")) {
-        const sessionWithoutRefreshToken = {
-          ...session,
-          tokens: {
-            ...session.tokens,
-            refresh_token: void 0
-          }
-        };
-        console.warn(
-          "⚠️ Storing session without refresh token due to fallback security limitations"
-        );
-        await this.secureStorage.setItem(
-          "auth0_session",
-          JSON.stringify(sessionWithoutRefreshToken)
-        );
-      } else {
-        throw error;
-      }
-    }
+    await this.secureStorage.setItem("auth0_session", JSON.stringify(session));
   }
   /**
    * Restore session from secure storage
@@ -859,26 +635,24 @@ class Auth0Service {
             );
             this.currentSession.tokens = refreshedTokens;
             await this.storeSession(this.currentSession);
-            console.log("✅ Session restored and tokens refreshed successfully");
             this.notifyListeners("SIGNED_IN", this.currentSession);
           } catch (refreshError) {
             console.warn(
-              "Failed to refresh restored tokens, clearing session:",
-              SecurityValidator.sanitizeUserForLogging(refreshError)
+              "Failed to refresh restored tokens:",
+              refreshError instanceof Error ? refreshError.message : "Unknown error"
             );
             await this.clearSession();
             this.currentSession = null;
           }
         } else {
           this.currentSession = restoredSession;
-          console.log("✅ Session restored successfully with valid tokens");
           this.notifyListeners("SIGNED_IN", this.currentSession);
         }
       }
     } catch (error) {
       console.warn(
         "Failed to restore session:",
-        SecurityValidator.sanitizeUserForLogging(error)
+        error instanceof Error ? error.message : "Unknown error"
       );
       await this.clearSession();
       this.currentSession = null;
@@ -1017,7 +791,8 @@ class WindowManager {
         contextIsolation: true,
         allowRunningInsecureContent: false,
         experimentalFeatures: false,
-        devTools: process.env.NODE_ENV === "development",
+        devTools: true,
+        // Always enable dev tools for auth window debugging
         webSecurity: true,
         // Safe memory optimization
         spellcheck: false,
@@ -1112,6 +887,31 @@ class WindowManager {
     this.authWindow.on("closed", () => {
       this.authWindow = null;
     });
+    if (process.env.NODE_ENV === "development")
+      this.authWindow.webContents.on("context-menu", () => {
+        const menu = Menu.buildFromTemplate([
+          {
+            label: "Open DevTools",
+            click: () => {
+              this.authWindow?.webContents.openDevTools({ mode: "detach" });
+            }
+          },
+          {
+            label: "Close DevTools",
+            click: () => {
+              this.authWindow?.webContents.closeDevTools();
+            }
+          },
+          { type: "separator" },
+          {
+            label: "Reload",
+            click: () => {
+              this.authWindow?.webContents.reload();
+            }
+          }
+        ]);
+        menu.popup();
+      });
   }
   setupOverlayWindowEvents() {
     if (!this.overlayWindow) return;
@@ -1357,6 +1157,125 @@ class WindowManager {
     this.tray.setContextMenu(contextMenu);
   }
 }
+const SecurityValidator = {
+  /**
+   * Validate OAuth provider
+   */
+  validateOAuthProvider(provider) {
+    const validProviders = ["google", "github", "discord"];
+    if (typeof provider !== "string") {
+      throw new Error("OAuth provider must be a string");
+    }
+    if (!validProviders.includes(provider)) {
+      throw new Error(
+        `Invalid OAuth provider: ${provider}. Must be one of: ${validProviders.join(", ")}`
+      );
+    }
+    return provider;
+  },
+  /**
+   * Validate URL string
+   */
+  validateUrl(url) {
+    if (typeof url !== "string") {
+      throw new Error("URL must be a string");
+    }
+    if (url.length === 0) {
+      throw new Error("URL cannot be empty");
+    }
+    if (url.length > 2048) {
+      throw new Error("URL too long (max 2048 characters)");
+    }
+    if (!url.startsWith("https://")) {
+      throw new Error("URL must use https:// protocol");
+    }
+    return url;
+  },
+  /**
+   * Validate mouse event options
+   */
+  validateMouseEventOptions(options) {
+    if (options === void 0 || options === null) {
+      return void 0;
+    }
+    if (typeof options !== "object") {
+      throw new Error("Mouse event options must be an object");
+    }
+    const opts = options;
+    if ("forward" in opts && typeof opts.forward !== "boolean") {
+      throw new Error("Mouse event forward option must be a boolean");
+    }
+    return { forward: opts.forward };
+  },
+  /**
+   * Validate boolean value
+   */
+  validateBoolean(value, fieldName) {
+    if (typeof value !== "boolean") {
+      throw new Error(`${fieldName} must be a boolean`);
+    }
+    return value;
+  },
+  /**
+   * Validate string with length limits
+   */
+  validateString(value, fieldName, maxLength = 255) {
+    if (typeof value !== "string") {
+      throw new Error(`${fieldName} must be a string`);
+    }
+    if (value.length > maxLength) {
+      throw new Error(`${fieldName} too long (max ${maxLength} characters)`);
+    }
+    return value;
+  },
+  /**
+   * Sanitize user object for logging (remove sensitive fields)
+   */
+  sanitizeUserForLogging(user) {
+    if (!user || typeof user !== "object") {
+      return user;
+    }
+    const sanitized = { ...user };
+    delete sanitized.access_token;
+    delete sanitized.refresh_token;
+    delete sanitized.session;
+    delete sanitized.raw_app_meta_data;
+    delete sanitized.raw_user_meta_data;
+    const typedSanitized = sanitized;
+    return {
+      sub: typedSanitized.sub,
+      email: typedSanitized.email,
+      name: typedSanitized.name,
+      nickname: typedSanitized.nickname,
+      picture: typedSanitized.picture,
+      email_verified: typedSanitized.email_verified,
+      created_at: typedSanitized.created_at,
+      updated_at: typedSanitized.updated_at,
+      id: typedSanitized.id
+      // Keep for backward compatibility
+    };
+  },
+  /**
+   * Rate limiting for IPC calls
+   */
+  rateLimitMap: /* @__PURE__ */ new Map(),
+  checkRateLimit(channel, maxRequests, windowMs) {
+    const now = Date.now();
+    const key = channel;
+    const record = this.rateLimitMap.get(key);
+    if (!record || now > record.resetTime) {
+      this.rateLimitMap.set(key, {
+        count: 1,
+        resetTime: now + windowMs
+      });
+      return;
+    }
+    if (record.count >= maxRequests) {
+      throw new Error(`Rate limit exceeded for channel: ${channel}`);
+    }
+    record.count++;
+  }
+};
 class AuthIPCHandlers {
   // Will be initialized in setConfig() method
   constructor(windowManager2) {

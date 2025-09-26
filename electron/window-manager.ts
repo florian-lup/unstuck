@@ -32,7 +32,7 @@ export class WindowManager {
         contextIsolation: true,
         allowRunningInsecureContent: false,
         experimentalFeatures: false,
-        devTools: process.env.NODE_ENV === 'development',
+        devTools: true, // Always enable dev tools for auth window debugging
         webSecurity: true,
         // Safe memory optimization
         spellcheck: false, // Disable spellcheck to save memory
@@ -157,6 +157,33 @@ export class WindowManager {
 
     this.authWindow.on('closed', () => {
       this.authWindow = null
+    })
+
+    // Add context menu for DevTools
+     if (process.env.NODE_ENV === 'development')
+    this.authWindow.webContents.on('context-menu', () => {
+      const menu = Menu.buildFromTemplate([
+        {
+          label: 'Open DevTools',
+          click: () => {
+            this.authWindow?.webContents.openDevTools({ mode: 'detach' })
+          }
+        },
+        {
+          label: 'Close DevTools',
+          click: () => {
+            this.authWindow?.webContents.closeDevTools()
+          }
+        },
+        { type: 'separator' },
+        {
+          label: 'Reload',
+          click: () => {
+            this.authWindow?.webContents.reload()
+          }
+        }
+      ])
+      menu.popup()
     })
   }
 

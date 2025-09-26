@@ -7,7 +7,6 @@
  * - SecureStorage: Manages encrypted storage with fallback mechanisms
  * - DeviceFlowManager: Handles OAuth2 Device Authorization Flow
  */
-import { SecurityValidator } from './security-validators'
 import { Auth0Config } from '../../config/auth.config'
 import { TokenManager, Auth0Tokens } from './token-manager'
 import { SecureStorage } from './secure-storage'
@@ -83,7 +82,7 @@ export class Auth0Service {
       this.clientId,
       this.audience
     )
-    this.secureStorage = new SecureStorage(config)
+    this.secureStorage = new SecureStorage()
     this.deviceFlowManager = new DeviceFlowManager(
       config,
       this.domain,
@@ -154,7 +153,7 @@ export class Auth0Service {
         } catch (error) {
           console.error(
             'Automatic token refresh failed:',
-            SecurityValidator.sanitizeUserForLogging(error)
+            error instanceof Error ? error.message : 'Unknown error'
           )
 
           // Handle specific refresh errors that require re-authentication
@@ -287,32 +286,7 @@ export class Auth0Service {
    * Store session using secure storage
    */
   private async storeSession(session: Auth0Session): Promise<void> {
-    try {
-      await this.secureStorage.setItem('auth0_session', JSON.stringify(session))
-    } catch (error) {
-      // Handle fallback storage limitations
-      if (
-        error instanceof Error &&
-        error.message.includes('Secure storage required for refresh tokens')
-      ) {
-        const sessionWithoutRefreshToken = {
-          ...session,
-          tokens: {
-            ...session.tokens,
-            refresh_token: undefined,
-          },
-        }
-        console.warn(
-          '⚠️ Storing session without refresh token due to fallback security limitations'
-        )
-        await this.secureStorage.setItem(
-          'auth0_session',
-          JSON.stringify(sessionWithoutRefreshToken)
-        )
-      } else {
-        throw error
-      }
-    }
+    await this.secureStorage.setItem('auth0_session', JSON.stringify(session))
   }
 
   /**
@@ -338,12 +312,11 @@ export class Auth0Service {
             )
             this.currentSession.tokens = refreshedTokens
             await this.storeSession(this.currentSession)
-            console.log('✅ Session restored and tokens refreshed successfully')
             this.notifyListeners('SIGNED_IN', this.currentSession)
           } catch (refreshError) {
             console.warn(
-              'Failed to refresh restored tokens, clearing session:',
-              SecurityValidator.sanitizeUserForLogging(refreshError)
+              'Failed to refresh restored tokens:',
+              refreshError instanceof Error ? refreshError.message : 'Unknown error'
             )
             await this.clearSession()
             this.currentSession = null
@@ -351,14 +324,13 @@ export class Auth0Service {
         } else {
           // Tokens are still valid
           this.currentSession = restoredSession
-          console.log('✅ Session restored successfully with valid tokens')
           this.notifyListeners('SIGNED_IN', this.currentSession)
         }
       }
     } catch (error) {
       console.warn(
         'Failed to restore session:',
-        SecurityValidator.sanitizeUserForLogging(error)
+        error instanceof Error ? error.message : 'Unknown error'
       )
       await this.clearSession()
       this.currentSession = null
