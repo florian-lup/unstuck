@@ -203,6 +203,66 @@ export class ApiClient {
       throw networkError
     }
   }
+
+  /**
+   * Delete a conversation permanently (⚠️ IRREVERSIBLE!)
+   */
+  async deleteConversation(conversationId: string, accessToken: string): Promise<void> {
+    const url = `${this.baseUrl}/gaming/conversations/${conversationId}`
+    
+    try {
+      const response = await fetch(url, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${accessToken}`,
+          'Content-Type': 'application/json',
+        },
+      })
+
+      // Handle non-200 responses
+      if (!response.ok) {
+        let errorMessage = 'Failed to delete conversation'
+        let errorType = 'delete_error'
+        let requestId = ''
+
+        try {
+          const errorData = await response.json() as ApiErrorResponse
+          errorMessage = errorData.message || errorMessage
+          errorType = errorData.error || errorType
+          requestId = errorData.request_id || ''
+        } catch {
+          // If we can't parse the error response, use status text
+          errorMessage = response.statusText || `HTTP ${response.status}`
+        }
+
+        // Create a more descriptive error based on status code
+        if (response.status === 401) {
+          throw new Error('Authentication failed. Please sign in again.')
+        } else if (response.status === 403) {
+          throw new Error('Access denied. You do not have permission to delete this conversation.')
+        } else if (response.status === 404) {
+          throw new Error('Conversation not found or has already been deleted.')
+        } else if (response.status === 429) {
+          throw new Error('Rate limit exceeded. Please wait a moment and try again.')
+        } else if (response.status >= 500) {
+          throw new Error('Server error. Please try again later.')
+        } else {
+          throw new Error(`${errorType}: ${errorMessage}${requestId ? ` (Request ID: ${requestId})` : ''}`)
+        }
+      }
+
+      // Success - no response body expected for DELETE
+      
+    } catch (networkError) {
+      // Check if it's a fetch error (network issues)
+      if (networkError instanceof TypeError && networkError.message.includes('fetch')) {
+        throw new Error('Connection failed. Please check your internet connection and try again.')
+      }
+      
+      // Re-throw other errors
+      throw networkError
+    }
+  }
 }
 
 // Export singleton instance
