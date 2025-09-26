@@ -18,6 +18,7 @@ function App() {
     user,
     customKeybind,
     transparency,
+    isLoadingMessage,
 
     // Actions
     handleSpeakClick,
@@ -33,8 +34,8 @@ function App() {
     handleTransparencyChange,
     setShowSettingsMenu,
     setShowHistoryPanel,
-    isLoadingMessage,
     handleStartNewConversation,
+    handleConversationSelect,
   } = useAppLogic()
 
   return (
@@ -70,10 +71,7 @@ function App() {
               onClose={() => {
                 setShowHistoryPanel(false)
               }}
-              onConversationSelect={(conversation) => {
-                // TODO: Handle conversation selection - could load the conversation
-                console.warn('Selected conversation:', conversation)
-              }}
+              onConversationSelect={handleConversationSelect}
             />
           )}
         </div>

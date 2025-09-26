@@ -47,6 +47,16 @@ export interface ConversationsResponse {
   total: number
 }
 
+export interface ConversationHistoryResponse {
+  conversation_id: string
+  messages: {
+    role: 'user' | 'assistant'
+    content: string
+  }[]
+  created_at: number
+  updated_at: number
+}
+
 export class ApiClient {
   private readonly baseUrl = 'https://unstuck-backend-production-d9c1.up.railway.app/api/v1'
   private readonly endpoints = {
@@ -182,6 +192,81 @@ export class ApiClient {
         
         // Basic validation of required fields
         if (!Array.isArray(data.conversations) || typeof data.total !== 'number') {
+          throw new Error('Invalid response format from server')
+        }
+
+        return data
+      } catch (error) {
+        if (error instanceof Error) {
+          throw error
+        }
+        throw new Error('Failed to parse server response')
+      }
+      
+    } catch (networkError) {
+      // Check if it's a fetch error (network issues)
+      if (networkError instanceof TypeError && networkError.message.includes('fetch')) {
+        throw new Error('Connection failed. Please check your internet connection and try again.')
+      }
+      
+      // Re-throw other errors
+      throw networkError
+    }
+  }
+
+  /**
+   * Get conversation history including all messages
+   */
+  async getConversationHistory(conversationId: string, accessToken: string): Promise<ConversationHistoryResponse> {
+    const url = `${this.baseUrl}/gaming/conversations/${conversationId}/history`
+    
+    try {
+      const response = await fetch(url, {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${accessToken}`,
+          'Content-Type': 'application/json',
+        },
+      })
+
+      // Handle non-200 responses
+      if (!response.ok) {
+        let errorMessage = 'Failed to fetch conversation history'
+        let errorType = 'fetch_error'
+        let requestId = ''
+
+        try {
+          const errorData = await response.json() as ApiErrorResponse
+          errorMessage = errorData.message || errorMessage
+          errorType = errorData.error || errorType
+          requestId = errorData.request_id || ''
+        } catch {
+          // If we can't parse the error response, use status text
+          errorMessage = response.statusText || `HTTP ${response.status}`
+        }
+
+        // Create a more descriptive error based on status code
+        if (response.status === 401) {
+          throw new Error('Authentication failed. Please sign in again.')
+        } else if (response.status === 403) {
+          throw new Error('Access denied. Please check your permissions.')
+        } else if (response.status === 404) {
+          throw new Error('Conversation not found.')
+        } else if (response.status === 429) {
+          throw new Error('Rate limit exceeded. Please wait a moment and try again.')
+        } else if (response.status >= 500) {
+          throw new Error('Server error. Please try again later.')
+        } else {
+          throw new Error(`${errorType}: ${errorMessage}${requestId ? ` (Request ID: ${requestId})` : ''}`)
+        }
+      }
+
+      // Parse and validate the successful response
+      try {
+        const data = await response.json() as ConversationHistoryResponse
+        
+        // Basic validation of required fields
+        if (!data.conversation_id || !Array.isArray(data.messages)) {
           throw new Error('Invalid response format from server')
         }
 

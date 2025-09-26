@@ -5,6 +5,9 @@ import { useAuth } from './use-auth'
 import { type Game } from '../lib/games'
 import { type Message } from '../components/text-chat'
 import { chatService } from '../lib/chat-service'
+import { apiClient } from '../lib/api-client'
+import { secureAuth } from '../lib/auth-client'
+import { type Conversation } from '../components/conversation-history'
 
 // Helper function to convert keybind string to useKeyboardToggle format
 function parseKeybind(keybind: string) {
@@ -55,6 +58,7 @@ export function useAppLogic() {
   const [showSettingsMenu, setShowSettingsMenu] = useState(false)
   const [showHistoryPanel, setShowHistoryPanel] = useState(false)
   const [isLoadingMessage, setIsLoadingMessage] = useState(false)
+  const [currentConversationId, setCurrentConversationId] = useState<string | null>(null)
 
   // Keybind management
   const [customKeybind, setCustomKeybind] = useState<string>(() => {
@@ -311,6 +315,58 @@ export function useAppLogic() {
   const handleStartNewConversation = () => {
     chatService.startNewConversation()
     setMessages([])
+    setCurrentConversationId(null)
+  }
+
+  const handleConversationSelect = async (conversation: Conversation) => {
+    try {
+      setIsLoadingMessage(true)
+      setMessages([]) // Clear current messages while loading
+      
+      const tokens = secureAuth.getCurrentTokens()
+      if (!tokens?.access_token) {
+        throw new Error('No authentication token available')
+      }
+
+      // Get conversation history from API
+      const historyResponse = await apiClient.getConversationHistory(
+        conversation.id, 
+        tokens.access_token
+      )
+
+      // Convert API messages to Message format expected by TextChat
+      const convertedMessages: Message[] = historyResponse.messages.map((msg, index) => ({
+        id: `${conversation.id}-${index}`,
+        content: msg.content,
+        role: msg.role,
+        timestamp: new Date(historyResponse.updated_at * 1000), // Convert unix timestamp to Date
+      }))
+
+      // Update state
+      setMessages(convertedMessages)
+      setCurrentConversationId(conversation.id)
+      
+      // Set the conversation ID in chat service so new messages go to this conversation
+      chatService.setConversationId(conversation.id)
+      
+      // Show text chat and close history panel
+      setIsTextChatVisible(true)
+      setShowHistoryPanel(false)
+      
+    } catch (error) {
+      console.error('Error loading conversation history:', error)
+      
+      // Show error message
+      const errorMessage: Message = {
+        id: `${Date.now()}-error`,
+        content: error instanceof Error ? `Failed to load conversation: ${error.message}` : 'Failed to load conversation',
+        role: 'assistant',
+        timestamp: new Date(),
+      }
+      setMessages([errorMessage])
+    } finally {
+      setIsLoadingMessage(false)
+    }
   }
 
   const handleDropdownOpenChange = (open: boolean) => {
@@ -362,6 +418,7 @@ export function useAppLogic() {
     customKeybind,
     transparency,
     isLoadingMessage,
+    currentConversationId,
 
     // Actions
     handleSpeakClick,
@@ -372,6 +429,7 @@ export function useAppLogic() {
     handleSendMessage,
     handleTextChatClose,
     handleStartNewConversation,
+    handleConversationSelect,
     handleDropdownOpenChange,
     handleLogout,
     handleKeybindChange,
