@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { AlertCircle, Loader, Trash2 } from 'lucide-react'
 import { Button } from './ui/button'
+import { Badge } from './ui/badge'
 import { InteractiveArea } from './interactive-area'
 import { apiClient, ConversationsResponse } from '../lib/api-client'
 import { secureAuth } from '../lib/auth-client'
@@ -177,7 +178,7 @@ export function ConversationHistory({
           <h3 className="text-sm font-medium text-overlay-text-primary">
             Conversation History
           </h3>
-          <div className="text-xs text-overlay-text-muted">
+          <div className="text-xs text-overlay-text-secondary">
             {total > 0 ? `${total} conversation${total === 1 ? '' : 's'}` : ''}
           </div>
         </div>
@@ -231,7 +232,7 @@ export function ConversationHistory({
                     onClick={() => {
                       handleConversationClick(conversation)
                     }}
-                    className={`p-3 rounded-2xl bg-overlay-bg-secondary border border-transparent hover:border-overlay-accent-primary hover:bg-overlay-bg-hover cursor-pointer transition-all duration-200 group ${
+                    className={`p-3 rounded-2xl bg-overlay-bg-secondary border border-transparent hover:border-overlay-accent-primary cursor-pointer transition-all duration-200 group ${
                       deletingId === conversation.id ? 'opacity-50 pointer-events-none' : ''
                     }`}
                   >
@@ -241,16 +242,10 @@ export function ConversationHistory({
                           {conversation.title}
                         </h4>
                         <div className="flex items-center gap-2 mt-1">
-                          <div className="flex items-center gap-1">
-                            <span className="text-xs text-overlay-text-muted">
-                              {conversation.game_name}
-                            </span>
-                            {conversation.game_version && (
-                              <span className="text-xs text-overlay-text-muted">
-                                v{conversation.game_version}
-                              </span>
-                            )}
-                          </div>
+                          <Badge variant="outline" className="text-xs text-overlay-text-muted">
+                            {conversation.game_name}
+                            {conversation.game_version && ` v${conversation.game_version}`}
+                          </Badge>
                         </div>
                       </div>
                       <div className="flex items-center gap-2">
