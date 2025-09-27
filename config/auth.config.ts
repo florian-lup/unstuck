@@ -88,7 +88,7 @@ export const auth0Config: Auth0Config = {
 
   rateLimiting: {
     maxRefreshAttempts: 5, // Max 5 refresh attempts
-    refreshWindowMinutes: 1, // Within 1 minute window
+    refreshWindowMinutes: 10080, // Within 10080 minutes window
     ipcRateLimits: {
       startFlow: { requests: 5, windowMs: 60000 },
       getSession: { requests: 10, windowMs: 60000 },

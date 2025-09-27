@@ -126,7 +126,7 @@ export function AuthWindow({ onAuthSuccess }: AuthWindowProps) {
         {/* Auth Buttons */}
         <div className="flex items-center justify-center space-x-4">
           <Button onClick={handleLogin} disabled={isLoading} className="w-36">
-            {isLoading ? 'Starting...' : 'Log In'}
+            Log In
           </Button>
 
           <Button
@@ -135,7 +135,7 @@ export function AuthWindow({ onAuthSuccess }: AuthWindowProps) {
             variant="outline"
             className="w-36"
           >
-            {isLoading ? 'Starting...' : 'Sign Up for Free'}
+            Sign Up for Free
           </Button>
         </div>
       </div>
