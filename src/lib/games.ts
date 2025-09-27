@@ -30,7 +30,7 @@ export const GAMES: Game[] = [
   },
   {
     id: 'lol',
-    gameName: 'lol',
+    gameName: 'league of legnds',
     displayName: 'League of Legends',
     version: '14.18',
     category: 'moba',
@@ -38,7 +38,7 @@ export const GAMES: Game[] = [
   },
   {
     id: 'apex',
-    gameName: 'apex',
+    gameName: 'apex legends',
     displayName: 'Apex Legends',
     version: 'Season 22',
     category: 'battle-royale',

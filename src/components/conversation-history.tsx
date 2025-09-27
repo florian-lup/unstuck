@@ -32,6 +32,7 @@ export function ConversationHistory({
   const [error, setError] = useState<string | null>(null)
   const [total, setTotal] = useState(0)
   const [deletingId, setDeletingId] = useState<string | null>(null)
+  const [hasInitialized, setHasInitialized] = useState(false)
 
   // Format date for display
   const formatDate = (dateInput: string) => {
@@ -83,7 +84,11 @@ export function ConversationHistory({
   // Fetch conversations when panel opens
   useEffect(() => {
     const fetchConversations = async () => {
-      if (!isOpen) return
+      if (!isOpen) {
+        // Reset initialization state when panel is closed
+        setHasInitialized(false)
+        return
+      }
 
       // Check cache first
       const cachedData = conversationCache.getCachedConversationList()
@@ -91,6 +96,7 @@ export function ConversationHistory({
         setConversations(cachedData.conversations)
         setTotal(cachedData.total)
         setError(null)
+        setHasInitialized(true)
         return
       }
 
@@ -116,6 +122,7 @@ export function ConversationHistory({
         console.error('Error fetching conversations:', err)
       } finally {
         setIsLoading(false)
+        setHasInitialized(true)
       }
     }
 
@@ -181,6 +188,7 @@ export function ConversationHistory({
         console.error('Error fetching conversations:', err)
       } finally {
         setIsLoading(false)
+        setHasInitialized(true)
       }
     }
 
@@ -231,7 +239,7 @@ export function ConversationHistory({
           )}
 
           {/* Empty State */}
-          {!isLoading && !error && conversations.length === 0 && (
+          {!isLoading && !error && conversations.length === 0 && hasInitialized && (
             <div className="flex flex-col items-center justify-center py-8">
               <p className="text-sm text-overlay-text-muted text-center">
                 No conversations yet
