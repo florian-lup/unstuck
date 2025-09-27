@@ -1,5 +1,5 @@
 import { NavigationBar } from './components/navigation-bar'
-import { TextChat } from './components/text-chat'
+import { GamingChat } from './components/gaming-chat'
 import { SettingsMenu } from './components/settings-menu'
 import { ConversationHistory } from './components/conversation-history'
 import { useAppLogic } from './hooks/use-app-logic'
@@ -10,7 +10,7 @@ function App() {
   const {
     // State
     selectedGame,
-    isTextChatVisible,
+    isGamingChatVisible,
     messages,
     isNavigationBarVisible,
     showSettingsMenu,
@@ -27,7 +27,7 @@ function App() {
     handleSettingsClick,
     handleGameSelect,
     handleSendMessage,
-    handleTextChatClose,
+    handleGamingChatClose,
     handleDropdownOpenChange,
     handleLogout,
     handleKeybindChange,
@@ -76,9 +76,9 @@ function App() {
           )}
         </div>
       )}
-      {isNavigationBarVisible && isTextChatVisible && (
-        <TextChat
-          onClose={handleTextChatClose}
+      {isNavigationBarVisible && isGamingChatVisible && (
+        <GamingChat
+          onClose={handleGamingChatClose}
           onSendMessage={handleSendMessage}
           onStartNewConversation={handleStartNewConversation}
           messages={messages}

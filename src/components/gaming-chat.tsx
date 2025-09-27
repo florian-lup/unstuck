@@ -3,7 +3,7 @@ import { InteractiveArea } from './interactive-area'
 import { CornerDownLeft, X, RotateCcw, Loader2, BookOpen, Wrench, Scroll, ClipboardList } from 'lucide-react'
 import { Button } from './ui/button'
 import { Toggle } from './ui/toggle'
-import { useTextChat } from '../hooks/use-text-chat'
+import { useGamingChat } from '../hooks/use-gaming-chat'
 import { MarkdownContent } from '../utils/markdown-content'
 
 export interface Message {
@@ -13,7 +13,7 @@ export interface Message {
   timestamp: Date
 }
 
-interface TextChatProps {
+interface GamingChatProps {
   onClose?: () => void
   onSendMessage?: (message: string) => void
   onStartNewConversation?: () => void
@@ -21,13 +21,13 @@ interface TextChatProps {
   isLoading?: boolean
 }
 
-export function TextChat({
+export function GamingChat({
   onClose,
   onSendMessage,
   onStartNewConversation,
   messages = [],
   isLoading = false,
-}: TextChatProps) {
+}: GamingChatProps) {
   const {
     // State
     message,
@@ -46,7 +46,7 @@ export function TextChat({
     // Computed
     hasMessages,
     canSubmit,
-  } = useTextChat({ 
+  } = useGamingChat({ 
     onClose, 
     onSendMessage, 
     onStartNewConversation,

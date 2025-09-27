@@ -3,7 +3,7 @@ import { useKeyboardToggle } from './use-keyboard-toggle'
 import { useClickThrough } from './use-click-through'
 import { useAuth } from './use-auth'
 import { type Game } from '../lib/games'
-import { type Message } from '../components/text-chat'
+import { type Message } from '../components/gaming-chat'
 import { chatService } from '../lib/chat-service'
 import { apiClient } from '../lib/api-client'
 import { secureAuth } from '../lib/auth-client'
@@ -54,7 +54,7 @@ export function useAppLogic() {
 
   // Core application state
   const [selectedGame, setSelectedGame] = useState<Game | null>(null)
-  const [isTextChatVisible, setIsTextChatVisible] = useState(false)
+  const [isGamingChatVisible, setIsGamingChatVisible] = useState(false)
   const [messages, setMessages] = useState<Message[]>([])
   const [showSettingsMenu, setShowSettingsMenu] = useState(false)
   const [showHistoryPanel, setShowHistoryPanel] = useState(false)
@@ -205,7 +205,7 @@ export function useAppLogic() {
   // Global click-through management
   useClickThrough({
     interactiveSelectors:
-      isNavigationBarVisible || isTextChatVisible || showSettingsMenu || showHistoryPanel
+      isNavigationBarVisible || isGamingChatVisible || showSettingsMenu || showHistoryPanel
         ? ['[data-interactive-area]']
         : [],
   })
@@ -217,9 +217,9 @@ export function useAppLogic() {
   }
 
   const handleTextClick = () => {
-    setIsTextChatVisible(!isTextChatVisible)
+    setIsGamingChatVisible(!isGamingChatVisible)
     // Close other panels when text chat opens
-    if (!isTextChatVisible) {
+    if (!isGamingChatVisible) {
       if (showSettingsMenu) {
         setShowSettingsMenu(false)
       }
@@ -233,8 +233,8 @@ export function useAppLogic() {
     setShowHistoryPanel(!showHistoryPanel)
     // Close other panels when history opens
     if (!showHistoryPanel) {
-      if (isTextChatVisible) {
-        setIsTextChatVisible(false)
+      if (isGamingChatVisible) {
+        setIsGamingChatVisible(false)
       }
       if (showSettingsMenu) {
         setShowSettingsMenu(false)
@@ -246,8 +246,8 @@ export function useAppLogic() {
     setShowSettingsMenu(!showSettingsMenu)
     // Close other panels when settings opens
     if (!showSettingsMenu) {
-      if (isTextChatVisible) {
-        setIsTextChatVisible(false)
+      if (isGamingChatVisible) {
+        setIsGamingChatVisible(false)
       }
       if (showHistoryPanel) {
         setShowHistoryPanel(false)
@@ -317,8 +317,8 @@ export function useAppLogic() {
     }
   }
 
-  const handleTextChatClose = () => {
-    setIsTextChatVisible(false)
+  const handleGamingChatClose = () => {
+    setIsGamingChatVisible(false)
     // Optionally clear messages when closing chat
     // setMessages([])
   }
@@ -339,7 +339,7 @@ export function useAppLogic() {
       // Check cache first
       const cachedHistory = conversationCache.getCachedConversationHistory(conversation.id)
       if (cachedHistory) {
-        // Convert cached API messages to Message format expected by TextChat
+        // Convert cached API messages to Message format expected by GamingChat
         const convertedMessages: Message[] = cachedHistory.messages.map((msg, index) => ({
           id: `${conversation.id}-${index}`,
           content: msg.content,
@@ -355,7 +355,7 @@ export function useAppLogic() {
         chatService.setConversationId(conversation.id)
         
         // Show text chat and close history panel
-        setIsTextChatVisible(true)
+        setIsGamingChatVisible(true)
         setShowHistoryPanel(false)
         setIsLoadingMessage(false)
         return
@@ -375,7 +375,7 @@ export function useAppLogic() {
       // Cache the response
       conversationCache.setCachedConversationHistory(conversation.id, historyResponse)
 
-      // Convert API messages to Message format expected by TextChat
+      // Convert API messages to Message format expected by GamingChat
       const convertedMessages: Message[] = historyResponse.messages.map((msg, index) => ({
         id: `${conversation.id}-${index}`,
         content: msg.content,
@@ -391,7 +391,7 @@ export function useAppLogic() {
       chatService.setConversationId(conversation.id)
       
       // Show text chat and close history panel
-      setIsTextChatVisible(true)
+      setIsGamingChatVisible(true)
       setShowHistoryPanel(false)
       
     } catch (error) {
@@ -413,8 +413,8 @@ export function useAppLogic() {
   const handleDropdownOpenChange = (open: boolean) => {
     if (open) {
       // Close all panels when dropdown opens
-      if (isTextChatVisible) {
-        setIsTextChatVisible(false)
+      if (isGamingChatVisible) {
+        setIsGamingChatVisible(false)
       }
       if (showSettingsMenu) {
         setShowSettingsMenu(false)
@@ -450,7 +450,7 @@ export function useAppLogic() {
   return {
     // State
     selectedGame,
-    isTextChatVisible,
+    isGamingChatVisible,
     messages,
     isNavigationBarVisible,
     showSettingsMenu,
@@ -468,7 +468,7 @@ export function useAppLogic() {
     handleSettingsClick,
     handleGameSelect,
     handleSendMessage,
-    handleTextChatClose,
+    handleGamingChatClose,
     handleStartNewConversation,
     handleConversationSelect,
     handleDropdownOpenChange,

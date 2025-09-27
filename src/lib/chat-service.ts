@@ -5,7 +5,7 @@
 
 import { apiClient, type GamingSearchRequest } from './api-client'
 import { secureAuth } from './auth-client'
-import type { Message } from '../components/text-chat'
+import type { Message } from '../components/gaming-chat'
 import type { Game } from './games'
 
 export interface ConversationState {

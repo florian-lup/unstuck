@@ -60,7 +60,7 @@ export interface ConversationHistoryResponse {
 export class ApiClient {
   private readonly baseUrl = 'https://unstuck-backend-production-d9c1.up.railway.app/api/v1'
   private readonly endpoints = {
-    gamingSearch: '/gaming/search',
+    gamingSearch: '/gaming/chat',
     conversations: '/gaming/conversations'
   } as const
 
