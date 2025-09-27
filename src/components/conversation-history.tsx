@@ -5,6 +5,7 @@ import { Badge } from './ui/badge'
 import { InteractiveArea } from './interactive-area'
 import { apiClient, ConversationsResponse } from '../lib/api-client'
 import { secureAuth } from '../lib/auth-client'
+import { conversationCache } from '../services/conversation-cache'
 
 export interface Conversation {
   id: string
@@ -84,6 +85,15 @@ export function ConversationHistory({
     const fetchConversations = async () => {
       if (!isOpen) return
 
+      // Check cache first
+      const cachedData = conversationCache.getCachedConversationList()
+      if (cachedData) {
+        setConversations(cachedData.conversations)
+        setTotal(cachedData.total)
+        setError(null)
+        return
+      }
+
       setIsLoading(true)
       setError(null)
 
@@ -94,6 +104,9 @@ export function ConversationHistory({
         }
 
         const response: ConversationsResponse = await apiClient.getConversations(tokens.access_token)
+        
+        // Cache the response
+        conversationCache.setCachedConversationList(response)
         
         setConversations(response.conversations)
         setTotal(response.total)
@@ -128,6 +141,9 @@ export function ConversationHistory({
 
       await apiClient.deleteConversation(conversationId, tokens.access_token)
 
+      // Remove conversation from cache
+      conversationCache.removeConversation(conversationId)
+
       // Remove conversation from local state
       setConversations(prev => prev.filter(conv => conv.id !== conversationId))
       setTotal(prev => Math.max(0, prev - 1))
@@ -153,6 +169,9 @@ export function ConversationHistory({
         }
 
         const response: ConversationsResponse = await apiClient.getConversations(tokens.access_token)
+        
+        // Cache the response
+        conversationCache.setCachedConversationList(response)
         
         setConversations(response.conversations)
         setTotal(response.total)

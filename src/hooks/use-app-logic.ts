@@ -8,6 +8,7 @@ import { chatService } from '../lib/chat-service'
 import { apiClient } from '../lib/api-client'
 import { secureAuth } from '../lib/auth-client'
 import { type Conversation } from '../components/conversation-history'
+import { conversationCache } from '../services/conversation-cache'
 
 // Helper function to convert keybind string to useKeyboardToggle format
 function parseKeybind(keybind: string) {
@@ -271,6 +272,9 @@ export function useAppLogic() {
   }
 
   const handleSendMessage = async (messageContent: string) => {
+    // Remember if we had a conversation ID before sending
+    const hadConversation = !!currentConversationId
+    
     // Immediately add user message to show it right away
     const userMessage: Message = {
       id: `${Date.now()}-user`,
@@ -286,7 +290,14 @@ export function useAppLogic() {
     try {
       // Send message through chat service
       // Let the backend handle JWT verification  
-      const { assistantMessage } = await chatService.sendMessage(messageContent, selectedGame)
+      const { assistantMessage, conversationId } = await chatService.sendMessage(messageContent, selectedGame)
+
+      // If this was a new conversation (we didn't have one before), update the ID and invalidate cache
+      if (!hadConversation && conversationId) {
+        setCurrentConversationId(conversationId)
+        // Invalidate conversation list cache since a new conversation was created
+        conversationCache.invalidateConversationList()
+      }
 
       // Add assistant message to state
       setMessages((prev) => [...prev, assistantMessage])
@@ -316,12 +327,39 @@ export function useAppLogic() {
     chatService.startNewConversation()
     setMessages([])
     setCurrentConversationId(null)
+    // Invalidate conversation list cache so fresh data is fetched when history is opened
+    conversationCache.invalidateConversationList()
   }
 
   const handleConversationSelect = async (conversation: Conversation) => {
     try {
       setIsLoadingMessage(true)
       setMessages([]) // Clear current messages while loading
+      
+      // Check cache first
+      const cachedHistory = conversationCache.getCachedConversationHistory(conversation.id)
+      if (cachedHistory) {
+        // Convert cached API messages to Message format expected by TextChat
+        const convertedMessages: Message[] = cachedHistory.messages.map((msg, index) => ({
+          id: `${conversation.id}-${index}`,
+          content: msg.content,
+          role: msg.role,
+          timestamp: new Date(cachedHistory.updated_at * 1000), // Convert unix timestamp to Date
+        }))
+
+        // Update state
+        setMessages(convertedMessages)
+        setCurrentConversationId(conversation.id)
+        
+        // Set the conversation ID in chat service so new messages go to this conversation
+        chatService.setConversationId(conversation.id)
+        
+        // Show text chat and close history panel
+        setIsTextChatVisible(true)
+        setShowHistoryPanel(false)
+        setIsLoadingMessage(false)
+        return
+      }
       
       const tokens = secureAuth.getCurrentTokens()
       if (!tokens?.access_token) {
@@ -333,6 +371,9 @@ export function useAppLogic() {
         conversation.id, 
         tokens.access_token
       )
+
+      // Cache the response
+      conversationCache.setCachedConversationHistory(conversation.id, historyResponse)
 
       // Convert API messages to Message format expected by TextChat
       const convertedMessages: Message[] = historyResponse.messages.map((msg, index) => ({
