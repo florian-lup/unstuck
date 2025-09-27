@@ -30,7 +30,7 @@ export const GAMES: Game[] = [
   },
   {
     id: 'lol',
-    gameName: 'league of legnds',
+    gameName: 'league of legends',
     displayName: 'League of Legends',
     version: '14.18',
     category: 'moba',
