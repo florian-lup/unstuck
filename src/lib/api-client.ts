@@ -41,6 +41,7 @@ export interface ConversationsResponse {
     title: string
     game_name: string
     game_version: string
+    conversation_type: string
     created_at: string
     updated_at: string
   }[]

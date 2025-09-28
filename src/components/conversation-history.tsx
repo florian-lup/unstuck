@@ -12,6 +12,7 @@ export interface Conversation {
   title: string
   game_name: string
   game_version: string
+  conversation_type: string
   created_at: string
   updated_at: string
 }
@@ -270,7 +271,7 @@ export function ConversationHistory({
                         </h4>
                         <div className="flex items-center gap-2 mt-1">
                           <Badge variant="outline" className="text-xs text-overlay-text-muted">
-                            {conversation.game_name}
+                            {conversation.game_name} ({conversation.conversation_type})
                             {conversation.game_version && ` v${conversation.game_version}`}
                           </Badge>
                         </div>
