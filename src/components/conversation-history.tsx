@@ -270,9 +270,12 @@ export function ConversationHistory({
                           {conversation.title}
                         </h4>
                         <div className="flex items-center gap-2 mt-1">
-                          <Badge variant="outline" className="text-xs text-overlay-text-muted">
-                            {conversation.game_name} ({conversation.conversation_type})
+                          <span className="text-xs text-overlay-text-secondary">
+                            {conversation.game_name}
                             {conversation.game_version && ` v${conversation.game_version}`}
+                          </span>
+                          <Badge variant="outline" className="text-xs text-overlay-text-secondary">
+                            {conversation.conversation_type}
                           </Badge>
                         </div>
                       </div>
