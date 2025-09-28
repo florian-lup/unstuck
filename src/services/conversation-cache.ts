@@ -15,8 +15,8 @@ export class ConversationCacheService {
   private conversationListCache: CachedConversationList | null = null
   private conversationHistoryCache = new Map<string, CachedConversationHistory>()
   
-  // Cache expiry time in milliseconds (5 minutes)
-  private readonly CACHE_EXPIRY_MS = 5 * 60 * 1000
+  // Cache expiry time in milliseconds (1 hour)
+  private readonly CACHE_EXPIRY_MS = 60 * 60 * 1000
 
   /**
    * Get cached conversation list if valid, otherwise return null
