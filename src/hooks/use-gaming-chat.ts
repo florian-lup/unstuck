@@ -3,7 +3,7 @@ import type { Message } from '../components/gaming-chat'
 
 interface UseGamingChatProps {
   onClose?: () => void
-  onSendMessage?: (message: string) => void
+  onSendMessage?: (message: string, activeToggle?: 'guides' | 'builds' | 'lore' | 'help' | null) => void
   onStartNewConversation?: () => void
   messages?: Message[]
   isLoading?: boolean
@@ -44,7 +44,7 @@ export function useGamingChat({
     if (message.trim()) {
       // Ensure window stays on top when sending a message
       window.electronAPI?.windowInteraction()
-      onSendMessage?.(message.trim())
+      onSendMessage?.(message.trim(), activeToggle)
       setMessage('') // Clear input after sending
     }
   }
@@ -79,9 +79,9 @@ export function useGamingChat({
   return {
     // State
     message,
+    activeToggle,
     messagesEndRef,
     messagesContainerRef,
-    activeToggle,
 
     // Actions
     handleSubmit,

@@ -271,7 +271,7 @@ export function useAppLogic() {
     // TODO: Implement game-specific initialization
   }
 
-  const handleSendMessage = async (messageContent: string) => {
+  const handleSendMessage = async (messageContent: string, activeToggle?: 'guides' | 'builds' | 'lore' | 'help' | null) => {
     // Remember if we had a conversation ID before sending
     const hadConversation = !!currentConversationId
     
@@ -288,9 +288,11 @@ export function useAppLogic() {
     setIsLoadingMessage(true)
 
     try {
-      // Send message through chat service
+      // Send message through appropriate service based on active toggle
       // Let the backend handle JWT verification  
-      const { assistantMessage, conversationId } = await chatService.sendMessage(messageContent, selectedGame)
+      const { assistantMessage, conversationId } = activeToggle === 'lore' 
+        ? await chatService.sendLoreMessage(messageContent, selectedGame)
+        : await chatService.sendMessage(messageContent, selectedGame)
 
       // If this was a new conversation (we didn't have one before), update the ID and invalidate cache
       if (!hadConversation && conversationId) {

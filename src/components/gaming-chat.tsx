@@ -15,7 +15,7 @@ export interface Message {
 
 interface GamingChatProps {
   onClose?: () => void
-  onSendMessage?: (message: string) => void
+  onSendMessage?: (message: string, activeToggle?: 'guides' | 'builds' | 'lore' | 'help' | null) => void
   onStartNewConversation?: () => void
   messages?: Message[]
   isLoading?: boolean
