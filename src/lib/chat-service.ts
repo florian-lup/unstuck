@@ -34,10 +34,10 @@ export class ChatService {
     this.isLoading = true
 
     try {
-      // Get access token - just check if we have one to send
-      const tokens = secureAuth.getCurrentTokens()
+      // Get access token - use smart token method to avoid rate limits
+      const accessToken = await secureAuth.getValidAccessToken()
       
-      if (!tokens?.access_token) {
+      if (!accessToken) {
         throw new Error('Please sign in to continue.')
       }
 
@@ -63,7 +63,7 @@ export class ChatService {
       }
 
       // Make API call
-      const response = await apiClient.searchGaming(request, tokens.access_token)
+      const response = await apiClient.searchGaming(request, accessToken)
 
       // Update conversation ID
       this.conversationId = response.conversation_id
@@ -140,9 +140,13 @@ export class ChatService {
   /**
    * Check if we have a token to send (basic client check)
    */
-  hasToken(): boolean {
-    const tokens = secureAuth.getCurrentTokens()
-    return Boolean(tokens?.access_token)
+  async hasToken(): Promise<boolean> {
+    try {
+      const accessToken = await secureAuth.getValidAccessToken()
+      return Boolean(accessToken)
+    } catch {
+      return false
+    }
   }
 }
 

@@ -104,12 +104,12 @@ export function ConversationHistory({
       setError(null)
 
       try {
-        const tokens = secureAuth.getCurrentTokens()
-        if (!tokens?.access_token) {
+        const accessToken = await secureAuth.getValidAccessToken()
+        if (!accessToken) {
           throw new Error('No authentication token available')
         }
 
-        const response: ConversationsResponse = await apiClient.getConversations(tokens.access_token)
+        const response: ConversationsResponse = await apiClient.getConversations(accessToken)
         
         // Cache the response
         conversationCache.setCachedConversationList(response)
@@ -141,12 +141,12 @@ export function ConversationHistory({
       setDeletingId(conversationId)
       setError(null) // Clear any existing errors
 
-      const tokens = secureAuth.getCurrentTokens()
-      if (!tokens?.access_token) {
+      const accessToken = await secureAuth.getValidAccessToken()
+      if (!accessToken) {
         throw new Error('No authentication token available')
       }
 
-      await apiClient.deleteConversation(conversationId, tokens.access_token)
+      await apiClient.deleteConversation(conversationId, accessToken)
 
       // Remove conversation from cache
       conversationCache.removeConversation(conversationId)
@@ -170,12 +170,12 @@ export function ConversationHistory({
       setError(null)
 
       try {
-        const tokens = secureAuth.getCurrentTokens()
-        if (!tokens?.access_token) {
+        const accessToken = await secureAuth.getValidAccessToken()
+        if (!accessToken) {
           throw new Error('No authentication token available')
         }
 
-        const response: ConversationsResponse = await apiClient.getConversations(tokens.access_token)
+        const response: ConversationsResponse = await apiClient.getConversations(accessToken)
         
         // Cache the response
         conversationCache.setCachedConversationList(response)

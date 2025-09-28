@@ -361,15 +361,15 @@ export function useAppLogic() {
         return
       }
       
-      const tokens = secureAuth.getCurrentTokens()
-      if (!tokens?.access_token) {
+      const accessToken = await secureAuth.getValidAccessToken()
+      if (!accessToken) {
         throw new Error('No authentication token available')
       }
 
       // Get conversation history from API
       const historyResponse = await apiClient.getConversationHistory(
         conversation.id, 
-        tokens.access_token
+        accessToken
       )
 
       // Cache the response

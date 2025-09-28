@@ -188,6 +188,39 @@ export class SecureAuthClient {
     return this.session?.tokens ?? null
   }
 
+  /**
+   * Get valid access token - uses cached tokens if valid, refreshes if needed
+   * This reduces IPC calls and avoids rate limiting
+   */
+  async getValidAccessToken(): Promise<string | null> {
+    // First try cached tokens
+    const cachedTokens = this.getCurrentTokens()
+    if (cachedTokens?.access_token) {
+      // Check if token is still valid (simple expiration check)
+      // If we have an expires_at field, check it; otherwise assume it's valid for a short time
+      if (cachedTokens.expires_at) {
+        const now = Math.floor(Date.now() / 1000)
+        const bufferTime = 300 // 5 minute buffer
+        if (cachedTokens.expires_at > (now + bufferTime)) {
+          // Token is still valid
+          return cachedTokens.access_token
+        }
+      } else {
+        // No expiration info, assume valid for recent tokens
+        return cachedTokens.access_token
+      }
+    }
+
+    // Cached tokens are expired or missing, get fresh session
+    try {
+      const sessionData = await this.getSession()
+      return sessionData.tokens?.access_token ?? null
+    } catch (error) {
+      console.error('Failed to get valid access token:', error)
+      return null
+    }
+  }
+
   private setupIpcListeners() {
     if (!window.electronAPI?.auth) {
       console.warn('Auth API not available, skipping IPC listeners')
