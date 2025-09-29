@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from 'react'
+import { useState, useRef, useLayoutEffect } from 'react'
 import type { Message } from '../components/gaming-chat'
 
 interface UseGamingChatProps {
@@ -30,16 +30,35 @@ export function useGamingChat({
   // Refs for scroll management
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const messagesContainerRef = useRef<HTMLDivElement>(null)
+  
+  // Track if this is the first render and previous message count
+  const isFirstRenderRef = useRef(true)
+  const previousMessageCountRef = useRef(0)
 
-  // Utility function for scrolling
-  const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
+  // Utility functions for scrolling
+  const scrollToBottom = (smooth = true) => {
+    messagesEndRef.current?.scrollIntoView({ 
+      behavior: smooth ? 'smooth' : 'instant' 
+    })
   }
 
-  // Auto-scroll to bottom when new messages arrive
-  useEffect(() => {
+  // Handle scroll behavior for initial load vs new messages
+  useLayoutEffect(() => {
     if (messages.length > 0) {
-      scrollToBottom()
+      const currentMessageCount = messages.length
+      const previousMessageCount = previousMessageCountRef.current
+      
+      if (isFirstRenderRef.current) {
+        // First render with existing messages - scroll instantly to bottom
+        scrollToBottom(false)
+        isFirstRenderRef.current = false
+      } else if (currentMessageCount > previousMessageCount) {
+        // New messages added - scroll smoothly to bottom
+        scrollToBottom(true)
+      }
+      
+      // Update the previous message count
+      previousMessageCountRef.current = currentMessageCount
     }
   }, [messages])
 
