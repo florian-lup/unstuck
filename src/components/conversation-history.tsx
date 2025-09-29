@@ -35,52 +35,6 @@ export function ConversationHistory({
   const [deletingId, setDeletingId] = useState<string | null>(null)
   const [hasInitialized, setHasInitialized] = useState(false)
 
-  // Format date for display
-  const formatDate = (dateInput: string) => {
-    try {
-      let date: Date
-
-      // Handle different timestamp formats
-      // Check if it's a unix timestamp (all digits)
-      if (/^\d+$/.test(dateInput)) {
-        const timestamp = parseInt(dateInput, 10)
-        // Unix timestamps can be in seconds or milliseconds
-        // If less than a reasonable year 2000 timestamp in ms, assume it's seconds
-        date = new Date(timestamp < 10000000000 ? timestamp * 1000 : timestamp)
-      } else {
-        // Assume it's an ISO string or other parseable format
-        date = new Date(dateInput)
-      }
-
-      const now = new Date()
-
-      // Check if date is valid
-      if (isNaN(date.getTime())) {
-        return 'Invalid date'
-      }
-
-      const diffInMs = now.getTime() - date.getTime()
-      const diffInMinutes = Math.floor(diffInMs / (1000 * 60))
-      const diffInHours = Math.floor(diffInMs / (1000 * 60 * 60))
-      const diffInDays = Math.floor(diffInHours / 24)
-
-      // Show more granular time for recent conversations
-      if (diffInMinutes < 1) {
-        return 'Just now'
-      } else if (diffInMinutes < 60) {
-        return `${diffInMinutes}m ago`
-      } else if (diffInHours < 24) {
-        return `${diffInHours}h ago`
-      } else if (diffInDays < 7) {
-        return `${diffInDays}d ago`
-      } else {
-        return date.toLocaleDateString()
-      }
-    } catch (error) {
-      console.error('Error in formatDate:', error)
-      return 'Unknown'
-    }
-  }
 
   // Fetch conversations when panel opens
   useEffect(() => {
@@ -301,7 +255,7 @@ export function ConversationHistory({
                       </div>
                       <div className="flex items-center gap-2">
                         <div className="text-xs text-overlay-text-muted whitespace-nowrap flex items-center">
-                          {formatDate(conversation.updated_at)}
+                          {new Date(conversation.created_at).toLocaleDateString()}
                         </div>
                         {/* Delete Button */}
                         {deletingId === conversation.id ? (
