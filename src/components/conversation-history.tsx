@@ -39,7 +39,7 @@ export function ConversationHistory({
   const formatDate = (dateInput: string) => {
     try {
       let date: Date
-      
+
       // Handle different timestamp formats
       // Check if it's a unix timestamp (all digits)
       if (/^\d+$/.test(dateInput)) {
@@ -51,14 +51,14 @@ export function ConversationHistory({
         // Assume it's an ISO string or other parseable format
         date = new Date(dateInput)
       }
-      
+
       const now = new Date()
-      
+
       // Check if date is valid
       if (isNaN(date.getTime())) {
         return 'Invalid date'
       }
-      
+
       const diffInMs = now.getTime() - date.getTime()
       const diffInMinutes = Math.floor(diffInMs / (1000 * 60))
       const diffInHours = Math.floor(diffInMs / (1000 * 60 * 60))
@@ -110,15 +110,17 @@ export function ConversationHistory({
           throw new Error('No authentication token available')
         }
 
-        const response: ConversationsResponse = await apiClient.getConversations(accessToken)
-        
+        const response: ConversationsResponse =
+          await apiClient.getConversations(accessToken)
+
         // Cache the response
         conversationCache.setCachedConversationList(response)
-        
+
         setConversations(response.conversations)
         setTotal(response.total)
       } catch (err) {
-        const errorMessage = err instanceof Error ? err.message : 'Failed to fetch conversations'
+        const errorMessage =
+          err instanceof Error ? err.message : 'Failed to fetch conversations'
         setError(errorMessage)
         console.error('Error fetching conversations:', err)
       } finally {
@@ -135,9 +137,12 @@ export function ConversationHistory({
     onClose()
   }
 
-  const handleDeleteClick = async (e: React.MouseEvent, conversationId: string) => {
+  const handleDeleteClick = async (
+    e: React.MouseEvent,
+    conversationId: string
+  ) => {
     e.stopPropagation() // Prevent conversation selection
-    
+
     try {
       setDeletingId(conversationId)
       setError(null) // Clear any existing errors
@@ -153,11 +158,13 @@ export function ConversationHistory({
       conversationCache.removeConversation(conversationId)
 
       // Remove conversation from local state
-      setConversations(prev => prev.filter(conv => conv.id !== conversationId))
-      setTotal(prev => Math.max(0, prev - 1))
-
+      setConversations((prev) =>
+        prev.filter((conv) => conv.id !== conversationId)
+      )
+      setTotal((prev) => Math.max(0, prev - 1))
     } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'Failed to delete conversation'
+      const errorMessage =
+        err instanceof Error ? err.message : 'Failed to delete conversation'
       setError(errorMessage)
       console.error('Error deleting conversation:', err)
     } finally {
@@ -176,15 +183,17 @@ export function ConversationHistory({
           throw new Error('No authentication token available')
         }
 
-        const response: ConversationsResponse = await apiClient.getConversations(accessToken)
-        
+        const response: ConversationsResponse =
+          await apiClient.getConversations(accessToken)
+
         // Cache the response
         conversationCache.setCachedConversationList(response)
-        
+
         setConversations(response.conversations)
         setTotal(response.total)
       } catch (err) {
-        const errorMessage = err instanceof Error ? err.message : 'Failed to fetch conversations'
+        const errorMessage =
+          err instanceof Error ? err.message : 'Failed to fetch conversations'
         setError(errorMessage)
         console.error('Error fetching conversations:', err)
       } finally {
@@ -217,7 +226,9 @@ export function ConversationHistory({
           {isLoading && (
             <div className="flex items-center justify-center py-8">
               <Loader className="w-5 h-5 text-overlay-accent-primary animate-spin mr-2" />
-              <span className="text-sm text-overlay-text-muted">Loading conversations...</span>
+              <span className="text-sm text-overlay-text-muted">
+                Loading conversations...
+              </span>
             </div>
           )}
 
@@ -240,16 +251,19 @@ export function ConversationHistory({
           )}
 
           {/* Empty State */}
-          {!isLoading && !error && conversations.length === 0 && hasInitialized && (
-            <div className="flex flex-col items-center justify-center py-8">
-              <p className="text-sm text-overlay-text-muted text-center">
-                No conversations yet
-              </p>
-              <p className="text-xs text-overlay-text-muted text-center mt-1">
-                Start a conversation by asking a question!
-              </p>
-            </div>
-          )}
+          {!isLoading &&
+            !error &&
+            conversations.length === 0 &&
+            hasInitialized && (
+              <div className="flex flex-col items-center justify-center py-8">
+                <p className="text-sm text-overlay-text-muted text-center">
+                  No conversations yet
+                </p>
+                <p className="text-xs text-overlay-text-muted text-center mt-1">
+                  Start a conversation by asking a question!
+                </p>
+              </div>
+            )}
 
           {/* Conversations List */}
           {!isLoading && !error && conversations.length > 0 && (
@@ -261,7 +275,9 @@ export function ConversationHistory({
                       handleConversationClick(conversation)
                     }}
                     className={`p-3 rounded-2xl bg-overlay-bg-secondary border border-transparent hover:border-overlay-accent-primary cursor-pointer transition-all duration-200 group ${
-                      deletingId === conversation.id ? 'opacity-50 pointer-events-none' : ''
+                      deletingId === conversation.id
+                        ? 'opacity-50 pointer-events-none'
+                        : ''
                     }`}
                   >
                     <div className="flex items-start justify-between gap-2">
@@ -272,9 +288,13 @@ export function ConversationHistory({
                         <div className="flex items-center gap-2 mt-1">
                           <span className="text-xs text-overlay-text-secondary">
                             {conversation.game_name}
-                            {conversation.game_version && ` v${conversation.game_version}`}
+                            {conversation.game_version &&
+                              ` v${conversation.game_version}`}
                           </span>
-                          <Badge variant="outline" className="text-xs text-overlay-text-secondary">
+                          <Badge
+                            variant="outline"
+                            className="text-xs text-overlay-text-secondary"
+                          >
                             {conversation.conversation_type}
                           </Badge>
                         </div>
@@ -305,7 +325,6 @@ export function ConversationHistory({
               ))}
             </div>
           )}
-
         </div>
 
         {/* Close button footer - only show if there are conversations or error */}

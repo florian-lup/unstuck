@@ -59,7 +59,9 @@ export function useAppLogic() {
   const [showSettingsMenu, setShowSettingsMenu] = useState(false)
   const [showHistoryPanel, setShowHistoryPanel] = useState(false)
   const [isLoadingMessage, setIsLoadingMessage] = useState(false)
-  const [currentConversationId, setCurrentConversationId] = useState<string | null>(null)
+  const [currentConversationId, setCurrentConversationId] = useState<
+    string | null
+  >(null)
 
   // Keybind management
   const [customKeybind, setCustomKeybind] = useState<string>(() => {
@@ -92,13 +94,17 @@ export function useAppLogic() {
         const savedTransparency = localStorage.getItem('overlay-transparency')
         if (savedTransparency) {
           const parsedTransparency = parseInt(savedTransparency, 10)
-          if (!isNaN(parsedTransparency) && parsedTransparency >= 10 && parsedTransparency <= 100) {
+          if (
+            !isNaN(parsedTransparency) &&
+            parsedTransparency >= 10 &&
+            parsedTransparency <= 100
+          ) {
             setTransparency(parsedTransparency)
           }
         }
       }
     }
-    
+
     loadSavedTransparency()
   }, [])
 
@@ -121,7 +127,7 @@ export function useAppLogic() {
     const root = document.documentElement
     const colorVars = [
       '--overlay-bg-primary',
-      '--overlay-bg-secondary', 
+      '--overlay-bg-secondary',
       '--overlay-bg-hover',
       '--overlay-text-primary',
       '--overlay-text-secondary',
@@ -130,43 +136,43 @@ export function useAppLogic() {
       '--overlay-border-accent',
       '--overlay-accent-primary',
       '--overlay-accent-secondary',
-      '--overlay-accent-successs'
+      '--overlay-accent-successs',
     ]
 
     // Store original CSS values on first run (when transparency is 100%)
     const originalValues: Record<string, string> = {}
-    
+
     const storeOriginalValues = () => {
       const computedStyles = getComputedStyle(root)
-      colorVars.forEach(cssVar => {
+      colorVars.forEach((cssVar) => {
         // Remove any existing inline styles to get CSS file values
         root.style.removeProperty(cssVar)
         originalValues[cssVar] = computedStyles.getPropertyValue(cssVar).trim()
       })
     }
-    
+
     const applyTransparency = () => {
       const transparencyMultiplier = transparency / 100
-      
+
       // Helper function to parse rgba and apply transparency
       const applyTransparencyToColor = (originalValue: string) => {
         // Parse rgba(r, g, b, a) format
         const rgbaRegex = /rgba?\(([^)]+)\)/
         const rgbaMatch = rgbaRegex.exec(originalValue)
         if (rgbaMatch) {
-          const values = rgbaMatch[1].split(',').map(v => v.trim())
+          const values = rgbaMatch[1].split(',').map((v) => v.trim())
           const [r, g, b, originalAlpha = '1'] = values
           const newAlpha = parseFloat(originalAlpha) * transparencyMultiplier
-          
+
           return `rgba(${r}, ${g}, ${b}, ${newAlpha})`
         }
-        
+
         // If not rgba format, return original
         return originalValue
       }
-      
+
       // Apply transparency to all overlay colors using stored original values
-      colorVars.forEach(cssVar => {
+      colorVars.forEach((cssVar) => {
         const originalValue = originalValues[cssVar]
         if (originalValue) {
           const newValue = applyTransparencyToColor(originalValue)
@@ -174,14 +180,14 @@ export function useAppLogic() {
         }
       })
     }
-    
+
     // Store original values then apply transparency
     storeOriginalValues()
     applyTransparency()
-    
+
     // Cleanup function to reset to original CSS values
     return () => {
-      colorVars.forEach(cssVar => {
+      colorVars.forEach((cssVar) => {
         root.style.removeProperty(cssVar)
       })
     }
@@ -205,7 +211,10 @@ export function useAppLogic() {
   // Global click-through management
   useClickThrough({
     interactiveSelectors:
-      isNavigationBarVisible || isGamingChatVisible || showSettingsMenu || showHistoryPanel
+      isNavigationBarVisible ||
+      isGamingChatVisible ||
+      showSettingsMenu ||
+      showHistoryPanel
         ? ['[data-interactive-area]']
         : [],
   })
@@ -271,10 +280,13 @@ export function useAppLogic() {
     // TODO: Implement game-specific initialization
   }
 
-  const handleSendMessage = async (messageContent: string, activeToggle?: 'guides' | 'builds' | 'lore' | 'help' | null) => {
+  const handleSendMessage = async (
+    messageContent: string,
+    activeToggle?: 'guides' | 'builds' | 'lore' | 'help' | null
+  ) => {
     // Remember if we had a conversation ID before sending
     const hadConversation = !!currentConversationId
-    
+
     // Immediately add user message to show it right away
     const userMessage: Message = {
       id: `${Date.now()}-user`,
@@ -283,21 +295,24 @@ export function useAppLogic() {
       timestamp: new Date(),
     }
     setMessages((prev) => [...prev, userMessage])
-    
+
     // Set loading state
     setIsLoadingMessage(true)
 
     try {
       // Send message through appropriate service based on active toggle
-      // Let the backend handle JWT verification  
-      const { assistantMessage, conversationId } = 
-        activeToggle === 'lore' 
+      // Let the backend handle JWT verification
+      const { assistantMessage, conversationId } =
+        activeToggle === 'lore'
           ? await chatService.sendLoreMessage(messageContent, selectedGame)
-        : activeToggle === 'guides' 
-          ? await chatService.sendGuidesMessage(messageContent, selectedGame)
-        : activeToggle === 'builds'
-          ? await chatService.sendBuildsMessage(messageContent, selectedGame)
-        : await chatService.sendMessage(messageContent, selectedGame)
+          : activeToggle === 'guides'
+            ? await chatService.sendGuidesMessage(messageContent, selectedGame)
+            : activeToggle === 'builds'
+              ? await chatService.sendBuildsMessage(
+                  messageContent,
+                  selectedGame
+                )
+              : await chatService.sendMessage(messageContent, selectedGame)
 
       // If this was a new conversation (we didn't have one before), update the ID and invalidate cache
       if (!hadConversation && conversationId) {
@@ -316,7 +331,7 @@ export function useAppLogic() {
         role: 'assistant',
         timestamp: new Date(),
       }
-      
+
       setMessages((prev) => [...prev, errorMessage])
       console.error('Error sending message:', error)
     } finally {
@@ -342,32 +357,36 @@ export function useAppLogic() {
     try {
       setIsLoadingMessage(true)
       setMessages([]) // Clear current messages while loading
-      
+
       // Check cache first
-      const cachedHistory = conversationCache.getCachedConversationHistory(conversation.id)
+      const cachedHistory = conversationCache.getCachedConversationHistory(
+        conversation.id
+      )
       if (cachedHistory) {
         // Convert cached API messages to Message format expected by GamingChat
-        const convertedMessages: Message[] = cachedHistory.messages.map((msg, index) => ({
-          id: `${conversation.id}-${index}`,
-          content: msg.content,
-          role: msg.role,
-          timestamp: new Date(cachedHistory.updated_at * 1000), // Convert unix timestamp to Date
-        }))
+        const convertedMessages: Message[] = cachedHistory.messages.map(
+          (msg, index) => ({
+            id: `${conversation.id}-${index}`,
+            content: msg.content,
+            role: msg.role,
+            timestamp: new Date(cachedHistory.updated_at * 1000), // Convert unix timestamp to Date
+          })
+        )
 
         // Update state
         setMessages(convertedMessages)
         setCurrentConversationId(conversation.id)
-        
+
         // Set the conversation ID in chat service so new messages go to this conversation
         chatService.setConversationId(conversation.id)
-        
+
         // Show text chat and close history panel
         setIsGamingChatVisible(true)
         setShowHistoryPanel(false)
         setIsLoadingMessage(false)
         return
       }
-      
+
       const accessToken = await secureAuth.getValidAccessToken()
       if (!accessToken) {
         throw new Error('No authentication token available')
@@ -375,39 +394,46 @@ export function useAppLogic() {
 
       // Get conversation history from API
       const historyResponse = await apiClient.getConversationHistory(
-        conversation.id, 
+        conversation.id,
         accessToken
       )
 
       // Cache the response
-      conversationCache.setCachedConversationHistory(conversation.id, historyResponse)
+      conversationCache.setCachedConversationHistory(
+        conversation.id,
+        historyResponse
+      )
 
       // Convert API messages to Message format expected by GamingChat
-      const convertedMessages: Message[] = historyResponse.messages.map((msg, index) => ({
-        id: `${conversation.id}-${index}`,
-        content: msg.content,
-        role: msg.role,
-        timestamp: new Date(historyResponse.updated_at * 1000), // Convert unix timestamp to Date
-      }))
+      const convertedMessages: Message[] = historyResponse.messages.map(
+        (msg, index) => ({
+          id: `${conversation.id}-${index}`,
+          content: msg.content,
+          role: msg.role,
+          timestamp: new Date(historyResponse.updated_at * 1000), // Convert unix timestamp to Date
+        })
+      )
 
       // Update state
       setMessages(convertedMessages)
       setCurrentConversationId(conversation.id)
-      
+
       // Set the conversation ID in chat service so new messages go to this conversation
       chatService.setConversationId(conversation.id)
-      
+
       // Show text chat and close history panel
       setIsGamingChatVisible(true)
       setShowHistoryPanel(false)
-      
     } catch (error) {
       console.error('Error loading conversation history:', error)
-      
+
       // Show error message
       const errorMessage: Message = {
         id: `${Date.now()}-error`,
-        content: error instanceof Error ? `Failed to load conversation: ${error.message}` : 'Failed to load conversation',
+        content:
+          error instanceof Error
+            ? `Failed to load conversation: ${error.message}`
+            : 'Failed to load conversation',
         role: 'assistant',
         timestamp: new Date(),
       }

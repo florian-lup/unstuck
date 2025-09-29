@@ -1,4 +1,7 @@
-import { ConversationHistoryResponse, ConversationsResponse } from '../lib/api-client'
+import {
+  ConversationHistoryResponse,
+  ConversationsResponse,
+} from '../lib/api-client'
 import { Conversation } from '../components/conversation-history'
 
 export interface CachedConversationList {
@@ -13,8 +16,11 @@ export interface CachedConversationHistory {
 
 export class ConversationCacheService {
   private conversationListCache: CachedConversationList | null = null
-  private conversationHistoryCache = new Map<string, CachedConversationHistory>()
-  
+  private conversationHistoryCache = new Map<
+    string,
+    CachedConversationHistory
+  >()
+
   // Cache expiry time in milliseconds (1 hour)
   private readonly CACHE_EXPIRY_MS = 60 * 60 * 1000
 
@@ -27,7 +33,10 @@ export class ConversationCacheService {
     }
 
     // Check if cache is expired
-    if (Date.now() - this.conversationListCache.timestamp > this.CACHE_EXPIRY_MS) {
+    if (
+      Date.now() - this.conversationListCache.timestamp >
+      this.CACHE_EXPIRY_MS
+    ) {
       this.conversationListCache = null
       return null
     }
@@ -41,14 +50,16 @@ export class ConversationCacheService {
   setCachedConversationList(data: ConversationsResponse): void {
     this.conversationListCache = {
       data,
-      timestamp: Date.now()
+      timestamp: Date.now(),
     }
   }
 
   /**
    * Get cached conversation history if valid, otherwise return null
    */
-  getCachedConversationHistory(conversationId: string): ConversationHistoryResponse | null {
+  getCachedConversationHistory(
+    conversationId: string
+  ): ConversationHistoryResponse | null {
     const cached = this.conversationHistoryCache.get(conversationId)
     if (!cached) {
       return null
@@ -66,10 +77,13 @@ export class ConversationCacheService {
   /**
    * Cache conversation history
    */
-  setCachedConversationHistory(conversationId: string, data: ConversationHistoryResponse): void {
+  setCachedConversationHistory(
+    conversationId: string,
+    data: ConversationHistoryResponse
+  ): void {
     this.conversationHistoryCache.set(conversationId, {
       data,
-      timestamp: Date.now()
+      timestamp: Date.now(),
     })
   }
 
@@ -101,19 +115,20 @@ export class ConversationCacheService {
   removeConversation(conversationId: string): void {
     // Remove from history cache
     this.conversationHistoryCache.delete(conversationId)
-    
+
     // Update conversation list cache if it exists
     if (this.conversationListCache) {
-      const updatedConversations = this.conversationListCache.data.conversations.filter(
-        conv => conv.id !== conversationId
-      )
-      
+      const updatedConversations =
+        this.conversationListCache.data.conversations.filter(
+          (conv) => conv.id !== conversationId
+        )
+
       this.conversationListCache = {
         data: {
           conversations: updatedConversations,
-          total: Math.max(0, this.conversationListCache.data.total - 1)
+          total: Math.max(0, this.conversationListCache.data.total - 1),
         },
-        timestamp: this.conversationListCache.timestamp
+        timestamp: this.conversationListCache.timestamp,
       }
     }
   }
@@ -124,14 +139,17 @@ export class ConversationCacheService {
   addConversationToCache(conversation: Conversation): void {
     if (this.conversationListCache) {
       // Add to the beginning of the list (most recent first)
-      const updatedConversations = [conversation, ...this.conversationListCache.data.conversations]
-      
+      const updatedConversations = [
+        conversation,
+        ...this.conversationListCache.data.conversations,
+      ]
+
       this.conversationListCache = {
         data: {
           conversations: updatedConversations,
-          total: this.conversationListCache.data.total + 1
+          total: this.conversationListCache.data.total + 1,
         },
-        timestamp: this.conversationListCache.timestamp
+        timestamp: this.conversationListCache.timestamp,
       }
     }
   }
@@ -147,9 +165,9 @@ export class ConversationCacheService {
     return {
       conversationListCached: !!this.conversationListCache,
       conversationHistoryCacheSize: this.conversationHistoryCache.size,
-      conversationListAge: this.conversationListCache 
-        ? Date.now() - this.conversationListCache.timestamp 
-        : undefined
+      conversationListAge: this.conversationListCache
+        ? Date.now() - this.conversationListCache.timestamp
+        : undefined,
     }
   }
 }

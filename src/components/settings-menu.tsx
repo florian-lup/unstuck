@@ -195,11 +195,13 @@ export function SettingsMenu({
           </h3>
           <div className="flex justify-between items-center">
             <div className="flex items-center gap-2">
-              <Power className={`w-4 h-4 transition-colors duration-200 ${
-                autoLaunchEnabled 
-                  ? 'text-overlay-accent-primary' 
-                  : 'text-overlay-text-muted'
-              }`} />
+              <Power
+                className={`w-4 h-4 transition-colors duration-200 ${
+                  autoLaunchEnabled
+                    ? 'text-overlay-accent-primary'
+                    : 'text-overlay-text-muted'
+                }`}
+              />
               <span className="text-xs text-overlay-text-muted">
                 Launch Unstuck when computer starts
               </span>

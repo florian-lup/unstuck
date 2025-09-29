@@ -1,4 +1,12 @@
-import { BrowserWindow, screen, shell, Tray, Menu, nativeImage, app } from 'electron'
+import {
+  BrowserWindow,
+  screen,
+  shell,
+  Tray,
+  Menu,
+  nativeImage,
+  app,
+} from 'electron'
 import path from 'node:path'
 
 export class WindowManager {
@@ -160,31 +168,31 @@ export class WindowManager {
     })
 
     // Add context menu for DevTools
-     if (process.env.NODE_ENV === 'development')
-    this.authWindow.webContents.on('context-menu', () => {
-      const menu = Menu.buildFromTemplate([
-        {
-          label: 'Open DevTools',
-          click: () => {
-            this.authWindow?.webContents.openDevTools({ mode: 'detach' })
-          }
-        },
-        {
-          label: 'Close DevTools',
-          click: () => {
-            this.authWindow?.webContents.closeDevTools()
-          }
-        },
-        { type: 'separator' },
-        {
-          label: 'Reload',
-          click: () => {
-            this.authWindow?.webContents.reload()
-          }
-        }
-      ])
-      menu.popup()
-    })
+    if (process.env.NODE_ENV === 'development')
+      this.authWindow.webContents.on('context-menu', () => {
+        const menu = Menu.buildFromTemplate([
+          {
+            label: 'Open DevTools',
+            click: () => {
+              this.authWindow?.webContents.openDevTools({ mode: 'detach' })
+            },
+          },
+          {
+            label: 'Close DevTools',
+            click: () => {
+              this.authWindow?.webContents.closeDevTools()
+            },
+          },
+          { type: 'separator' },
+          {
+            label: 'Reload',
+            click: () => {
+              this.authWindow?.webContents.reload()
+            },
+          },
+        ])
+        menu.popup()
+      })
   }
 
   private setupOverlayWindowEvents(): void {
@@ -225,21 +233,21 @@ export class WindowManager {
             label: 'Open DevTools',
             click: () => {
               this.overlayWindow?.webContents.openDevTools({ mode: 'detach' })
-            }
+            },
           },
           {
-            label: 'Close DevTools', 
+            label: 'Close DevTools',
             click: () => {
               this.overlayWindow?.webContents.closeDevTools()
-            }
+            },
           },
           { type: 'separator' },
           {
             label: 'Reload',
             click: () => {
               this.overlayWindow?.webContents.reload()
-            }
-          }
+            },
+          },
         ])
         menu.popup()
       })
@@ -323,14 +331,14 @@ export class WindowManager {
   // System Tray Management
   createSystemTray(): Tray {
     const iconPath = path.join(this.vitePublic, 'unstuck-logo.ico')
-    
+
     // Create tray icon
     this.tray = new Tray(nativeImage.createFromPath(iconPath))
     this.tray.setToolTip('Unstuck')
-    
+
     this.setupTrayMenu()
     this.setupTrayEvents()
-    
+
     return this.tray
   }
 
@@ -350,7 +358,7 @@ export class WindowManager {
             }
             this.ensureOverlayOnTop()
           }
-        }
+        },
       },
       {
         label: 'Hide Overlay',
@@ -359,7 +367,7 @@ export class WindowManager {
           if (this.overlayWindow?.isVisible()) {
             this.overlayWindow.hide()
           }
-        }
+        },
       },
       { type: 'separator' },
       {
@@ -374,7 +382,7 @@ export class WindowManager {
             // Send event to renderer to open settings
             this.overlayWindow.webContents.send('open-settings-menu')
           }
-        }
+        },
       },
       { type: 'separator' },
       {
@@ -382,8 +390,8 @@ export class WindowManager {
         type: 'normal',
         click: () => {
           app.quit()
-        }
-      }
+        },
+      },
     ])
 
     this.tray.setContextMenu(contextMenu)
@@ -445,7 +453,7 @@ export class WindowManager {
               this.ensureOverlayOnTop()
             }
           }
-        }
+        },
       },
       { type: 'separator' },
       {
@@ -458,7 +466,7 @@ export class WindowManager {
             this.ensureOverlayOnTop()
             this.overlayWindow.webContents.send('open-settings-menu')
           }
-        }
+        },
       },
       { type: 'separator' },
       {
@@ -466,8 +474,8 @@ export class WindowManager {
         type: 'normal',
         click: () => {
           app.quit()
-        }
-      }
+        },
+      },
     ])
 
     this.tray.setContextMenu(contextMenu)

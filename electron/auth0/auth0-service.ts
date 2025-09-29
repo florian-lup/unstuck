@@ -316,7 +316,9 @@ export class Auth0Service {
           } catch (refreshError) {
             console.warn(
               'Failed to refresh restored tokens:',
-              refreshError instanceof Error ? refreshError.message : 'Unknown error'
+              refreshError instanceof Error
+                ? refreshError.message
+                : 'Unknown error'
             )
             await this.clearSession()
             this.currentSession = null

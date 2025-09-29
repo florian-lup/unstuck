@@ -16,10 +16,10 @@ export default defineConfig({
         vite: {
           build: {
             rollupOptions: {
-              external: ['auto-launch']
-            }
-          }
-        }
+              external: ['auto-launch'],
+            },
+          },
+        },
       },
       preload: {
         // Shortcut of `build.rollupOptions.input`.

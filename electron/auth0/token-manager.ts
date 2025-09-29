@@ -144,7 +144,6 @@ export class TokenManager {
         errorData = { error: response.statusText }
       }
 
-
       // Handle specific Auth0 error codes
       if (errorData.error === 'invalid_grant') {
         throw new Error('Refresh token invalid - re-authentication required')

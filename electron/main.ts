@@ -72,7 +72,11 @@ void app.whenReady().then(async () => {
   appLifecycle.setupAppEvents()
 
   // Register managers with app lifecycle for proper cleanup
-  appLifecycle.registerManagers(authIPCHandlers, shortcutsManager, autoLaunchManager)
+  appLifecycle.registerManagers(
+    authIPCHandlers,
+    shortcutsManager,
+    autoLaunchManager
+  )
 
   // Setup shortcuts
   shortcutsManager.registerGlobalShortcuts()

@@ -6,11 +6,7 @@ interface TooltipProps {
   delay?: number
 }
 
-export function Tooltip({ 
-  content, 
-  children, 
-  delay = 300 
-}: TooltipProps) {
+export function Tooltip({ content, children, delay = 300 }: TooltipProps) {
   const [isVisible, setIsVisible] = useState(false)
   const [timeoutId, setTimeoutId] = useState<NodeJS.Timeout | null>(null)
 
@@ -33,7 +29,7 @@ export function Tooltip({
   }
 
   return (
-    <div 
+    <div
       className="relative inline-block"
       onMouseEnter={showTooltip}
       onMouseLeave={hideTooltip}
@@ -50,7 +46,7 @@ export function Tooltip({
         >
           {content}
           {/* Arrow */}
-          <div 
+          <div
             className="absolute bottom-full left-1/2 w-0 h-0"
             style={{
               transform: 'translateX(-50%)',

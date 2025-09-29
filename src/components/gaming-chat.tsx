@@ -1,6 +1,15 @@
 import { Input } from './ui/input'
 import { InteractiveArea } from './interactive-area'
-import { CornerDownLeft, X, RotateCcw, Loader2, BookOpen, Wrench, Scroll, ClipboardList } from 'lucide-react'
+import {
+  CornerDownLeft,
+  X,
+  RotateCcw,
+  Loader2,
+  BookOpen,
+  Wrench,
+  Scroll,
+  ClipboardList,
+} from 'lucide-react'
 import { Button } from './ui/button'
 import { Toggle } from './ui/toggle'
 import { Tooltip } from './ui/tooltip'
@@ -16,7 +25,10 @@ export interface Message {
 
 interface GamingChatProps {
   onClose?: () => void
-  onSendMessage?: (message: string, activeToggle?: 'guides' | 'builds' | 'lore' | 'help' | null) => void
+  onSendMessage?: (
+    message: string,
+    activeToggle?: 'guides' | 'builds' | 'lore' | 'help' | null
+  ) => void
   onStartNewConversation?: () => void
   messages?: Message[]
   isLoading?: boolean
@@ -47,12 +59,12 @@ export function GamingChat({
     // Computed
     hasMessages,
     canSubmit,
-  } = useGamingChat({ 
-    onClose, 
-    onSendMessage, 
+  } = useGamingChat({
+    onClose,
+    onSendMessage,
     onStartNewConversation,
-    messages, 
-    isLoading 
+    messages,
+    isLoading,
   })
 
   return (
@@ -62,43 +74,51 @@ export function GamingChat({
         <InteractiveArea className="p-0 rounded-3xl border border-overlay-border-primary bg-overlay-bg-primary">
           <div className="flex justify-between items-center h-9 px-3">
             <div className="flex items-center gap-2">
-              <Toggle 
-                variant="gaming" 
-                size="sm" 
+              <Toggle
+                variant="gaming"
+                size="sm"
                 className="h-6 px-2 text-xs"
                 pressed={activeToggle === 'guides'}
-                onPressedChange={() => { handleToggleClick('guides') }}
+                onPressedChange={() => {
+                  handleToggleClick('guides')
+                }}
               >
                 <BookOpen className="w-3 h-3 mr-1" />
                 Guides
               </Toggle>
-              <Toggle 
-                variant="gaming" 
-                size="sm" 
+              <Toggle
+                variant="gaming"
+                size="sm"
                 className="h-6 px-2 text-xs"
                 pressed={activeToggle === 'builds'}
-                onPressedChange={() => { handleToggleClick('builds') }}
+                onPressedChange={() => {
+                  handleToggleClick('builds')
+                }}
               >
                 <ClipboardList className="w-3 h-3 mr-1" />
                 Builds
               </Toggle>
-              <Toggle 
-                variant="gaming" 
-                size="sm" 
+              <Toggle
+                variant="gaming"
+                size="sm"
                 className="h-6 px-2 text-xs"
                 pressed={activeToggle === 'lore'}
-                onPressedChange={() => { handleToggleClick('lore') }}
+                onPressedChange={() => {
+                  handleToggleClick('lore')
+                }}
               >
                 <Scroll className="w-3 h-3 mr-1" />
                 Lore
               </Toggle>
               <Tooltip content="Troubleshooting Coming Soon">
-                <Toggle 
-                  variant="gaming" 
-                  size="sm" 
+                <Toggle
+                  variant="gaming"
+                  size="sm"
                   className="h-6 px-2 text-xs"
                   pressed={activeToggle === 'help'}
-                  onPressedChange={() => { handleToggleClick('help') }}
+                  onPressedChange={() => {
+                    handleToggleClick('help')
+                  }}
                 >
                   <Wrench className="w-3 h-3 mr-1" />
                   Help
@@ -117,7 +137,7 @@ export function GamingChat({
           </div>
         </InteractiveArea>
       </div>
-      
+
       {/* Messages Area */}
       {hasMessages && (
         <InteractiveArea className="mb-2 p-3 rounded-3xl border border-overlay-border-primary bg-overlay-bg-primary">
@@ -126,10 +146,7 @@ export function GamingChat({
             className="max-h-120 overflow-y-auto space-y-2 overlay-scrollbar"
           >
             {messages.map((msg) => (
-              <div
-                key={msg.id}
-                className="flex justify-start"
-              >
+              <div key={msg.id} className="flex justify-start">
                 <div
                   className={`px-3 py-2 text-sm break-words w-full ${
                     msg.role === 'user'
@@ -145,7 +162,7 @@ export function GamingChat({
                 </div>
               </div>
             ))}
-            
+
             {/* Loading indicator */}
             {isLoading && (
               <div className="flex justify-start">
@@ -155,7 +172,7 @@ export function GamingChat({
                 </div>
               </div>
             )}
-            
+
             <div ref={messagesEndRef} />
           </div>
         </InteractiveArea>
@@ -168,7 +185,9 @@ export function GamingChat({
             value={message}
             onChange={handleMessageChange}
             onKeyDown={handleKeyDown}
-            placeholder={isLoading ? "Getting response..." : "Ask about your game..."}
+            placeholder={
+              isLoading ? 'Getting response...' : 'Ask about your game...'
+            }
             className="w-full pr-20" // Add right padding for buttons
             autoFocus
             disabled={isLoading}

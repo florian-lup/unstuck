@@ -259,7 +259,7 @@ export class AuthIPCHandlers {
    */
   cleanup(): void {
     console.log('Cleaning up Auth IPC handlers...')
-    
+
     // Remove all IPC handlers
     ipcMain.removeHandler('auth0-start-flow')
     ipcMain.removeHandler('auth0-get-session')
@@ -267,7 +267,7 @@ export class AuthIPCHandlers {
     ipcMain.removeHandler('auth0-is-secure-storage')
     ipcMain.removeHandler('auth0-cancel-device-flow')
     ipcMain.removeHandler('open-external-url')
-    
+
     // Remove all IPC listeners
     ipcMain.removeAllListeners('auth-success')
     ipcMain.removeAllListeners('user-logout')

@@ -3,7 +3,13 @@
  * Handles conversation IDs, message history, and API calls
  */
 
-import { apiClient, type GamingSearchRequest, type GamingLoreRequest, type GamingGuidesRequest, type GamingBuildsRequest } from './api-client'
+import {
+  apiClient,
+  type GamingSearchRequest,
+  type GamingLoreRequest,
+  type GamingGuidesRequest,
+  type GamingBuildsRequest,
+} from './api-client'
 import { secureAuth } from './auth-client'
 import type { Message } from '../components/gaming-chat'
 import type { Game } from './games'
@@ -36,7 +42,7 @@ export class ChatService {
     try {
       // Get access token - use smart token method to avoid rate limits
       const accessToken = await secureAuth.getValidAccessToken()
-      
+
       if (!accessToken) {
         throw new Error('Please sign in to continue.')
       }
@@ -83,8 +89,9 @@ export class ChatService {
       }
     } catch (error) {
       // Create error message for display
-      const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred'
-      
+      const errorMessage =
+        error instanceof Error ? error.message : 'Unknown error occurred'
+
       const userMessage: Message = {
         id: `${Date.now()}-user`,
         content: message,
@@ -126,7 +133,7 @@ export class ChatService {
     try {
       // Get access token - use smart token method to avoid rate limits
       const accessToken = await secureAuth.getValidAccessToken()
-      
+
       if (!accessToken) {
         throw new Error('Please sign in to continue.')
       }
@@ -173,8 +180,9 @@ export class ChatService {
       }
     } catch (error) {
       // Create error message for display
-      const errorMessage = error instanceof Error ? error.message : 'Unknown error'
-      
+      const errorMessage =
+        error instanceof Error ? error.message : 'Unknown error'
+
       const userMessage: Message = {
         id: `${Date.now()}-user`,
         content: message,
@@ -216,7 +224,7 @@ export class ChatService {
     try {
       // Get access token - use smart token method to avoid rate limits
       const accessToken = await secureAuth.getValidAccessToken()
-      
+
       if (!accessToken) {
         throw new Error('Please sign in to continue.')
       }
@@ -263,8 +271,9 @@ export class ChatService {
       }
     } catch (error) {
       // Create error message for display
-      const errorMessage = error instanceof Error ? error.message : 'Unknown error'
-      
+      const errorMessage =
+        error instanceof Error ? error.message : 'Unknown error'
+
       const userMessage: Message = {
         id: `${Date.now()}-user`,
         content: message,
@@ -306,7 +315,7 @@ export class ChatService {
     try {
       // Get access token - use smart token method to avoid rate limits
       const accessToken = await secureAuth.getValidAccessToken()
-      
+
       if (!accessToken) {
         throw new Error('Please sign in to continue.')
       }
@@ -353,8 +362,9 @@ export class ChatService {
       }
     } catch (error) {
       // Create error message for display
-      const errorMessage = error instanceof Error ? error.message : 'Unknown error'
-      
+      const errorMessage =
+        error instanceof Error ? error.message : 'Unknown error'
+
       const userMessage: Message = {
         id: `${Date.now()}-user`,
         content: message,

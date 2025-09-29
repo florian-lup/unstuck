@@ -9,7 +9,6 @@ import os from 'os'
 export class SecureStorage {
   private secureDir = path.join(os.homedir(), '.unstuck-secure')
 
-
   /**
    * Initialize secure storage directory
    */
@@ -55,7 +54,9 @@ export class SecureStorage {
     try {
       const { safeStorage } = await import('electron')
       if (!safeStorage.isEncryptionAvailable()) {
-        throw new Error('OS-level encryption is required but not available. Please ensure Windows Credential Manager is working properly.')
+        throw new Error(
+          'OS-level encryption is required but not available. Please ensure Windows Credential Manager is working properly.'
+        )
       }
 
       const encrypted = safeStorage.encryptString(value)
@@ -78,7 +79,6 @@ export class SecureStorage {
       // File doesn't exist, consider it removed
     }
   }
-
 
   /**
    * Ensure secure directory exists with proper permissions

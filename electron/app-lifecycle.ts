@@ -29,15 +29,15 @@ export class AppLifecycleManager {
    */
   private cleanupAllResources(): void {
     console.log('Cleaning up all app resources...')
-    
+
     // Clean up main IPC handlers
     ipcMain.removeHandler('update-navigation-shortcut')
-    
+
     // Clean up manager resources
     this.authIPCHandlers?.cleanup()
     this.shortcutsManager?.unregisterAllShortcuts()
     this.autoLaunchManager?.cleanup()
-    
+
     // Clean up tray icon
     this.windowManager.destroyTray()
   }
@@ -47,7 +47,7 @@ export class AppLifecycleManager {
     app.on('window-all-closed', () => {
       // Clean up resources before quitting
       this.cleanupAllResources()
-      
+
       if (process.platform !== 'darwin') {
         app.quit()
       }

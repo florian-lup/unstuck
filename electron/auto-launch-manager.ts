@@ -15,8 +15,11 @@ export class AutoLaunchManager {
     })
 
     // Path to store settings
-    this.settingsPath = path.join(app.getPath('userData'), 'auto-launch-settings.json')
-    
+    this.settingsPath = path.join(
+      app.getPath('userData'),
+      'auto-launch-settings.json'
+    )
+
     this.setupIpcHandlers()
   }
 
@@ -114,7 +117,10 @@ export class AutoLaunchManager {
   private async saveAutoLaunchSetting(enabled: boolean): Promise<void> {
     try {
       const settings = { autoLaunch: enabled }
-      await fs.promises.writeFile(this.settingsPath, JSON.stringify(settings, null, 2))
+      await fs.promises.writeFile(
+        this.settingsPath,
+        JSON.stringify(settings, null, 2)
+      )
     } catch (error) {
       console.error('Failed to save auto-launch setting:', error)
     }
@@ -128,7 +134,7 @@ export class AutoLaunchManager {
       if (!fs.existsSync(this.settingsPath)) {
         return true // Default to enabled on first install
       }
-      
+
       const data = await fs.promises.readFile(this.settingsPath, 'utf-8')
       const settings = JSON.parse(data) as { autoLaunch?: boolean }
       return settings.autoLaunch === true

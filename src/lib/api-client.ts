@@ -146,13 +146,14 @@ export interface GamingBuildsResponse {
 }
 
 export class ApiClient {
-  private readonly baseUrl = 'https://unstuck-backend-production-d9c1.up.railway.app/api/v1'
+  private readonly baseUrl =
+    'https://unstuck-backend-production-d9c1.up.railway.app/api/v1'
   private readonly endpoints = {
     gamingSearch: '/gaming/chat',
     gamingLore: '/gaming/lore',
     gamingGuides: '/gaming/guides',
     gamingBuilds: '/gaming/builds',
-    conversations: '/gaming/conversations'
+    conversations: '/gaming/conversations',
   } as const
 
   /**
@@ -163,12 +164,12 @@ export class ApiClient {
     accessToken: string
   ): Promise<GamingSearchResponse> {
     const url = `${this.baseUrl}${this.endpoints.gamingSearch}`
-    
+
     try {
       const response = await fetch(url, {
         method: 'POST',
         headers: {
-          'Authorization': `Bearer ${accessToken}`,
+          Authorization: `Bearer ${accessToken}`,
           'Content-Type': 'application/json',
         },
         body: JSON.stringify(request),
@@ -181,7 +182,7 @@ export class ApiClient {
         let requestId = ''
 
         try {
-          const errorData = await response.json() as ApiErrorResponse
+          const errorData = (await response.json()) as ApiErrorResponse
           errorMessage = errorData.message || errorMessage
           errorType = errorData.error || errorType
           requestId = errorData.request_id || ''
@@ -196,18 +197,22 @@ export class ApiClient {
         } else if (response.status === 403) {
           throw new Error('Access denied. Please check your permissions.')
         } else if (response.status === 429) {
-          throw new Error('Rate limit exceeded. Please wait a moment and try again.')
+          throw new Error(
+            'Rate limit exceeded. Please wait a moment and try again.'
+          )
         } else if (response.status >= 500) {
           throw new Error('Server error. Please try again later.')
         } else {
-          throw new Error(`${errorType}: ${errorMessage}${requestId ? ` (Request ID: ${requestId})` : ''}`)
+          throw new Error(
+            `${errorType}: ${errorMessage}${requestId ? ` (Request ID: ${requestId})` : ''}`
+          )
         }
       }
 
       // Parse and validate the successful response
       try {
-        const data = await response.json() as GamingSearchResponse
-        
+        const data = (await response.json()) as GamingSearchResponse
+
         // Basic validation of required fields
         if (!data.id || !data.conversation_id || !data.content) {
           throw new Error('Invalid response format from server')
@@ -220,13 +225,17 @@ export class ApiClient {
         }
         throw new Error('Failed to parse server response')
       }
-      
     } catch (networkError) {
       // Check if it's a fetch error (network issues)
-      if (networkError instanceof TypeError && networkError.message.includes('fetch')) {
-        throw new Error('Connection failed. Please check your internet connection and try again.')
+      if (
+        networkError instanceof TypeError &&
+        networkError.message.includes('fetch')
+      ) {
+        throw new Error(
+          'Connection failed. Please check your internet connection and try again.'
+        )
       }
-      
+
       // Re-throw other errors
       throw networkError
     }
@@ -240,12 +249,12 @@ export class ApiClient {
     accessToken: string
   ): Promise<GamingLoreResponse> {
     const url = `${this.baseUrl}${this.endpoints.gamingLore}`
-    
+
     try {
       const response = await fetch(url, {
         method: 'POST',
         headers: {
-          'Authorization': `Bearer ${accessToken}`,
+          Authorization: `Bearer ${accessToken}`,
           'Content-Type': 'application/json',
         },
         body: JSON.stringify(request),
@@ -258,7 +267,7 @@ export class ApiClient {
         let requestId = ''
 
         try {
-          const errorData = await response.json() as ApiErrorResponse
+          const errorData = (await response.json()) as ApiErrorResponse
           errorMessage = errorData.message || errorMessage
           errorType = errorData.error || errorType
           requestId = errorData.request_id || ''
@@ -273,18 +282,22 @@ export class ApiClient {
         } else if (response.status === 403) {
           throw new Error('Access denied. Please check your permissions.')
         } else if (response.status === 429) {
-          throw new Error('Rate limit exceeded. Please wait a moment and try again.')
+          throw new Error(
+            'Rate limit exceeded. Please wait a moment and try again.'
+          )
         } else if (response.status >= 500) {
           throw new Error('Server error. Please try again later.')
         } else {
-          throw new Error(`${errorType}: ${errorMessage}${requestId ? ` (Request ID: ${requestId})` : ''}`)
+          throw new Error(
+            `${errorType}: ${errorMessage}${requestId ? ` (Request ID: ${requestId})` : ''}`
+          )
         }
       }
 
       // Parse and validate the successful response
       try {
-        const data = await response.json() as GamingLoreResponse
-        
+        const data = (await response.json()) as GamingLoreResponse
+
         // Basic validation of required fields
         if (!data.id || !data.conversation_id || !data.content) {
           throw new Error('Invalid response format from server')
@@ -297,13 +310,17 @@ export class ApiClient {
         }
         throw new Error('Failed to parse server response')
       }
-      
     } catch (networkError) {
       // Check if it's a fetch error (network issues)
-      if (networkError instanceof TypeError && networkError.message.includes('fetch')) {
-        throw new Error('Connection failed. Please check your internet connection and try again.')
+      if (
+        networkError instanceof TypeError &&
+        networkError.message.includes('fetch')
+      ) {
+        throw new Error(
+          'Connection failed. Please check your internet connection and try again.'
+        )
       }
-      
+
       // Re-throw other errors
       throw networkError
     }
@@ -317,12 +334,12 @@ export class ApiClient {
     accessToken: string
   ): Promise<GamingGuidesResponse> {
     const url = `${this.baseUrl}${this.endpoints.gamingGuides}`
-    
+
     try {
       const response = await fetch(url, {
         method: 'POST',
         headers: {
-          'Authorization': `Bearer ${accessToken}`,
+          Authorization: `Bearer ${accessToken}`,
           'Content-Type': 'application/json',
         },
         body: JSON.stringify(request),
@@ -335,7 +352,7 @@ export class ApiClient {
         let requestId = ''
 
         try {
-          const errorData = await response.json() as ApiErrorResponse
+          const errorData = (await response.json()) as ApiErrorResponse
           errorMessage = errorData.message || errorMessage
           errorType = errorData.error || errorType
           requestId = errorData.request_id || ''
@@ -350,18 +367,22 @@ export class ApiClient {
         } else if (response.status === 403) {
           throw new Error('Access denied. Please check your permissions.')
         } else if (response.status === 429) {
-          throw new Error('Rate limit exceeded. Please wait a moment and try again.')
+          throw new Error(
+            'Rate limit exceeded. Please wait a moment and try again.'
+          )
         } else if (response.status >= 500) {
           throw new Error('Server error. Please try again later.')
         } else {
-          throw new Error(`${errorType}: ${errorMessage}${requestId ? ` (Request ID: ${requestId})` : ''}`)
+          throw new Error(
+            `${errorType}: ${errorMessage}${requestId ? ` (Request ID: ${requestId})` : ''}`
+          )
         }
       }
 
       // Parse and validate the successful response
       try {
-        const data = await response.json() as GamingGuidesResponse
-        
+        const data = (await response.json()) as GamingGuidesResponse
+
         // Basic validation of required fields
         if (!data.id || !data.conversation_id || !data.content) {
           throw new Error('Invalid response format from server')
@@ -374,13 +395,17 @@ export class ApiClient {
         }
         throw new Error('Failed to parse server response')
       }
-      
     } catch (networkError) {
       // Check if it's a fetch error (network issues)
-      if (networkError instanceof TypeError && networkError.message.includes('fetch')) {
-        throw new Error('Connection failed. Please check your internet connection and try again.')
+      if (
+        networkError instanceof TypeError &&
+        networkError.message.includes('fetch')
+      ) {
+        throw new Error(
+          'Connection failed. Please check your internet connection and try again.'
+        )
       }
-      
+
       // Re-throw other errors
       throw networkError
     }
@@ -394,12 +419,12 @@ export class ApiClient {
     accessToken: string
   ): Promise<GamingBuildsResponse> {
     const url = `${this.baseUrl}${this.endpoints.gamingBuilds}`
-    
+
     try {
       const response = await fetch(url, {
         method: 'POST',
         headers: {
-          'Authorization': `Bearer ${accessToken}`,
+          Authorization: `Bearer ${accessToken}`,
           'Content-Type': 'application/json',
         },
         body: JSON.stringify(request),
@@ -412,7 +437,7 @@ export class ApiClient {
         let requestId = ''
 
         try {
-          const errorData = await response.json() as ApiErrorResponse
+          const errorData = (await response.json()) as ApiErrorResponse
           errorMessage = errorData.message || errorMessage
           errorType = errorData.error || errorType
           requestId = errorData.request_id || ''
@@ -427,18 +452,22 @@ export class ApiClient {
         } else if (response.status === 403) {
           throw new Error('Access denied. Please check your permissions.')
         } else if (response.status === 429) {
-          throw new Error('Rate limit exceeded. Please wait a moment and try again.')
+          throw new Error(
+            'Rate limit exceeded. Please wait a moment and try again.'
+          )
         } else if (response.status >= 500) {
           throw new Error('Server error. Please try again later.')
         } else {
-          throw new Error(`${errorType}: ${errorMessage}${requestId ? ` (Request ID: ${requestId})` : ''}`)
+          throw new Error(
+            `${errorType}: ${errorMessage}${requestId ? ` (Request ID: ${requestId})` : ''}`
+          )
         }
       }
 
       // Parse and validate the successful response
       try {
-        const data = await response.json() as GamingBuildsResponse
-        
+        const data = (await response.json()) as GamingBuildsResponse
+
         // Basic validation of required fields
         if (!data.id || !data.conversation_id || !data.content) {
           throw new Error('Invalid response format from server')
@@ -451,13 +480,17 @@ export class ApiClient {
         }
         throw new Error('Failed to parse server response')
       }
-      
     } catch (networkError) {
       // Check if it's a fetch error (network issues)
-      if (networkError instanceof TypeError && networkError.message.includes('fetch')) {
-        throw new Error('Connection failed. Please check your internet connection and try again.')
+      if (
+        networkError instanceof TypeError &&
+        networkError.message.includes('fetch')
+      ) {
+        throw new Error(
+          'Connection failed. Please check your internet connection and try again.'
+        )
       }
-      
+
       // Re-throw other errors
       throw networkError
     }
@@ -468,12 +501,12 @@ export class ApiClient {
    */
   async getConversations(accessToken: string): Promise<ConversationsResponse> {
     const url = `${this.baseUrl}${this.endpoints.conversations}`
-    
+
     try {
       const response = await fetch(url, {
         method: 'GET',
         headers: {
-          'Authorization': `Bearer ${accessToken}`,
+          Authorization: `Bearer ${accessToken}`,
           'Content-Type': 'application/json',
         },
       })
@@ -485,7 +518,7 @@ export class ApiClient {
         let requestId = ''
 
         try {
-          const errorData = await response.json() as ApiErrorResponse
+          const errorData = (await response.json()) as ApiErrorResponse
           errorMessage = errorData.message || errorMessage
           errorType = errorData.error || errorType
           requestId = errorData.request_id || ''
@@ -500,20 +533,27 @@ export class ApiClient {
         } else if (response.status === 403) {
           throw new Error('Access denied. Please check your permissions.')
         } else if (response.status === 429) {
-          throw new Error('Rate limit exceeded. Please wait a moment and try again.')
+          throw new Error(
+            'Rate limit exceeded. Please wait a moment and try again.'
+          )
         } else if (response.status >= 500) {
           throw new Error('Server error. Please try again later.')
         } else {
-          throw new Error(`${errorType}: ${errorMessage}${requestId ? ` (Request ID: ${requestId})` : ''}`)
+          throw new Error(
+            `${errorType}: ${errorMessage}${requestId ? ` (Request ID: ${requestId})` : ''}`
+          )
         }
       }
 
       // Parse and validate the successful response
       try {
-        const data = await response.json() as ConversationsResponse
-        
+        const data = (await response.json()) as ConversationsResponse
+
         // Basic validation of required fields
-        if (!Array.isArray(data.conversations) || typeof data.total !== 'number') {
+        if (
+          !Array.isArray(data.conversations) ||
+          typeof data.total !== 'number'
+        ) {
           throw new Error('Invalid response format from server')
         }
 
@@ -524,13 +564,17 @@ export class ApiClient {
         }
         throw new Error('Failed to parse server response')
       }
-      
     } catch (networkError) {
       // Check if it's a fetch error (network issues)
-      if (networkError instanceof TypeError && networkError.message.includes('fetch')) {
-        throw new Error('Connection failed. Please check your internet connection and try again.')
+      if (
+        networkError instanceof TypeError &&
+        networkError.message.includes('fetch')
+      ) {
+        throw new Error(
+          'Connection failed. Please check your internet connection and try again.'
+        )
       }
-      
+
       // Re-throw other errors
       throw networkError
     }
@@ -539,14 +583,17 @@ export class ApiClient {
   /**
    * Get conversation history including all messages
    */
-  async getConversationHistory(conversationId: string, accessToken: string): Promise<ConversationHistoryResponse> {
+  async getConversationHistory(
+    conversationId: string,
+    accessToken: string
+  ): Promise<ConversationHistoryResponse> {
     const url = `${this.baseUrl}/gaming/conversations/${conversationId}/history`
-    
+
     try {
       const response = await fetch(url, {
         method: 'GET',
         headers: {
-          'Authorization': `Bearer ${accessToken}`,
+          Authorization: `Bearer ${accessToken}`,
           'Content-Type': 'application/json',
         },
       })
@@ -558,7 +605,7 @@ export class ApiClient {
         let requestId = ''
 
         try {
-          const errorData = await response.json() as ApiErrorResponse
+          const errorData = (await response.json()) as ApiErrorResponse
           errorMessage = errorData.message || errorMessage
           errorType = errorData.error || errorType
           requestId = errorData.request_id || ''
@@ -575,18 +622,22 @@ export class ApiClient {
         } else if (response.status === 404) {
           throw new Error('Conversation not found.')
         } else if (response.status === 429) {
-          throw new Error('Rate limit exceeded. Please wait a moment and try again.')
+          throw new Error(
+            'Rate limit exceeded. Please wait a moment and try again.'
+          )
         } else if (response.status >= 500) {
           throw new Error('Server error. Please try again later.')
         } else {
-          throw new Error(`${errorType}: ${errorMessage}${requestId ? ` (Request ID: ${requestId})` : ''}`)
+          throw new Error(
+            `${errorType}: ${errorMessage}${requestId ? ` (Request ID: ${requestId})` : ''}`
+          )
         }
       }
 
       // Parse and validate the successful response
       try {
-        const data = await response.json() as ConversationHistoryResponse
-        
+        const data = (await response.json()) as ConversationHistoryResponse
+
         // Basic validation of required fields
         if (!data.conversation_id || !Array.isArray(data.messages)) {
           throw new Error('Invalid response format from server')
@@ -599,13 +650,17 @@ export class ApiClient {
         }
         throw new Error('Failed to parse server response')
       }
-      
     } catch (networkError) {
       // Check if it's a fetch error (network issues)
-      if (networkError instanceof TypeError && networkError.message.includes('fetch')) {
-        throw new Error('Connection failed. Please check your internet connection and try again.')
+      if (
+        networkError instanceof TypeError &&
+        networkError.message.includes('fetch')
+      ) {
+        throw new Error(
+          'Connection failed. Please check your internet connection and try again.'
+        )
       }
-      
+
       // Re-throw other errors
       throw networkError
     }
@@ -614,14 +669,17 @@ export class ApiClient {
   /**
    * Delete a conversation permanently (⚠️ IRREVERSIBLE!)
    */
-  async deleteConversation(conversationId: string, accessToken: string): Promise<void> {
+  async deleteConversation(
+    conversationId: string,
+    accessToken: string
+  ): Promise<void> {
     const url = `${this.baseUrl}/gaming/conversations/${conversationId}`
-    
+
     try {
       const response = await fetch(url, {
         method: 'DELETE',
         headers: {
-          'Authorization': `Bearer ${accessToken}`,
+          Authorization: `Bearer ${accessToken}`,
           'Content-Type': 'application/json',
         },
       })
@@ -633,7 +691,7 @@ export class ApiClient {
         let requestId = ''
 
         try {
-          const errorData = await response.json() as ApiErrorResponse
+          const errorData = (await response.json()) as ApiErrorResponse
           errorMessage = errorData.message || errorMessage
           errorType = errorData.error || errorType
           requestId = errorData.request_id || ''
@@ -646,26 +704,36 @@ export class ApiClient {
         if (response.status === 401) {
           throw new Error('Authentication failed. Please sign in again.')
         } else if (response.status === 403) {
-          throw new Error('Access denied. You do not have permission to delete this conversation.')
+          throw new Error(
+            'Access denied. You do not have permission to delete this conversation.'
+          )
         } else if (response.status === 404) {
           throw new Error('Conversation not found or has already been deleted.')
         } else if (response.status === 429) {
-          throw new Error('Rate limit exceeded. Please wait a moment and try again.')
+          throw new Error(
+            'Rate limit exceeded. Please wait a moment and try again.'
+          )
         } else if (response.status >= 500) {
           throw new Error('Server error. Please try again later.')
         } else {
-          throw new Error(`${errorType}: ${errorMessage}${requestId ? ` (Request ID: ${requestId})` : ''}`)
+          throw new Error(
+            `${errorType}: ${errorMessage}${requestId ? ` (Request ID: ${requestId})` : ''}`
+          )
         }
       }
 
       // Success - no response body expected for DELETE
-      
     } catch (networkError) {
       // Check if it's a fetch error (network issues)
-      if (networkError instanceof TypeError && networkError.message.includes('fetch')) {
-        throw new Error('Connection failed. Please check your internet connection and try again.')
+      if (
+        networkError instanceof TypeError &&
+        networkError.message.includes('fetch')
+      ) {
+        throw new Error(
+          'Connection failed. Please check your internet connection and try again.'
+        )
       }
-      
+
       // Re-throw other errors
       throw networkError
     }

@@ -239,7 +239,9 @@ class SecureStorage {
     try {
       const { safeStorage } = await import("electron");
       if (!safeStorage.isEncryptionAvailable()) {
-        throw new Error("OS-level encryption is required but not available. Please ensure Windows Credential Manager is working properly.");
+        throw new Error(
+          "OS-level encryption is required but not available. Please ensure Windows Credential Manager is working properly."
+        );
       }
       const encrypted = safeStorage.encryptString(value);
       const filePath = path.join(this.secureDir, `${key}.dat`);
@@ -1600,7 +1602,10 @@ class AutoLaunchManager {
       name: appName,
       path: app.getPath("exe")
     });
-    this.settingsPath = path.join(app.getPath("userData"), "auto-launch-settings.json");
+    this.settingsPath = path.join(
+      app.getPath("userData"),
+      "auto-launch-settings.json"
+    );
     this.setupIpcHandlers();
   }
   /**
@@ -1688,7 +1693,10 @@ class AutoLaunchManager {
   async saveAutoLaunchSetting(enabled) {
     try {
       const settings = { autoLaunch: enabled };
-      await fs$1.promises.writeFile(this.settingsPath, JSON.stringify(settings, null, 2));
+      await fs$1.promises.writeFile(
+        this.settingsPath,
+        JSON.stringify(settings, null, 2)
+      );
     } catch (error) {
       console.error("Failed to save auto-launch setting:", error);
     }
@@ -1770,7 +1778,11 @@ void app.whenReady().then(async () => {
     return;
   }
   appLifecycle.setupAppEvents();
-  appLifecycle.registerManagers(authIPCHandlers, shortcutsManager, autoLaunchManager);
+  appLifecycle.registerManagers(
+    authIPCHandlers,
+    shortcutsManager,
+    autoLaunchManager
+  );
   shortcutsManager.registerGlobalShortcuts();
   shortcutsManager.setupShortcutCleanup();
   ipcMain.handle("update-navigation-shortcut", (_event, shortcut) => {

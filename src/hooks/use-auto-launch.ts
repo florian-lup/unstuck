@@ -4,8 +4,12 @@ import { useState, useEffect, useCallback } from 'react'
 let cachedAutoLaunchStatus: boolean | null = null
 
 export function useAutoLaunch() {
-  const [isEnabled, setIsEnabled] = useState<boolean>(() => cachedAutoLaunchStatus ?? false)
-  const [isLoading, setIsLoading] = useState<boolean>(() => cachedAutoLaunchStatus === null)
+  const [isEnabled, setIsEnabled] = useState<boolean>(
+    () => cachedAutoLaunchStatus ?? false
+  )
+  const [isLoading, setIsLoading] = useState<boolean>(
+    () => cachedAutoLaunchStatus === null
+  )
   const [error, setError] = useState<string | null>(null)
 
   // Load the current auto-launch status
