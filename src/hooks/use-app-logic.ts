@@ -58,6 +58,7 @@ export function useAppLogic() {
   const [messages, setMessages] = useState<Message[]>([])
   const [showSettingsMenu, setShowSettingsMenu] = useState(false)
   const [showHistoryPanel, setShowHistoryPanel] = useState(false)
+  const [showInfoPanel, setShowInfoPanel] = useState(false)
   const [isLoadingMessage, setIsLoadingMessage] = useState(false)
   const [currentConversationId, setCurrentConversationId] = useState<
     string | null
@@ -214,7 +215,8 @@ export function useAppLogic() {
       isNavigationBarVisible ||
       isGamingChatVisible ||
       showSettingsMenu ||
-      showHistoryPanel
+      showHistoryPanel ||
+      showInfoPanel
         ? ['[data-interactive-area]']
         : [],
   })
@@ -235,6 +237,9 @@ export function useAppLogic() {
       if (showHistoryPanel) {
         setShowHistoryPanel(false)
       }
+      if (showInfoPanel) {
+        setShowInfoPanel(false)
+      }
     }
   }
 
@@ -248,6 +253,9 @@ export function useAppLogic() {
       if (showSettingsMenu) {
         setShowSettingsMenu(false)
       }
+      if (showInfoPanel) {
+        setShowInfoPanel(false)
+      }
     }
   }
 
@@ -257,6 +265,25 @@ export function useAppLogic() {
     if (!showSettingsMenu) {
       if (isGamingChatVisible) {
         setIsGamingChatVisible(false)
+      }
+      if (showHistoryPanel) {
+        setShowHistoryPanel(false)
+      }
+      if (showInfoPanel) {
+        setShowInfoPanel(false)
+      }
+    }
+  }
+
+  const handleInfoClick = () => {
+    setShowInfoPanel(!showInfoPanel)
+    // Close other panels when info opens
+    if (!showInfoPanel) {
+      if (isGamingChatVisible) {
+        setIsGamingChatVisible(false)
+      }
+      if (showSettingsMenu) {
+        setShowSettingsMenu(false)
       }
       if (showHistoryPanel) {
         setShowHistoryPanel(false)
@@ -455,6 +482,9 @@ export function useAppLogic() {
       if (showHistoryPanel) {
         setShowHistoryPanel(false)
       }
+      if (showInfoPanel) {
+        setShowInfoPanel(false)
+      }
     }
   }
 
@@ -488,6 +518,7 @@ export function useAppLogic() {
     isNavigationBarVisible,
     showSettingsMenu,
     showHistoryPanel,
+    showInfoPanel,
     user,
     customKeybind,
     transparency,
@@ -499,6 +530,7 @@ export function useAppLogic() {
     handleTextClick,
     handleHistoryClick,
     handleSettingsClick,
+    handleInfoClick,
     handleGameSelect,
     handleSendMessage,
     handleGamingChatClose,
@@ -510,5 +542,6 @@ export function useAppLogic() {
     handleTransparencyChange,
     setShowSettingsMenu,
     setShowHistoryPanel,
+    setShowInfoPanel,
   }
 }

@@ -2,6 +2,7 @@ import { NavigationBar } from './components/navigation-bar'
 import { GamingChat } from './components/gaming-chat'
 import { SettingsMenu } from './components/settings-menu'
 import { ConversationHistory } from './components/conversation-history'
+import { AppInfo } from './components/app-info'
 import { useAppLogic } from './hooks/use-app-logic'
 import './index.css'
 import './overlay.css'
@@ -15,6 +16,7 @@ function App() {
     isNavigationBarVisible,
     showSettingsMenu,
     showHistoryPanel,
+    showInfoPanel,
     user,
     customKeybind,
     transparency,
@@ -25,6 +27,7 @@ function App() {
     handleTextClick,
     handleHistoryClick,
     handleSettingsClick,
+    handleInfoClick,
     handleGameSelect,
     handleSendMessage,
     handleGamingChatClose,
@@ -34,6 +37,7 @@ function App() {
     handleTransparencyChange,
     setShowSettingsMenu,
     setShowHistoryPanel,
+    setShowInfoPanel,
     handleStartNewConversation,
     handleConversationSelect,
   } = useAppLogic()
@@ -47,6 +51,7 @@ function App() {
             onTextClick={handleTextClick}
             onHistoryClick={handleHistoryClick}
             onSettingsClick={handleSettingsClick}
+            onInfoClick={handleInfoClick}
             onGameSelect={handleGameSelect}
             selectedGame={selectedGame}
             onDropdownOpenChange={handleDropdownOpenChange}
@@ -72,6 +77,14 @@ function App() {
                 setShowHistoryPanel(false)
               }}
               onConversationSelect={handleConversationSelect}
+            />
+          )}
+          {showInfoPanel && (
+            <AppInfo
+              isOpen={showInfoPanel}
+              onClose={() => {
+                setShowInfoPanel(false)
+              }}
             />
           )}
         </div>

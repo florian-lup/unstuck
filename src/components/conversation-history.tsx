@@ -189,8 +189,8 @@ export function ConversationHistory({
           {/* Error State */}
           {error && !isLoading && (
             <div className="flex flex-col items-center justify-center py-8">
-              <AlertCircle className="w-5 h-5 text-destructive mb-2" />
-              <p className="text-sm text-destructive text-center mb-3 max-w-xs">
+              <AlertCircle className="w-5 h-5 text-overlay-accent-error mb-2" />
+              <p className="text-sm text-overlay-accent-error text-center mb-3 max-w-xs">
                 {error}
               </p>
               <Button
@@ -267,7 +267,7 @@ export function ConversationHistory({
                             onClick={(e) => {
                               void handleDeleteClick(e, conversation.id)
                             }}
-                            className="flex items-center justify-center w-5 h-5 hover:bg-destructive/20 hover:text-destructive rounded transition-all duration-200 text-overlay-text-muted"
+                            className="flex items-center justify-center w-5 h-5 hover:bg-overlay-accent-error/20 hover:text-overlay-accent-error rounded transition-all duration-200 text-overlay-text-muted"
                           >
                             <Trash2 className="w-3 h-3" />
                           </button>
