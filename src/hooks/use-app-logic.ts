@@ -295,6 +295,8 @@ export function useAppLogic() {
           ? await chatService.sendLoreMessage(messageContent, selectedGame)
         : activeToggle === 'guides' 
           ? await chatService.sendGuidesMessage(messageContent, selectedGame)
+        : activeToggle === 'builds'
+          ? await chatService.sendBuildsMessage(messageContent, selectedGame)
         : await chatService.sendMessage(messageContent, selectedGame)
 
       // If this was a new conversation (we didn't have one before), update the ID and invalidate cache
