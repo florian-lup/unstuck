@@ -5,7 +5,7 @@ interface UseGamingChatProps {
   onClose?: () => void
   onSendMessage?: (
     message: string,
-    activeToggle?: 'guides' | 'builds' | 'lore' | 'help' | null
+    activeToggle?: 'guides' | 'builds' | 'lore' | 'fix' | null
   ) => void
   onStartNewConversation?: () => void
   messages?: Message[]
@@ -24,7 +24,7 @@ export function useGamingChat({
 
   // Local state for toggle buttons (only one can be active at a time)
   const [activeToggle, setActiveToggle] = useState<
-    'guides' | 'builds' | 'lore' | 'help' | null
+    'guides' | 'builds' | 'lore' | 'fix' | null
   >(null)
 
   // Refs for scroll management
@@ -77,7 +77,7 @@ export function useGamingChat({
   }
 
   const handleToggleClick = (
-    toggleName: 'guides' | 'builds' | 'lore' | 'help'
+    toggleName: 'guides' | 'builds' | 'lore' | 'fix'
   ) => {
     // If the same toggle is clicked, deactivate it, otherwise set it as active
     setActiveToggle(activeToggle === toggleName ? null : toggleName)

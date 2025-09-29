@@ -282,7 +282,7 @@ export function useAppLogic() {
 
   const handleSendMessage = async (
     messageContent: string,
-    activeToggle?: 'guides' | 'builds' | 'lore' | 'help' | null
+    activeToggle?: 'guides' | 'builds' | 'lore' | 'fix' | null
   ) => {
     // Remember if we had a conversation ID before sending
     const hadConversation = !!currentConversationId

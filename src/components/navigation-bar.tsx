@@ -1,5 +1,5 @@
 import React from 'react'
-import { Mic, Type, Menu, Settings, Grip } from 'lucide-react'
+import { Mic, Type, Menu, Settings, Info, Grip } from 'lucide-react'
 import { Button } from './ui/button'
 import { Tooltip } from './ui/tooltip'
 import { SelectGame } from './select-game'
@@ -12,6 +12,7 @@ interface NavigationBarProps {
   onTextClick?: () => void
   onHistoryClick?: () => void
   onSettingsClick?: () => void
+  onInfoClick?: () => void
   onGameSelect?: (game: Game) => void
   selectedGame?: Game | null
   onDropdownOpenChange?: (open: boolean) => void
@@ -22,6 +23,7 @@ export function NavigationBar({
   onTextClick,
   onHistoryClick,
   onSettingsClick,
+  onInfoClick,
   onGameSelect,
   selectedGame,
   onDropdownOpenChange,
@@ -48,6 +50,12 @@ export function NavigationBar({
     // Ensure window stays on top when button is clicked
     window.electronAPI?.windowInteraction()
     onSettingsClick?.()
+  }
+
+  const handleInfoClick = () => {
+    // Ensure window stays on top when button is clicked
+    window.electronAPI?.windowInteraction()
+    onInfoClick?.()
   }
 
   const handleGameSelect = (game: Game) => {
@@ -96,6 +104,9 @@ export function NavigationBar({
                 <span className="text-xs">Chat</span>
               </Button>
 
+              {/* Divider */}
+              <div className="w-px h-4 mx-1 bg-overlay-border-primary"></div>
+
               {/* History Button */}
               <Button
                 onClick={handleHistoryClick}
@@ -114,6 +125,16 @@ export function NavigationBar({
                 className="p-1 h-auto w-auto"
               >
                 <Settings className="w-3 h-3" />
+              </Button>
+
+              {/* Info Button */}
+              <Button
+                onClick={handleInfoClick}
+                variant="gaming"
+                size="icon"
+                className="p-1 h-auto w-auto"
+              >
+                <Info className="w-3 h-3" />
               </Button>
             </div>
 

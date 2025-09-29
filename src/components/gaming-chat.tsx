@@ -27,7 +27,7 @@ interface GamingChatProps {
   onClose?: () => void
   onSendMessage?: (
     message: string,
-    activeToggle?: 'guides' | 'builds' | 'lore' | 'help' | null
+    activeToggle?: 'guides' | 'builds' | 'lore' | 'fix' | null
   ) => void
   onStartNewConversation?: () => void
   messages?: Message[]
@@ -110,18 +110,18 @@ export function GamingChat({
                 <Scroll className="w-3 h-3 mr-1" />
                 Lore
               </Toggle>
-              <Tooltip content="Troubleshooting Coming Soon">
+              <Tooltip content="Game Troubleshooting Coming Soon">
                 <Toggle
                   variant="gaming"
                   size="sm"
                   className="h-6 px-2 text-xs"
-                  pressed={activeToggle === 'help'}
+                  pressed={activeToggle === 'fix'}
                   onPressedChange={() => {
-                    handleToggleClick('help')
+                    handleToggleClick('fix')
                   }}
                 >
                   <Wrench className="w-3 h-3 mr-1" />
-                  Help
+                  Fix
                 </Toggle>
               </Tooltip>
             </div>
