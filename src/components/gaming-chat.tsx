@@ -3,6 +3,7 @@ import { InteractiveArea } from './interactive-area'
 import { CornerDownLeft, X, RotateCcw, Loader2, BookOpen, Wrench, Scroll, ClipboardList } from 'lucide-react'
 import { Button } from './ui/button'
 import { Toggle } from './ui/toggle'
+import { Tooltip } from './ui/tooltip'
 import { useGamingChat } from '../hooks/use-gaming-chat'
 import { MarkdownContent } from '../utils/markdown-content'
 
@@ -91,16 +92,18 @@ export function GamingChat({
                 <Scroll className="w-3 h-3 mr-1" />
                 Lore
               </Toggle>
-              <Toggle 
-                variant="gaming" 
-                size="sm" 
-                className="h-6 px-2 text-xs"
-                pressed={activeToggle === 'help'}
-                onPressedChange={() => { handleToggleClick('help') }}
-              >
-                <Wrench className="w-3 h-3 mr-1" />
-                Help
-              </Toggle>
+              <Tooltip content="Troubleshooting Coming Soon">
+                <Toggle 
+                  variant="gaming" 
+                  size="sm" 
+                  className="h-6 px-2 text-xs"
+                  pressed={activeToggle === 'help'}
+                  onPressedChange={() => { handleToggleClick('help') }}
+                >
+                  <Wrench className="w-3 h-3 mr-1" />
+                  Help
+                </Toggle>
+              </Tooltip>
             </div>
             <Button
               onClick={handleNewConversation}
