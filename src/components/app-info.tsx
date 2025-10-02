@@ -75,10 +75,10 @@ export function AppInfo({ isOpen, onClose }: AppInfoProps) {
         {/* Chat Toggles */}
         <div className="mb-4">
           <h3 className="text-sm font-medium text-overlay-text-primary mb-2">
-            Chat Modes (optional)
+            Agents
           </h3>
           <p className="text-xs text-overlay-text-secondary leading-relaxed mb-3 ml-2">
-            To further enhance chat functionality, toggle a mode to get specialized responses tailored to your specific needs.
+            To further enhance chat functionality, toggle an agent to get specialized responses tailored to your specific needs.
           </p>
           <div className="space-y-3 ml-2">
             {/* Guides */}
