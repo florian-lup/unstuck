@@ -21,6 +21,7 @@ export interface Message {
   content: string
   role: 'user' | 'assistant'
   timestamp: Date
+  remainingRequests?: number
 }
 
 interface GamingChatProps {
@@ -147,17 +148,24 @@ export function GamingChat({
           >
             {messages.map((msg) => (
               <div key={msg.id} className="flex justify-start">
-                <div
-                  className={`px-3 py-2 text-sm break-words w-full ${
-                    msg.role === 'user'
-                      ? 'text-overlay-text-secondary whitespace-pre-wrap border-b border-overlay-border-primary pb-4 mb-2 mr-2'
-                      : 'text-overlay-text-primary'
-                  }`}
-                >
-                  {msg.role === 'assistant' ? (
-                    <MarkdownContent content={msg.content} />
-                  ) : (
-                    msg.content
+                <div className="w-full">
+                  <div
+                    className={`px-3 py-2 text-sm break-words w-full ${
+                      msg.role === 'user'
+                        ? 'text-overlay-text-secondary whitespace-pre-wrap border-b border-overlay-border-primary pb-4 mb-2 mr-2'
+                        : 'text-overlay-text-primary'
+                    }`}
+                  >
+                    {msg.role === 'assistant' ? (
+                      <MarkdownContent content={msg.content} />
+                    ) : (
+                      msg.content
+                    )}
+                  </div>
+                  {msg.role === 'assistant' && msg.remainingRequests !== undefined && (
+                    <div className="px-3 pb-2 text-xs text-overlay-text-muted opacity-60">
+                      {msg.remainingRequests} requests remaining
+                    </div>
                   )}
                 </div>
               </div>

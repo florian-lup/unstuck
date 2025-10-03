@@ -27,6 +27,9 @@ export interface GamingSearchResponse {
     total_tokens: number
   }
   finish_reason: string
+  request_limit_info: {
+    remaining_requests: number
+  }
 }
 
 export interface ApiErrorResponse {
@@ -127,6 +130,9 @@ export interface GamingLoreResponse {
     num_search_queries: number
   }
   finish_reason: string
+  request_limit_info: {
+    remaining_requests: number
+  }
 }
 
 export interface GamingGuidesRequest {
@@ -156,6 +162,9 @@ export interface GamingGuidesResponse {
     num_search_queries: number
   }
   finish_reason: string
+  request_limit_info: {
+    remaining_requests: number
+  }
 }
 
 export interface GamingBuildsRequest {
@@ -185,6 +194,9 @@ export interface GamingBuildsResponse {
     num_search_queries: number
   }
   finish_reason: string
+  request_limit_info: {
+    remaining_requests: number
+  }
 }
 
 export interface CreateCheckoutSessionResponse {

@@ -80,6 +80,7 @@ export class ChatService {
         content: response.content,
         role: 'assistant',
         timestamp: new Date(response.created * 1000), // Convert Unix timestamp to Date
+        remainingRequests: response.request_limit_info.remaining_requests,
       }
 
       return {
@@ -171,6 +172,7 @@ export class ChatService {
         content: response.content,
         role: 'assistant',
         timestamp: new Date(response.created * 1000), // Convert Unix timestamp to Date
+        remainingRequests: response.request_limit_info.remaining_requests,
       }
 
       return {
@@ -262,6 +264,7 @@ export class ChatService {
         content: response.content,
         role: 'assistant',
         timestamp: new Date(response.created * 1000), // Convert Unix timestamp to Date
+        remainingRequests: response.request_limit_info.remaining_requests,
       }
 
       return {
@@ -353,6 +356,7 @@ export class ChatService {
         content: response.content,
         role: 'assistant',
         timestamp: new Date(response.created * 1000), // Convert Unix timestamp to Date
+        remainingRequests: response.request_limit_info.remaining_requests,
       }
 
       return {
