@@ -65,8 +65,12 @@ export class Auth0Service {
       throw new Error('Missing Auth0 credentials')
     }
 
-    // Validate domain format
-    if (!domain.includes('.auth0.com') && !domain.includes('.us.auth0.com')) {
+    // Validate domain format (supports both standard Auth0 domains and custom domains)
+    if (
+      !domain.includes('.auth0.com') &&
+      !domain.includes('.us.auth0.com') &&
+      !domain.includes('auth.unstuck.gg')
+    ) {
       throw new Error('Invalid Auth0 domain format')
     }
 

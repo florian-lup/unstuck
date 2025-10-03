@@ -58,7 +58,7 @@ class TokenManager {
     const refreshKey = currentTokens.refresh_token;
     this.validateRefreshRateLimit(refreshKey);
     if (this.config.security.validateDomainOnRefresh) {
-      if (!this.domain || !this.domain.includes(".auth0.com") && !this.domain.includes(".us.auth0.com")) {
+      if (!this.domain || !this.domain.includes(".auth0.com") && !this.domain.includes(".us.auth0.com") && !this.domain.includes("auth.unstuck.gg")) {
         throw new Error("Invalid Auth0 domain for token refresh");
       }
     }
@@ -456,7 +456,7 @@ class Auth0Service {
     if (!domain || !clientId) {
       throw new Error("Missing Auth0 credentials");
     }
-    if (!domain.includes(".auth0.com") && !domain.includes(".us.auth0.com")) {
+    if (!domain.includes(".auth0.com") && !domain.includes(".us.auth0.com") && !domain.includes("auth.unstuck.gg")) {
       throw new Error("Invalid Auth0 domain format");
     }
     this.domain = domain.startsWith("https://") ? domain : `https://${domain}`;
@@ -680,7 +680,7 @@ class Auth0Service {
 }
 const auth0Service = new Auth0Service();
 const auth0Config = {
-  domain: "dev-go8elfmr2gh3aye8.us.auth0.com",
+  domain: "auth.unstuck.gg",
   clientId: "vVv9ZUVlCqxZQemAwrOGve0HSrK5rTlO",
   // Request access to user profile and enable refresh tokens
   scope: "openid profile email offline_access",
@@ -738,9 +738,9 @@ function validateAuth0Config(config) {
       "Missing Auth0 configuration. Please set domain and clientId in config/auth.config.ts"
     );
   }
-  if (!config.domain.includes(".auth0.com") && !config.domain.includes(".us.auth0.com")) {
+  if (!config.domain.includes(".auth0.com") && !config.domain.includes(".us.auth0.com") && !config.domain.includes("auth.unstuck.gg")) {
     throw new Error(
-      'Invalid Auth0 domain format. Domain should be like "your-tenant.auth0.com"'
+      'Invalid Auth0 domain format. Domain should be like "your-tenant.auth0.com" or a custom domain'
     );
   }
   if (config.scope && !config.scope.includes("openid")) {

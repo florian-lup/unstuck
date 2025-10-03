@@ -91,7 +91,8 @@ export class TokenManager {
       if (
         !this.domain ||
         (!this.domain.includes('.auth0.com') &&
-          !this.domain.includes('.us.auth0.com'))
+          !this.domain.includes('.us.auth0.com') &&
+          !this.domain.includes('auth.unstuck.gg'))
       ) {
         throw new Error('Invalid Auth0 domain for token refresh')
       }

@@ -64,7 +64,7 @@ export interface Auth0Config {
 }
 
 export const auth0Config: Auth0Config = {
-  domain: 'dev-go8elfmr2gh3aye8.us.auth0.com',
+  domain: 'auth.unstuck.gg',
   clientId: 'vVv9ZUVlCqxZQemAwrOGve0HSrK5rTlO',
 
   // Request access to user profile and enable refresh tokens
@@ -126,13 +126,14 @@ export function validateAuth0Config(config: Auth0Config): void {
     )
   }
 
-  // Validate domain format
+  // Validate domain format (supports both standard Auth0 domains and custom domains)
   if (
     !config.domain.includes('.auth0.com') &&
-    !config.domain.includes('.us.auth0.com')
+    !config.domain.includes('.us.auth0.com') &&
+    !config.domain.includes('auth.unstuck.gg')
   ) {
     throw new Error(
-      'Invalid Auth0 domain format. Domain should be like "your-tenant.auth0.com"'
+      'Invalid Auth0 domain format. Domain should be like "your-tenant.auth0.com" or a custom domain'
     )
   }
 
