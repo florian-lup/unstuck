@@ -684,8 +684,8 @@ const auth0Config = {
   clientId: "vVv9ZUVlCqxZQemAwrOGve0HSrK5rTlO",
   // Request access to user profile and enable refresh tokens
   scope: "openid profile email offline_access",
-  // Audience for your gaming search API
-  audience: "https://unstuck-search-api/",
+  // Audience for your backend API
+  audience: "https://unstuck-backend-api/",
   deviceFlow: {
     pollingInterval: 5,
     // Poll every 5 seconds
