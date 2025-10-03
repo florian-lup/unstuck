@@ -36,45 +36,20 @@ export interface ApiErrorResponse {
   error: string
   message: string
   request_id: string
+  // Some endpoints return nested error details
+  detail?: {
+    error: string
+    message: string
+    feature?: string
+    current_tier?: string
+    upgrade_required?: boolean
+  }
 }
-
-export interface FeatureAccessDeniedError extends ApiErrorResponse {
-  error: 'feature_access_denied'
-  feature: string
-  current_tier: string
-  upgrade_required: boolean
-}
-
-export interface RequestLimitExceededError extends ApiErrorResponse {
-  error: 'request_limit_exceeded'
-  current_requests: number
-  max_requests: number
-  tier: string
-  limit_type: string
-  upgrade_required: boolean
-}
-
-export interface MonthlyRequestLimitExceededError extends ApiErrorResponse {
-  error: 'monthly_request_limit_exceeded'
-  current_requests: number
-  max_requests: number
-  tier: string
-  limit_type: string
-  days_until_reset: number
-  reset_date: string
-}
-
-export type SubscriptionErrorResponse =
-  | FeatureAccessDeniedError
-  | RequestLimitExceededError
-  | MonthlyRequestLimitExceededError
 
 // Custom error class for subscription-related errors
+// These errors have pre-formatted messages from the backend
 export class SubscriptionError extends Error {
-  constructor(
-    message: string,
-    public readonly errorData: SubscriptionErrorResponse
-  ) {
+  constructor(message: string) {
     super(message)
     this.name = 'SubscriptionError'
   }
@@ -230,39 +205,6 @@ export class ApiClient {
   } as const
 
   /**
-   * Helper method to check if error response is a subscription error
-   */
-  private isSubscriptionError(
-    errorData: ApiErrorResponse
-  ): errorData is SubscriptionErrorResponse {
-    return (
-      errorData.error === 'feature_access_denied' ||
-      errorData.error === 'request_limit_exceeded' ||
-      errorData.error === 'monthly_request_limit_exceeded'
-    )
-  }
-
-  /**
-   * Helper method to format subscription error messages with upgrade prompt
-   */
-  private formatSubscriptionErrorMessage(
-    errorData: SubscriptionErrorResponse
-  ): string {
-    switch (errorData.error) {
-      case 'feature_access_denied': {
-        return `🔒 **${errorData.message}**\n\nThe **${errorData.feature}** feature will be available exclusively for Pro tier users.\n\n✨ Stay tuned for Pro tier launch! In the meantime:\n• Enjoy gaming chat on Free tier (150 lifetime requests)\n• Upgrade to Community for 300 monthly requests\n• Pro tier coming soon with exclusive features\n\n💡 Click the settings icon to check your current plan!`
-      }
-      case 'request_limit_exceeded': {
-        return `📊 **${errorData.message}**\n\nYou've used all ${errorData.max_requests} gaming chat requests on the ${errorData.tier} tier.\n\n✨ Upgrade to Community tier to continue chatting:\n• 300 gaming chat requests per month\n• Monthly limit resets automatically\n• Support development of Unstuck\n\n💡 Click the settings icon and select "Upgrade Subscription" to continue!`
-      }
-      case 'monthly_request_limit_exceeded': {
-        const resetDate = new Date(errorData.reset_date).toLocaleDateString()
-        return `📊 **${errorData.message}**\n\nYou've used all ${errorData.max_requests} gaming chat requests this month on the ${errorData.tier} tier.\n\n⏰ Your limit will reset in ${errorData.days_until_reset} day${errorData.days_until_reset === 1 ? '' : 's'} (on ${resetDate}).\n\n✨ Or upgrade to Pro tier for unlimited gaming chat:\n• Unlimited requests every month\n• Exclusive features (coming soon)\n• Priority support\n\n💡 Click the settings icon to upgrade to Pro!`
-      }
-    }
-  }
-
-  /**
    * Send a gaming search request to the API
    */
   async searchGaming(
@@ -283,48 +225,30 @@ export class ApiClient {
 
       // Handle non-200 responses
       if (!response.ok) {
-        let errorMessage = 'Unknown error occurred'
-        let errorType = 'unknown_error'
-        let requestId = ''
+        // Try to parse error response
         let errorData: ApiErrorResponse | null = null
-
         try {
           errorData = (await response.json()) as ApiErrorResponse
-          errorMessage = errorData.message || errorMessage
-          errorType = errorData.error || errorType
-          requestId = errorData.request_id || ''
-
-          // Check if this is a subscription-related error
-          if (this.isSubscriptionError(errorData)) {
-            const formattedMessage =
-              this.formatSubscriptionErrorMessage(errorData)
-            throw new SubscriptionError(formattedMessage, errorData)
-          }
-        } catch (error) {
-          // If it's a SubscriptionError, re-throw it
-          if (error instanceof SubscriptionError) {
-            throw error
-          }
-          // If we can't parse the error response, use status text
-          errorMessage = response.statusText || `HTTP ${response.status}`
+        } catch {
+          // If JSON parsing fails, use status text
+          throw new Error(`Request failed: ${response.statusText}`)
         }
 
-        // Create a more descriptive error based on status code
-        if (response.status === 401) {
-          throw new Error('Authentication failed. Please sign in again.')
-        } else if (response.status === 403) {
-          throw new Error('Access denied. Please check your permissions.')
-        } else if (response.status === 429) {
-          throw new Error(
-            'Rate limit exceeded. Please wait a moment and try again.'
-          )
-        } else if (response.status >= 500) {
-          throw new Error('Server error. Please try again later.')
-        } else {
-          throw new Error(
-            `${errorType}: ${errorMessage}${requestId ? ` (Request ID: ${requestId})` : ''}`
-          )
+        // Extract message from either flat or nested structure
+        const message = errorData.detail?.message ?? errorData.message
+        
+        // Check if it's a subscription error - if so, throw as SubscriptionError
+        const errorCode = errorData.detail?.error ?? errorData.error
+        if (
+          errorCode === 'feature_access_denied' ||
+          errorCode === 'request_limit_exceeded' ||
+          errorCode === 'monthly_request_limit_exceeded'
+        ) {
+          throw new SubscriptionError(message)
         }
+
+        // For other errors, throw as regular Error
+        throw new Error(message)
       }
 
       // Parse and validate the successful response
@@ -380,48 +304,19 @@ export class ApiClient {
 
       // Handle non-200 responses
       if (!response.ok) {
-        let errorMessage = 'Unknown error occurred'
-        let errorType = 'unknown_error'
-        let requestId = ''
+        // Try to parse error response
         let errorData: ApiErrorResponse | null = null
-
         try {
           errorData = (await response.json()) as ApiErrorResponse
-          errorMessage = errorData.message || errorMessage
-          errorType = errorData.error || errorType
-          requestId = errorData.request_id || ''
-
-          // Check if this is a subscription-related error
-          if (this.isSubscriptionError(errorData)) {
-            const formattedMessage =
-              this.formatSubscriptionErrorMessage(errorData)
-            throw new SubscriptionError(formattedMessage, errorData)
-          }
-        } catch (error) {
-          // If it's a SubscriptionError, re-throw it
-          if (error instanceof SubscriptionError) {
-            throw error
-          }
-          // If we can't parse the error response, use status text
-          errorMessage = response.statusText || `HTTP ${response.status}`
+        } catch {
+          // If JSON parsing fails, use status text
+          throw new SubscriptionError(`Request failed: ${response.statusText}`)
         }
 
-        // Create a more descriptive error based on status code
-        if (response.status === 401) {
-          throw new Error('Authentication failed. Please sign in again.')
-        } else if (response.status === 403) {
-          throw new Error('Access denied. Please check your permissions.')
-        } else if (response.status === 429) {
-          throw new Error(
-            'Rate limit exceeded. Please wait a moment and try again.'
-          )
-        } else if (response.status >= 500) {
-          throw new Error('Server error. Please try again later.')
-        } else {
-          throw new Error(
-            `${errorType}: ${errorMessage}${requestId ? ` (Request ID: ${requestId})` : ''}`
-          )
-        }
+        // Lore is a restricted feature - treat all API errors as subscription errors
+        // This ensures the backend's error message is displayed without modification
+        const message = errorData.detail?.message ?? errorData.message
+        throw new SubscriptionError(message)
       }
 
       // Parse and validate the successful response
@@ -451,7 +346,7 @@ export class ApiClient {
         )
       }
 
-      // Re-throw other errors
+      // Re-throw other errors (including SubscriptionError from above)
       throw networkError
     }
   }
@@ -477,48 +372,19 @@ export class ApiClient {
 
       // Handle non-200 responses
       if (!response.ok) {
-        let errorMessage = 'Unknown error occurred'
-        let errorType = 'unknown_error'
-        let requestId = ''
+        // Try to parse error response
         let errorData: ApiErrorResponse | null = null
-
         try {
           errorData = (await response.json()) as ApiErrorResponse
-          errorMessage = errorData.message || errorMessage
-          errorType = errorData.error || errorType
-          requestId = errorData.request_id || ''
-
-          // Check if this is a subscription-related error
-          if (this.isSubscriptionError(errorData)) {
-            const formattedMessage =
-              this.formatSubscriptionErrorMessage(errorData)
-            throw new SubscriptionError(formattedMessage, errorData)
-          }
-        } catch (error) {
-          // If it's a SubscriptionError, re-throw it
-          if (error instanceof SubscriptionError) {
-            throw error
-          }
-          // If we can't parse the error response, use status text
-          errorMessage = response.statusText || `HTTP ${response.status}`
+        } catch {
+          // If JSON parsing fails, use status text
+          throw new SubscriptionError(`Request failed: ${response.statusText}`)
         }
 
-        // Create a more descriptive error based on status code
-        if (response.status === 401) {
-          throw new Error('Authentication failed. Please sign in again.')
-        } else if (response.status === 403) {
-          throw new Error('Access denied. Please check your permissions.')
-        } else if (response.status === 429) {
-          throw new Error(
-            'Rate limit exceeded. Please wait a moment and try again.'
-          )
-        } else if (response.status >= 500) {
-          throw new Error('Server error. Please try again later.')
-        } else {
-          throw new Error(
-            `${errorType}: ${errorMessage}${requestId ? ` (Request ID: ${requestId})` : ''}`
-          )
-        }
+        // Guides is a restricted feature - treat all API errors as subscription errors
+        // This ensures the backend's error message is displayed without modification
+        const message = errorData.detail?.message ?? errorData.message
+        throw new SubscriptionError(message)
       }
 
       // Parse and validate the successful response
@@ -548,7 +414,7 @@ export class ApiClient {
         )
       }
 
-      // Re-throw other errors
+      // Re-throw other errors (including SubscriptionError from above)
       throw networkError
     }
   }
@@ -574,48 +440,19 @@ export class ApiClient {
 
       // Handle non-200 responses
       if (!response.ok) {
-        let errorMessage = 'Unknown error occurred'
-        let errorType = 'unknown_error'
-        let requestId = ''
+        // Try to parse error response
         let errorData: ApiErrorResponse | null = null
-
         try {
           errorData = (await response.json()) as ApiErrorResponse
-          errorMessage = errorData.message || errorMessage
-          errorType = errorData.error || errorType
-          requestId = errorData.request_id || ''
-
-          // Check if this is a subscription-related error
-          if (this.isSubscriptionError(errorData)) {
-            const formattedMessage =
-              this.formatSubscriptionErrorMessage(errorData)
-            throw new SubscriptionError(formattedMessage, errorData)
-          }
-        } catch (error) {
-          // If it's a SubscriptionError, re-throw it
-          if (error instanceof SubscriptionError) {
-            throw error
-          }
-          // If we can't parse the error response, use status text
-          errorMessage = response.statusText || `HTTP ${response.status}`
+        } catch {
+          // If JSON parsing fails, use status text
+          throw new SubscriptionError(`Request failed: ${response.statusText}`)
         }
 
-        // Create a more descriptive error based on status code
-        if (response.status === 401) {
-          throw new Error('Authentication failed. Please sign in again.')
-        } else if (response.status === 403) {
-          throw new Error('Access denied. Please check your permissions.')
-        } else if (response.status === 429) {
-          throw new Error(
-            'Rate limit exceeded. Please wait a moment and try again.'
-          )
-        } else if (response.status >= 500) {
-          throw new Error('Server error. Please try again later.')
-        } else {
-          throw new Error(
-            `${errorType}: ${errorMessage}${requestId ? ` (Request ID: ${requestId})` : ''}`
-          )
-        }
+        // Builds is a restricted feature - treat all API errors as subscription errors
+        // This ensures the backend's error message is displayed without modification
+        const message = errorData.detail?.message ?? errorData.message
+        throw new SubscriptionError(message)
       }
 
       // Parse and validate the successful response
@@ -645,7 +482,7 @@ export class ApiClient {
         )
       }
 
-      // Re-throw other errors
+      // Re-throw other errors (including SubscriptionError from above)
       throw networkError
     }
   }

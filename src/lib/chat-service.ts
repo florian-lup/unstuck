@@ -9,6 +9,7 @@ import {
   type GamingLoreRequest,
   type GamingGuidesRequest,
   type GamingBuildsRequest,
+  SubscriptionError,
 } from './api-client'
 import { secureAuth } from './auth-client'
 import type { Message } from '../components/gaming-chat'
@@ -24,6 +25,50 @@ export interface ConversationState {
 export class ChatService {
   private conversationId?: string
   private isLoading = false
+
+  /**
+   * Helper method to create error response messages
+   */
+  private createErrorResponse(
+    error: unknown,
+    userMessageContent: string
+  ): {
+    userMessage: Message
+    assistantMessage: Message
+    conversationId: string
+  } {
+    // Create error message for display
+    let errorMessage = 'Unknown error occurred'
+
+    // Check if it's a subscription error (no prefix needed, message is already formatted)
+    if (error instanceof SubscriptionError) {
+      errorMessage = error.message
+    } else if (error instanceof Error) {
+      errorMessage = `Sorry, I encountered an error: ${error.message}`
+    } else {
+      errorMessage = 'Sorry, I encountered an error: Unknown error occurred'
+    }
+
+    const userMessage: Message = {
+      id: `${Date.now()}-user`,
+      content: userMessageContent,
+      role: 'user',
+      timestamp: new Date(),
+    }
+
+    const assistantMessage: Message = {
+      id: `${Date.now()}-error`,
+      content: errorMessage,
+      role: 'assistant',
+      timestamp: new Date(),
+    }
+
+    return {
+      userMessage,
+      assistantMessage,
+      conversationId: this.conversationId ?? '',
+    }
+  }
 
   /**
    * Send a message and get AI response
@@ -89,29 +134,7 @@ export class ChatService {
         conversationId: response.conversation_id,
       }
     } catch (error) {
-      // Create error message for display
-      const errorMessage =
-        error instanceof Error ? error.message : 'Unknown error occurred'
-
-      const userMessage: Message = {
-        id: `${Date.now()}-user`,
-        content: message,
-        role: 'user',
-        timestamp: new Date(),
-      }
-
-      const assistantMessage: Message = {
-        id: `${Date.now()}-error`,
-        content: `Sorry, I encountered an error: ${errorMessage}`,
-        role: 'assistant',
-        timestamp: new Date(),
-      }
-
-      return {
-        userMessage,
-        assistantMessage,
-        conversationId: this.conversationId ?? '',
-      }
+      return this.createErrorResponse(error, message)
     } finally {
       this.isLoading = false
     }
@@ -181,29 +204,7 @@ export class ChatService {
         conversationId: response.conversation_id,
       }
     } catch (error) {
-      // Create error message for display
-      const errorMessage =
-        error instanceof Error ? error.message : 'Unknown error'
-
-      const userMessage: Message = {
-        id: `${Date.now()}-user`,
-        content: message,
-        role: 'user',
-        timestamp: new Date(),
-      }
-
-      const assistantMessage: Message = {
-        id: `${Date.now()}-error`,
-        content: `Sorry, I encountered an error: ${errorMessage}`,
-        role: 'assistant',
-        timestamp: new Date(),
-      }
-
-      return {
-        userMessage,
-        assistantMessage,
-        conversationId: this.conversationId ?? '',
-      }
+      return this.createErrorResponse(error, message)
     } finally {
       this.isLoading = false
     }
@@ -273,29 +274,7 @@ export class ChatService {
         conversationId: response.conversation_id,
       }
     } catch (error) {
-      // Create error message for display
-      const errorMessage =
-        error instanceof Error ? error.message : 'Unknown error'
-
-      const userMessage: Message = {
-        id: `${Date.now()}-user`,
-        content: message,
-        role: 'user',
-        timestamp: new Date(),
-      }
-
-      const assistantMessage: Message = {
-        id: `${Date.now()}-error`,
-        content: `Sorry, I encountered an error: ${errorMessage}`,
-        role: 'assistant',
-        timestamp: new Date(),
-      }
-
-      return {
-        userMessage,
-        assistantMessage,
-        conversationId: this.conversationId ?? '',
-      }
+      return this.createErrorResponse(error, message)
     } finally {
       this.isLoading = false
     }
@@ -365,29 +344,7 @@ export class ChatService {
         conversationId: response.conversation_id,
       }
     } catch (error) {
-      // Create error message for display
-      const errorMessage =
-        error instanceof Error ? error.message : 'Unknown error'
-
-      const userMessage: Message = {
-        id: `${Date.now()}-user`,
-        content: message,
-        role: 'user',
-        timestamp: new Date(),
-      }
-
-      const assistantMessage: Message = {
-        id: `${Date.now()}-error`,
-        content: `Sorry, I encountered an error: ${errorMessage}`,
-        role: 'assistant',
-        timestamp: new Date(),
-      }
-
-      return {
-        userMessage,
-        assistantMessage,
-        conversationId: this.conversationId ?? '',
-      }
+      return this.createErrorResponse(error, message)
     } finally {
       this.isLoading = false
     }
