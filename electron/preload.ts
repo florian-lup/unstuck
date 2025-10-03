@@ -107,6 +107,9 @@ contextBridge.exposeInMainWorld('electronAPI', {
   windowInteraction: () => {
     ipcRenderer.send('window-interaction')
   },
+  openExternalUrl: (url: string) => {
+    return ipcRenderer.invoke('open-external-url', url)
+  },
   // Secure Auth0 authentication APIs (no direct Auth0 client exposure)
   auth: {
     startAuthFlow: () => ipcRenderer.invoke('auth0-start-flow'),

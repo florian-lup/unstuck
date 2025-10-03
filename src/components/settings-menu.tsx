@@ -1,4 +1,4 @@
-import { LogOut, User, Pencil, Power } from 'lucide-react'
+import { LogOut, User, Pencil, Power, Sparkles, X } from 'lucide-react'
 import { Button } from './ui/button'
 import { Slider } from './ui/slider'
 import { InteractiveArea } from './interactive-area'
@@ -15,6 +15,10 @@ interface SettingsMenuProps {
   onKeybindChange?: (keybind: string) => void
   currentTransparency?: number
   onTransparencyChange?: (transparency: number) => void
+  isSubscribed: boolean
+  subscriptionLoading: boolean
+  onUpgrade: () => void
+  onCancel: () => void
 }
 
 export function SettingsMenu({
@@ -26,6 +30,10 @@ export function SettingsMenu({
   onKeybindChange,
   currentTransparency = 90,
   onTransparencyChange,
+  isSubscribed,
+  subscriptionLoading,
+  onUpgrade,
+  onCancel,
 }: SettingsMenuProps) {
   const [isCapturingKeybind, setIsCapturingKeybind] = useState(false)
   const { isEnabled: autoLaunchEnabled, toggleAutoLaunch } = useAutoLaunch()
@@ -220,7 +228,7 @@ export function SettingsMenu({
         {/* Divider */}
         <div className="border-b border-overlay-border-primary mb-3"></div>
 
-        {/* Email and Sign Out Button */}
+        {/* Email and Action Buttons */}
         <div className="flex items-center gap-3">
           <div className="w-8 h-8 bg-overlay-bg-secondary rounded-full flex items-center justify-center">
             <User className="w-4 h-4 text-overlay-text-muted" />
@@ -231,15 +239,46 @@ export function SettingsMenu({
             </p>
             <p className="text-xs text-overlay-accent-primary">Signed in</p>
           </div>
-          <Button
-            onClick={handleLogout}
-            variant="gaming"
-            size="sm"
-            className="justify-center items-center text-xs py-2 px-3 h-auto border border-overlay-border-primary"
-          >
-            <span>Sign Out</span>
-            <LogOut className="ml-2" />
-          </Button>
+          <div className="flex gap-2">
+            {isSubscribed ? (
+              <Button
+                onClick={() => {
+                  window.electronAPI?.windowInteraction()
+                  onCancel()
+                }}
+                variant="gaming"
+                size="sm"
+                disabled={subscriptionLoading}
+                className="justify-center items-center text-xs py-2 px-3 h-auto border border-red-500/50 bg-red-500/10 hover:bg-red-500/20 disabled:opacity-50"
+              >
+                <X className="mr-2 w-3.5 h-3.5" />
+                <span>{subscriptionLoading ? 'Processing...' : 'Cancel'}</span>
+              </Button>
+            ) : (
+              <Button
+                onClick={() => {
+                  window.electronAPI?.windowInteraction()
+                  onUpgrade()
+                }}
+                variant="gaming"
+                size="sm"
+                disabled={subscriptionLoading}
+                className="justify-center items-center text-xs py-2 px-3 h-auto border border-overlay-accent-primary bg-overlay-accent-primary/10 hover:bg-overlay-accent-primary/20 disabled:opacity-50"
+              >
+                <Sparkles className="mr-2 w-3.5 h-3.5" />
+                <span>{subscriptionLoading ? 'Loading...' : 'Upgrade'}</span>
+              </Button>
+            )}
+            <Button
+              onClick={handleLogout}
+              variant="gaming"
+              size="sm"
+              className="justify-center items-center text-xs py-2 px-3 h-auto border border-overlay-border-primary"
+            >
+              <span>Sign Out</span>
+              <LogOut className="ml-2 w-3.5 h-3.5" />
+            </Button>
+          </div>
         </div>
       </div>
     </InteractiveArea>

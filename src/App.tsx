@@ -21,6 +21,8 @@ function App() {
     customKeybind,
     transparency,
     isLoadingMessage,
+    isSubscribed,
+    subscriptionLoading,
 
     // Actions
     handleSpeakClick,
@@ -35,6 +37,8 @@ function App() {
     handleLogout,
     handleKeybindChange,
     handleTransparencyChange,
+    handleUpgrade,
+    handleCancel,
     setShowSettingsMenu,
     setShowHistoryPanel,
     setShowInfoPanel,
@@ -68,6 +72,10 @@ function App() {
               onKeybindChange={handleKeybindChange}
               currentTransparency={transparency}
               onTransparencyChange={handleTransparencyChange}
+              isSubscribed={isSubscribed}
+              subscriptionLoading={subscriptionLoading}
+              onUpgrade={handleUpgrade}
+              onCancel={handleCancel}
             />
           )}
           {showHistoryPanel && (

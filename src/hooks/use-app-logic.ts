@@ -2,6 +2,7 @@ import { useState, useEffect, useMemo } from 'react'
 import { useKeyboardToggle } from './use-keyboard-toggle'
 import { useClickThrough } from './use-click-through'
 import { useAuth } from './use-auth'
+import { useSubscription } from './use-subscription'
 import { type Game } from '../lib/games'
 import { type Message } from '../components/gaming-chat'
 import { chatService } from '../lib/chat-service'
@@ -51,6 +52,14 @@ function parseKeybind(keybind: string) {
 export function useAppLogic() {
   // Authentication state
   const { user, signOut } = useAuth()
+
+  // Subscription state (persists throughout app lifecycle)
+  const {
+    isSubscribed,
+    isLoading: subscriptionLoading,
+    handleUpgrade,
+    handleCancel,
+  } = useSubscription()
 
   // Core application state
   const [selectedGame, setSelectedGame] = useState<Game | null>(null)
@@ -524,6 +533,8 @@ export function useAppLogic() {
     transparency,
     isLoadingMessage,
     currentConversationId,
+    isSubscribed,
+    subscriptionLoading,
 
     // Actions
     handleSpeakClick,
@@ -540,6 +551,8 @@ export function useAppLogic() {
     handleLogout,
     handleKeybindChange,
     handleTransparencyChange,
+    handleUpgrade,
+    handleCancel,
     setShowSettingsMenu,
     setShowHistoryPanel,
     setShowInfoPanel,

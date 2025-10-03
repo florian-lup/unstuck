@@ -145,6 +145,22 @@ export interface GamingBuildsResponse {
   finish_reason: string
 }
 
+export interface CreateCheckoutSessionResponse {
+  checkout_url: string
+  session_id: string
+}
+
+export interface SubscriptionStatusResponse {
+  subscription_tier: string
+  subscription_status: string | null
+  stripe_customer_id: string | null
+}
+
+export interface CancelSubscriptionResponse {
+  success: boolean
+  message: string
+}
+
 export class ApiClient {
   private readonly baseUrl =
     'https://unstuck-backend-production-d9c1.up.railway.app/api/v1'
@@ -154,6 +170,9 @@ export class ApiClient {
     gamingGuides: '/gaming/guides',
     gamingBuilds: '/gaming/builds',
     conversations: '/gaming/conversations',
+    subscriptionCheckout: '/subscription/create-checkout-session',
+    subscriptionStatus: '/subscription/status',
+    subscriptionCancel: '/subscription/cancel',
   } as const
 
   /**
@@ -735,6 +754,201 @@ export class ApiClient {
       }
 
       // Re-throw other errors
+      throw networkError
+    }
+  }
+
+  /**
+   * Create a Stripe checkout session for subscription upgrade
+   */
+  async createCheckoutSession(
+    accessToken: string
+  ): Promise<CreateCheckoutSessionResponse> {
+    const url = `${this.baseUrl}${this.endpoints.subscriptionCheckout}`
+
+    try {
+      const response = await fetch(url, {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({}),
+      })
+
+      if (!response.ok) {
+        let errorMessage = 'Failed to create checkout session'
+        let errorType = 'checkout_error'
+
+        try {
+          const errorData = (await response.json()) as ApiErrorResponse
+          errorMessage = errorData.message || errorMessage
+          errorType = errorData.error || errorType
+        } catch {
+          errorMessage = response.statusText || `HTTP ${response.status}`
+        }
+
+        if (response.status === 401) {
+          throw new Error('Authentication failed. Please sign in again.')
+        } else if (response.status === 403) {
+          throw new Error('Access denied. Please check your permissions.')
+        } else if (response.status === 429) {
+          throw new Error(
+            'Rate limit exceeded. Please wait a moment and try again.'
+          )
+        } else if (response.status >= 500) {
+          throw new Error('Server error. Please try again later.')
+        } else {
+          throw new Error(`${errorType}: ${errorMessage}`)
+        }
+      }
+
+      const data = (await response.json()) as CreateCheckoutSessionResponse
+
+      if (!data.checkout_url || !data.session_id) {
+        throw new Error('Invalid checkout session response from server')
+      }
+
+      return data
+    } catch (networkError) {
+      if (
+        networkError instanceof TypeError &&
+        networkError.message.includes('fetch')
+      ) {
+        throw new Error(
+          'Connection failed. Please check your internet connection and try again.'
+        )
+      }
+      throw networkError
+    }
+  }
+
+  /**
+   * Get the current user's subscription status
+   */
+  async getSubscriptionStatus(
+    accessToken: string
+  ): Promise<SubscriptionStatusResponse> {
+    const url = `${this.baseUrl}${this.endpoints.subscriptionStatus}`
+
+    try {
+      const response = await fetch(url, {
+        method: 'GET',
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+          'Content-Type': 'application/json',
+        },
+      })
+
+      if (!response.ok) {
+        let errorMessage = 'Failed to fetch subscription status'
+        let errorType = 'status_error'
+
+        try {
+          const errorData = (await response.json()) as ApiErrorResponse
+          errorMessage = errorData.message || errorMessage
+          errorType = errorData.error || errorType
+        } catch {
+          errorMessage = response.statusText || `HTTP ${response.status}`
+        }
+
+        if (response.status === 401) {
+          throw new Error('Authentication failed. Please sign in again.')
+        } else if (response.status === 403) {
+          throw new Error('Access denied. Please check your permissions.')
+        } else if (response.status === 429) {
+          throw new Error(
+            'Rate limit exceeded. Please wait a moment and try again.'
+          )
+        } else if (response.status >= 500) {
+          throw new Error('Server error. Please try again later.')
+        } else {
+          throw new Error(`${errorType}: ${errorMessage}`)
+        }
+      }
+
+      const data = (await response.json()) as SubscriptionStatusResponse
+
+      // Validate that required fields exist (subscription_status and stripe_customer_id can be null)
+      if (!data.subscription_tier || typeof data.subscription_tier !== 'string') {
+        throw new Error('Invalid subscription status response from server')
+      }
+
+      return data
+    } catch (networkError) {
+      if (
+        networkError instanceof TypeError &&
+        networkError.message.includes('fetch')
+      ) {
+        throw new Error(
+          'Connection failed. Please check your internet connection and try again.'
+        )
+      }
+      throw networkError
+    }
+  }
+
+  /**
+   * Cancel the user's subscription
+   */
+  async cancelSubscription(
+    accessToken: string
+  ): Promise<CancelSubscriptionResponse> {
+    const url = `${this.baseUrl}${this.endpoints.subscriptionCancel}`
+
+    try {
+      const response = await fetch(url, {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({}),
+      })
+
+      if (!response.ok) {
+        let errorMessage = 'Failed to cancel subscription'
+        let errorType = 'cancel_error'
+
+        try {
+          const errorData = (await response.json()) as ApiErrorResponse
+          errorMessage = errorData.message || errorMessage
+          errorType = errorData.error || errorType
+        } catch {
+          errorMessage = response.statusText || `HTTP ${response.status}`
+        }
+
+        if (response.status === 401) {
+          throw new Error('Authentication failed. Please sign in again.')
+        } else if (response.status === 403) {
+          throw new Error('Access denied. Please check your permissions.')
+        } else if (response.status === 429) {
+          throw new Error(
+            'Rate limit exceeded. Please wait a moment and try again.'
+          )
+        } else if (response.status >= 500) {
+          throw new Error('Server error. Please try again later.')
+        } else {
+          throw new Error(`${errorType}: ${errorMessage}`)
+        }
+      }
+
+      const data = (await response.json()) as CancelSubscriptionResponse
+
+      if (typeof data.success !== 'boolean') {
+        throw new Error('Invalid cancellation response from server')
+      }
+
+      return data
+    } catch (networkError) {
+      if (
+        networkError instanceof TypeError &&
+        networkError.message.includes('fetch')
+      ) {
+        throw new Error(
+          'Connection failed. Please check your internet connection and try again.'
+        )
+      }
       throw networkError
     }
   }
