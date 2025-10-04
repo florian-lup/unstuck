@@ -83,6 +83,7 @@ export function GamingChat({
                 onPressedChange={() => {
                   handleToggleClick('guides')
                 }}
+                disabled
               >
                 <BookOpen className="w-3 h-3 mr-1" />
                 Guides
@@ -95,6 +96,7 @@ export function GamingChat({
                 onPressedChange={() => {
                   handleToggleClick('builds')
                 }}
+                disabled
               >
                 <ClipboardList className="w-3 h-3 mr-1" />
                 Builds
@@ -107,24 +109,24 @@ export function GamingChat({
                 onPressedChange={() => {
                   handleToggleClick('lore')
                 }}
+                disabled
               >
                 <Scroll className="w-3 h-3 mr-1" />
                 Lore
               </Toggle>
-              <Tooltip content="Game Troubleshooting Coming Soon">
-                <Toggle
-                  variant="gaming"
-                  size="sm"
-                  className="h-6 px-2 text-xs"
-                  pressed={activeToggle === 'fix'}
-                  onPressedChange={() => {
-                    handleToggleClick('fix')
-                  }}
-                >
-                  <Wrench className="w-3 h-3 mr-1" />
-                  Fix
-                </Toggle>
-              </Tooltip>
+              <Toggle
+                variant="gaming"
+                size="sm"
+                className="h-6 px-2 text-xs"
+                pressed={activeToggle === 'fix'}
+                onPressedChange={() => {
+                  handleToggleClick('fix')
+                }}
+                disabled
+              >
+                <Wrench className="w-3 h-3 mr-1" />
+                Fix
+              </Toggle>
             </div>
             <Button
               onClick={handleNewConversation}
