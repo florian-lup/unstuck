@@ -35,7 +35,6 @@ export function ConversationHistory({
   const [deletingId, setDeletingId] = useState<string | null>(null)
   const [hasInitialized, setHasInitialized] = useState(false)
 
-
   // Fetch conversations when panel opens
   useEffect(() => {
     const fetchConversations = async () => {
@@ -255,7 +254,9 @@ export function ConversationHistory({
                       </div>
                       <div className="flex items-center gap-2">
                         <div className="text-xs text-overlay-text-muted whitespace-nowrap flex items-center">
-                          {new Date(conversation.created_at).toLocaleDateString()}
+                          {new Date(
+                            conversation.created_at
+                          ).toLocaleDateString()}
                         </div>
                         {/* Delete Button */}
                         {deletingId === conversation.id ? (

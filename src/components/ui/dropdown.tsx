@@ -164,7 +164,7 @@ export function DropdownContent({
   className = '',
   isOpen,
   close,
-  maxWidth = 'max-w-[250px]',
+  maxWidth = 'max-w-[350px]',
 }: DropdownContentProps & {
   isOpen?: boolean
   close?: () => void
@@ -173,11 +173,16 @@ export function DropdownContent({
   if (!isOpen) return null
 
   return (
-    <div className={`absolute top-full left-0 mt-3 w-full ${maxWidth} z-50`}>
+    <div
+      className={`absolute top-full left-0 mt-3 w-max min-w-[250px] ${maxWidth} z-50`}
+    >
       <InteractiveArea
-        className={`bg-overlay-bg-primary border border-overlay-border-primary rounded-2xl p-1 ${className}`}
+        className={`bg-overlay-bg-primary border border-overlay-border-primary rounded-2xl px-2 py-2 ${className}`}
       >
-        <div className="py-1" role="listbox">
+        <div
+          className="max-h-[300px] overflow-y-auto overflow-x-hidden overlay-scrollbar pr-2"
+          role="listbox"
+        >
           {React.Children.map(children, (child) =>
             React.isValidElement(child)
               ? React.cloneElement(child as React.ReactElement, { close })

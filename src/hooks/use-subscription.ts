@@ -201,4 +201,3 @@ export function useSubscription(): UseSubscriptionReturn {
     refreshStatus,
   }
 }
-

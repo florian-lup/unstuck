@@ -236,7 +236,7 @@ export class ApiClient {
 
         // Extract message from either flat or nested structure
         const message = errorData.detail?.message ?? errorData.message
-        
+
         // Check if it's a subscription error - if so, throw as SubscriptionError
         const errorCode = errorData.detail?.error ?? errorData.error
         if (
@@ -842,7 +842,10 @@ export class ApiClient {
       const data = (await response.json()) as SubscriptionStatusResponse
 
       // Validate that required fields exist (subscription_status and stripe_customer_id can be null)
-      if (!data.subscription_tier || typeof data.subscription_tier !== 'string') {
+      if (
+        !data.subscription_tier ||
+        typeof data.subscription_tier !== 'string'
+      ) {
         throw new Error('Invalid subscription status response from server')
       }
 

@@ -10,7 +10,9 @@ export interface IElectronAPI {
   ) => void
   ensureAlwaysOnTop: () => void
   windowInteraction: () => void
-  openExternalUrl: (url: string) => Promise<{ success: boolean; error?: string }>
+  openExternalUrl: (
+    url: string
+  ) => Promise<{ success: boolean; error?: string }>
   auth: {
     startAuthFlow: () => Promise<{
       success: boolean

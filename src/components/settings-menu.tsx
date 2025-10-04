@@ -252,7 +252,9 @@ export function SettingsMenu({
                 className="justify-center items-center text-xs py-2 px-3 h-auto border border-overlay-accent-error bg-overlay-accent-error/10 hover:bg-overlay-accent-error/20 hover:border-overlay-accent-error disabled:opacity-50"
               >
                 <ArrowDown className="mr-2 w-3.5 h-3.5" />
-                <span>{subscriptionLoading ? 'Processing...' : 'Downgrade'}</span>
+                <span>
+                  {subscriptionLoading ? 'Processing...' : 'Downgrade'}
+                </span>
               </Button>
             ) : (
               <Button

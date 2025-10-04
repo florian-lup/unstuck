@@ -30,15 +30,15 @@ export function useGamingChat({
   // Refs for scroll management
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const messagesContainerRef = useRef<HTMLDivElement>(null)
-  
+
   // Track if this is the first render and previous message count
   const isFirstRenderRef = useRef(true)
   const previousMessageCountRef = useRef(0)
 
   // Utility functions for scrolling
   const scrollToBottom = (smooth = true) => {
-    messagesEndRef.current?.scrollIntoView({ 
-      behavior: smooth ? 'smooth' : 'instant' 
+    messagesEndRef.current?.scrollIntoView({
+      behavior: smooth ? 'smooth' : 'instant',
     })
   }
 
@@ -47,7 +47,7 @@ export function useGamingChat({
     if (messages.length > 0) {
       const currentMessageCount = messages.length
       const previousMessageCount = previousMessageCountRef.current
-      
+
       if (isFirstRenderRef.current) {
         // First render with existing messages - scroll instantly to bottom
         scrollToBottom(false)
@@ -56,7 +56,7 @@ export function useGamingChat({
         // New messages added - scroll smoothly to bottom
         scrollToBottom(true)
       }
-      
+
       // Update the previous message count
       previousMessageCountRef.current = currentMessageCount
     }

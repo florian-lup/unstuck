@@ -12,7 +12,6 @@ import {
 } from 'lucide-react'
 import { Button } from './ui/button'
 import { Toggle } from './ui/toggle'
-import { Tooltip } from './ui/tooltip'
 import { useGamingChat } from '../hooks/use-gaming-chat'
 import { MarkdownContent } from '../utils/markdown-content'
 
@@ -164,11 +163,12 @@ export function GamingChat({
                       msg.content
                     )}
                   </div>
-                  {msg.role === 'assistant' && msg.remainingRequests !== undefined && (
-                    <div className="px-3 pb-2 text-xs text-overlay-text-muted opacity-60">
-                      {msg.remainingRequests} requests remaining
-                    </div>
-                  )}
+                  {msg.role === 'assistant' &&
+                    msg.remainingRequests !== undefined && (
+                      <div className="px-3 pb-2 text-xs text-overlay-text-muted opacity-60">
+                        {msg.remainingRequests} requests remaining
+                      </div>
+                    )}
                 </div>
               </div>
             ))}
