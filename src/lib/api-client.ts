@@ -3,14 +3,14 @@
  * Handles communication with the Unstuck backend API
  */
 
-export interface GamingSearchRequest {
+export interface GamingChatRequest {
   query: string
   game: string
   version?: string
   conversation_id?: string
 }
 
-export interface GamingSearchResponse {
+export interface GamingChatResponse {
   id: string
   conversation_id: string
   model: string
@@ -208,9 +208,9 @@ export class ApiClient {
    * Send a gaming search request to the API
    */
   async searchGaming(
-    request: GamingSearchRequest,
+    request: GamingChatRequest,
     accessToken: string
-  ): Promise<GamingSearchResponse> {
+  ): Promise<GamingChatResponse> {
     const url = `${this.baseUrl}${this.endpoints.gamingSearch}`
 
     try {
@@ -253,7 +253,7 @@ export class ApiClient {
 
       // Parse and validate the successful response
       try {
-        const data = (await response.json()) as GamingSearchResponse
+        const data = (await response.json()) as GamingChatResponse
 
         // Basic validation of required fields
         if (!data.id || !data.conversation_id || !data.content) {

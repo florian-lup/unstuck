@@ -5,7 +5,7 @@
 
 import {
   apiClient,
-  type GamingSearchRequest,
+  type GamingChatRequest,
   type GamingLoreRequest,
   type GamingGuidesRequest,
   type GamingBuildsRequest,
@@ -106,7 +106,7 @@ export class ChatService {
       }
 
       // Prepare API request
-      const request: GamingSearchRequest = {
+      const request: GamingChatRequest = {
         query: message,
         game: selectedGame.gameName,
         ...(selectedGame.version && { version: selectedGame.version }),
