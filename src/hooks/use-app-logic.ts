@@ -231,7 +231,7 @@ export function useAppLogic() {
   })
 
   // Event handlers
-  const handleSpeakClick = () => {
+  const handleVoiceClick = () => {
     // Handle speak functionality here
     // TODO: Implement actual speech recognition
   }
@@ -537,7 +537,7 @@ export function useAppLogic() {
     subscriptionLoading,
 
     // Actions
-    handleSpeakClick,
+    handleVoiceClick,
     handleTextClick,
     handleHistoryClick,
     handleSettingsClick,

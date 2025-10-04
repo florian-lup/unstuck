@@ -28,7 +28,7 @@ export function NavigationBar({
   selectedGame,
   onDropdownOpenChange,
 }: NavigationBarProps) {
-  const handleSpeakClick = () => {
+  const handleVoiceClick = () => {
     // Ensure window stays on top when button is clicked
     window.electronAPI?.windowInteraction()
     onSpeakClick?.()
@@ -80,16 +80,16 @@ export function NavigationBar({
           <div className="flex items-center gap-1">
             {/* Action Buttons */}
             <div className="flex items-center gap-1">
-              {/* Speak Button */}
+              {/* Voice Button */}
               <Tooltip content="Voice Chat Coming Soon">
                 <Button
-                  onClick={handleSpeakClick}
+                  onClick={handleVoiceClick}
                   variant="gaming"
                   size="sm"
                   className="gap-1 p-1 h-auto"
                 >
                   <Mic className="w-3 h-3" />
-                  <span className="text-xs">Speak</span>
+                  <span className="text-xs">Voice</span>
                 </Button>
               </Tooltip>
 

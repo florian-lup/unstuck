@@ -25,7 +25,7 @@ function App() {
     subscriptionLoading,
 
     // Actions
-    handleSpeakClick,
+    handleVoiceClick,
     handleTextClick,
     handleHistoryClick,
     handleSettingsClick,
@@ -51,7 +51,7 @@ function App() {
       {isNavigationBarVisible && (
         <div className="relative">
           <NavigationBar
-            onSpeakClick={handleSpeakClick}
+            onSpeakClick={handleVoiceClick}
             onTextClick={handleTextClick}
             onHistoryClick={handleHistoryClick}
             onSettingsClick={handleSettingsClick}

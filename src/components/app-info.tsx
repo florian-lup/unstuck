@@ -5,7 +5,9 @@ import {
   BookOpen, 
   ClipboardList, 
   Scroll, 
-  Wrench 
+  Wrench,
+  Bot,
+  Mic
 } from 'lucide-react'
 import { Button } from './ui/button'
 import { InteractiveArea } from './interactive-area'
@@ -72,12 +74,28 @@ export function AppInfo({ isOpen, onClose }: AppInfoProps) {
           </p>
         </div>
 
-        {/* Chat Toggles */}
+        {/* Voice Chat */}
         <div className="mb-4">
-          <h3 className="text-sm font-medium text-overlay-text-primary mb-2">
-            Agents
-          </h3>
-          <p className="text-xs text-overlay-text-secondary leading-relaxed mb-3 ml-2">
+          <div className="flex items-center gap-2 mb-2">
+            <Mic className="w-4 h-4 text-overlay-accent-primary" />
+            <h3 className="text-sm font-medium text-overlay-text-primary">
+              Voice Chat
+            </h3>
+          </div>
+          <p className="text-xs text-overlay-text-secondary leading-relaxed ml-2">
+            Use voice input to ask questions hands-free while gaming. Simply speak your query and get instant responses without interrupting your gameplay.
+          </p>
+        </div>
+
+        {/* Agents */}
+        <div className="mb-4">
+          <div className="flex items-center gap-2 mb-2">
+            <Bot className="w-4 h-4 text-overlay-accent-primary" />
+            <h3 className="text-sm font-medium text-overlay-text-primary">
+              Agents (Coming Soon)
+            </h3>
+          </div>
+          <p className="text-xs text-overlay-text-secondary leading-relaxed ml-2 mb-3">
             To further enhance chat functionality, toggle an agent to get specialized responses tailored to your specific needs.
           </p>
           <div className="space-y-3 ml-2">
@@ -116,10 +134,10 @@ export function AppInfo({ isOpen, onClose }: AppInfoProps) {
 
             {/* Fix */}
             <div className="flex items-start gap-2">
-              <Wrench className="w-4 h-4 text-overlay-text-muted mt-0.5" />
+              <Wrench className="w-4 h-4 text-overlay-accent-primary mt-0.5" />
               <div>
-                <h4 className="text-xs font-medium text-overlay-text-muted">Fix (Coming Soon)</h4>
-                <p className="text-xs text-overlay-text-muted leading-relaxed">
+                <h4 className="text-xs font-medium text-overlay-text-primary">Fix</h4>
+                <p className="text-xs text-overlay-text-secondary leading-relaxed">
                   Get help troubleshooting technical issues and bugs in your games.
                 </p>
               </div>
