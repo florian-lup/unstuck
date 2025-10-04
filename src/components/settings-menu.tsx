@@ -1,4 +1,4 @@
-import { LogOut, User, Pencil, Power, Sparkles, X } from 'lucide-react'
+import { LogOut, User, Pencil, Power, ArrowUp, ArrowDown } from 'lucide-react'
 import { Button } from './ui/button'
 import { Slider } from './ui/slider'
 import { InteractiveArea } from './interactive-area'
@@ -249,10 +249,10 @@ export function SettingsMenu({
                 variant="gaming"
                 size="sm"
                 disabled={subscriptionLoading}
-                className="justify-center items-center text-xs py-2 px-3 h-auto border border-red-500/50 bg-red-500/10 hover:bg-red-500/20 disabled:opacity-50"
+                className="justify-center items-center text-xs py-2 px-3 h-auto border border-overlay-accent-error bg-overlay-accent-error/10 hover:bg-overlay-accent-error/20 hover:border-overlay-accent-error disabled:opacity-50"
               >
-                <X className="mr-2 w-3.5 h-3.5" />
-                <span>{subscriptionLoading ? 'Processing...' : 'Cancel'}</span>
+                <ArrowDown className="mr-2 w-3.5 h-3.5" />
+                <span>{subscriptionLoading ? 'Processing...' : 'Downgrade'}</span>
               </Button>
             ) : (
               <Button
@@ -263,9 +263,9 @@ export function SettingsMenu({
                 variant="gaming"
                 size="sm"
                 disabled={subscriptionLoading}
-                className="justify-center items-center text-xs py-2 px-3 h-auto border border-overlay-accent-primary bg-overlay-accent-primary/10 hover:bg-overlay-accent-primary/20 disabled:opacity-50"
+                className="justify-center items-center text-xs py-2 px-3 h-auto border border-overlay-accent-success bg-overlay-accent-success/10 hover:bg-overlay-accent-success/20 hover:border-overlay-accent-success disabled:opacity-50"
               >
-                <Sparkles className="mr-2 w-3.5 h-3.5" />
+                <ArrowUp className="mr-2 w-3.5 h-3.5" />
                 <span>{subscriptionLoading ? 'Loading...' : 'Upgrade'}</span>
               </Button>
             )}
