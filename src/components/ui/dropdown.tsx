@@ -164,7 +164,7 @@ export function DropdownContent({
   className = '',
   isOpen,
   close,
-  maxWidth = 'max-w-[350px]',
+  maxWidth = 'max-w-[250px]',
 }: DropdownContentProps & {
   isOpen?: boolean
   close?: () => void
@@ -174,7 +174,7 @@ export function DropdownContent({
 
   return (
     <div
-      className={`absolute top-full left-0 mt-3 w-max min-w-[250px] ${maxWidth} z-50`}
+      className={`absolute top-full left-0 mt-3 w-max min-w-[220px] ${maxWidth} z-50`}
     >
       <InteractiveArea
         className={`bg-overlay-bg-primary border border-overlay-border-primary rounded-2xl px-2 py-2 ${className}`}

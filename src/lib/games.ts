@@ -12,6 +12,7 @@ export interface Game {
 
 // Central games database
 export const GAMES: Game[] = [
+  // ========== MMORPG ==========
   {
     id: 'ff14',
     gameName: 'final fantasy 14',
@@ -45,37 +46,31 @@ export const GAMES: Game[] = [
     isActive: true,
   },
   {
-    id: 'elden-ring',
-    gameName: 'elden ring',
-    displayName: 'Elden Ring',
+    id: 'lost-ark',
+    gameName: 'lost ark',
+    displayName: 'Lost Ark',
     version: '',
-    category: 'souls-like',
+    category: 'mmorpg',
     isActive: true,
   },
   {
-    id: 'bg3',
-    gameName: "baldur's gate 3",
-    displayName: "Baldur's Gate 3",
+    id: 'new-world',
+    gameName: 'new world',
+    displayName: 'New World',
     version: '',
-    category: 'souls-like',
+    category: 'mmorpg',
     isActive: true,
   },
   {
-    id: 'poe1 ',
-    gameName: 'path of exile 1',
-    displayName: 'Path of Exile 1',
-    version: '3.26',
-    category: 'rpg',
+    id: 'runescape',
+    gameName: 'old school runescape',
+    displayName: 'Old School RuneScape',
+    version: '',
+    category: 'mmorpg',
     isActive: true,
   },
-  {
-    id: 'diablo4',
-    gameName: 'diablo 4',
-    displayName: 'Diablo 4',
-    version: '2.4.x',
-    category: 'rpg',
-    isActive: true,
-  },
+
+  // ========== MOBA ==========
   {
     id: 'lol',
     gameName: 'league of legends',
@@ -108,28 +103,14 @@ export const GAMES: Game[] = [
     category: 'moba',
     isActive: true,
   },
+
+  // ========== SOULS-LIKE ==========
   {
-    id: 'lost-ark',
-    gameName: 'lost ark',
-    displayName: 'Lost Ark',
+    id: 'elden-ring',
+    gameName: 'elden ring',
+    displayName: 'Elden Ring',
     version: '',
-    category: 'mmorpg',
-    isActive: true,
-  },
-  {
-    id: 'new-world',
-    gameName: 'new world',
-    displayName: 'New World',
-    version: '',
-    category: 'mmorpg',
-    isActive: true,
-  },
-  {
-    id: 'runescape',
-    gameName: 'old school runescape',
-    displayName: 'Old School RuneScape',
-    version: '',
-    category: 'mmorpg',
+    category: 'souls-like',
     isActive: true,
   },
   {
@@ -165,10 +146,36 @@ export const GAMES: Game[] = [
     isActive: true,
   },
   {
+    id: 'bg3',
+    gameName: "baldur's gate 3",
+    displayName: "Baldur's Gate 3",
+    version: '',
+    category: 'souls-like',
+    isActive: true,
+  },
+
+  // ========== RPG ==========
+  {
+    id: 'poe1 ',
+    gameName: 'path of exile 1',
+    displayName: 'Path of Exile 1',
+    version: '3.26',
+    category: 'rpg',
+    isActive: true,
+  },
+  {
     id: 'poe2',
     gameName: 'path of exile 2',
     displayName: 'Path of Exile 2',
     version: '0.xx',
+    category: 'rpg',
+    isActive: true,
+  },
+  {
+    id: 'diablo4',
+    gameName: 'diablo 4',
+    displayName: 'Diablo 4',
+    version: '2.4.x',
     category: 'rpg',
     isActive: true,
   },
@@ -196,6 +203,8 @@ export const GAMES: Game[] = [
     category: 'rpg',
     isActive: true,
   },
+
+  // ========== STRATEGY ==========
   {
     id: 'starcraft-2',
     gameName: 'starcraft 2',
@@ -228,6 +237,8 @@ export const GAMES: Game[] = [
     category: 'strategy',
     isActive: true,
   },
+
+  // ========== SURVIVAL ==========
   {
     id: 'valheim',
     gameName: 'valheim',
