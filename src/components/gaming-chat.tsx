@@ -178,7 +178,7 @@ export function GamingChat({
               <div className="flex justify-start">
                 <div className="px-3 py-2 text-sm text-overlay-text-secondary flex items-center">
                   <Loader2 className="w-4 h-4 animate-spin mr-2" />
-                  Getting response...
+                  Calculating your next move...
                 </div>
               </div>
             )}

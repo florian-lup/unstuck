@@ -268,7 +268,7 @@ export function ConversationHistory({
                             onClick={(e) => {
                               void handleDeleteClick(e, conversation.id)
                             }}
-                            className="flex items-center justify-center w-5 h-5 hover:bg-overlay-accent-error/20 hover:text-overlay-accent-error rounded transition-all duration-200 text-overlay-text-muted"
+                            className="flex items-center justify-center w-5 h-5 hover:bg-overlay-accent-error/20 hover:text-overlay-accent-error rounded text-overlay-text-muted"
                           >
                             <Trash2 className="w-3 h-3" />
                           </button>
