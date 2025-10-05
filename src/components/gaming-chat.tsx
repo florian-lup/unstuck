@@ -196,7 +196,12 @@ export function GamingChat({
             onChange={handleMessageChange}
             onKeyDown={handleKeyDown}
             placeholder={
-              isLoading ? 'Getting response...' : 'Ask about your game...'
+              isLoading
+                ? 'Getting response...'
+                : messages.length > 0 &&
+                    messages[messages.length - 1].role === 'assistant'
+                  ? 'Ask a follow up question...'
+                  : 'Ask about your game...'
             }
             className="w-full pr-20" // Add right padding for buttons
             autoFocus
