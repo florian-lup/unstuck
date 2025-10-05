@@ -146,7 +146,8 @@ export function useAppLogic() {
       '--overlay-border-accent',
       '--overlay-accent-primary',
       '--overlay-accent-secondary',
-      '--overlay-accent-successs',
+      '--overlay-accent-success',
+      '--overlay-accent-error',
     ]
 
     // Store original CSS values on first run (when transparency is 100%)
