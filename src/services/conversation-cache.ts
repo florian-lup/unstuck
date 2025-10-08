@@ -21,26 +21,24 @@ export class ConversationCacheService {
     CachedConversationHistory
   >()
 
-  // Cache expiry time in milliseconds (1 hour)
+  // Cache expiry time in milliseconds (1 hour) - only applies to conversation history, not conversation list
   private readonly CACHE_EXPIRY_MS = 60 * 60 * 1000
 
   /**
    * Get cached conversation list if valid, otherwise return null
+   * Note: Conversation list cache does not auto-expire.
+   * It only refreshes on:
+   * - App startup (no cache exists)
+   * - Chat creation (explicit invalidation)
+   * - Manual invalidation
    */
   getCachedConversationList(): ConversationsResponse | null {
     if (!this.conversationListCache) {
       return null
     }
 
-    // Check if cache is expired
-    if (
-      Date.now() - this.conversationListCache.timestamp >
-      this.CACHE_EXPIRY_MS
-    ) {
-      this.conversationListCache = null
-      return null
-    }
-
+    // Return cached data without checking expiry
+    // The cache will only be invalidated explicitly
     return this.conversationListCache.data
   }
 
