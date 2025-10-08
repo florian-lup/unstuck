@@ -8,12 +8,12 @@
       content="default-src 'self'; 
                script-src 'self'; 
                style-src 'self' 'unsafe-inline'; 
-               img-src 'self' data: blob:; 
-               connect-src 'self' https://unstuck-backend-production-d9c1.up.railway.app ws://localhost:5173 ws://127.0.0.1:5173; 
+               img-src 'self' data: blob: https:; 
+               connect-src 'self' https://unstuck-backend-production-d9c1.up.railway.app https://auth.unstuck.gg https://*.stripe.com; 
                font-src 'self'; 
                object-src 'none'; 
                base-uri 'self'; 
-               form-action 'self'; 
+               form-action 'self' https://*.stripe.com; 
                frame-ancestors 'none'; 
                upgrade-insecure-requests;"
     />
