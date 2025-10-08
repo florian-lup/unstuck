@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from 'react'
+import { useState, useEffect, useMemo, useCallback } from 'react'
 import { useKeyboardToggle } from './use-keyboard-toggle'
 import { useClickThrough } from './use-click-through'
 import { useAuth } from './use-auth'
@@ -432,6 +432,15 @@ export function useAppLogic() {
     }
   }, [parsedSettingsKeybind])
 
+  // Handler functions (defined before they're used in effects)
+  const handleStartNewConversation = useCallback(() => {
+    chatService.startNewConversation()
+    setMessages([])
+    setCurrentConversationId(null)
+    // Invalidate conversation list cache so fresh data is fetched when history is opened
+    conversationCache.invalidateConversationList()
+  }, [])
+
   // Listen for new chat keyboard shortcut
   useEffect(() => {
     const handleNewChat = (event: KeyboardEvent) => {
@@ -472,8 +481,7 @@ export function useAppLogic() {
     return () => {
       document.removeEventListener('keydown', handleNewChat, true)
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [parsedNewChatKeybind])
+  }, [parsedNewChatKeybind, handleStartNewConversation])
 
   // Global click-through management
   useClickThrough({
@@ -636,14 +644,6 @@ export function useAppLogic() {
     setIsGamingChatVisible(false)
     // Optionally clear messages when closing chat
     // setMessages([])
-  }
-
-  const handleStartNewConversation = () => {
-    chatService.startNewConversation()
-    setMessages([])
-    setCurrentConversationId(null)
-    // Invalidate conversation list cache so fresh data is fetched when history is opened
-    conversationCache.invalidateConversationList()
   }
 
   const handleConversationSelect = async (conversation: Conversation) => {

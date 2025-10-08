@@ -8,6 +8,8 @@ import {
   Wrench,
   Bot,
   Mic,
+  Layers,
+  Grip,
 } from 'lucide-react'
 import { Button } from './ui/button'
 import { InteractiveArea } from './interactive-area'
@@ -47,6 +49,27 @@ export function AppInfo({ isOpen, onClose }: AppInfoProps) {
 
           {/* Content */}
           <div className="flex-1 overflow-y-auto overlay-scrollbar pr-2">
+            {/* Overlay */}
+            <div className="mb-4">
+              <div className="flex items-center gap-2 mb-2">
+                <Layers className="w-4 h-4 text-overlay-accent-primary" />
+                <h3 className="text-sm font-medium text-overlay-text-primary">
+                  Overlay
+                </h3>
+              </div>
+              <div className="ml-2 space-y-2">
+                <p className="text-xs text-overlay-text-secondary leading-relaxed">
+                  Use <span className="font-medium text-overlay-text-primary">Shift + \</span> to hide or show the overlay while gaming. This keybind can be customized in the settings menu.
+                </p>
+                <p className="text-xs text-overlay-text-secondary leading-relaxed">
+                  Drag <Grip className="w-3 h-3 inline-block mx-0.5" /> the window to move and position it anywhere on your screen.
+                </p>
+                <p className="text-xs text-overlay-text-secondary leading-relaxed">
+                  <span className="font-medium text-overlay-text-primary">Note:</span> Your game must be in borderless fullscreen mode for the overlay to work.
+                </p>
+              </div>
+            </div>
+
             {/* Game Selection */}
             <div className="mb-4">
               <div className="flex items-center gap-2 mb-2">
