@@ -1,5 +1,5 @@
-import React, { useState, useRef, useEffect, useCallback } from 'react'
 import { ChevronDown } from 'lucide-react'
+import React, { useState, useRef, useEffect, useCallback } from 'react'
 import { InteractiveArea } from '../interactive-area'
 import '../../overlay.css'
 

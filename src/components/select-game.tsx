@@ -1,10 +1,10 @@
 import { Gamepad2 } from 'lucide-react'
-import { Dropdown } from './ui/dropdown'
 import {
   Game,
   getActiveGames,
   getGameDisplayNameWithVersion,
 } from '../lib/games'
+import { Dropdown } from './ui/dropdown'
 import '../overlay.css'
 
 interface SelectGameProps {

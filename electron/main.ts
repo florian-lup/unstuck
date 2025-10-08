@@ -1,13 +1,13 @@
-import { app, Menu, ipcMain } from 'electron'
-import { fileURLToPath } from 'node:url'
 import path from 'node:path'
-import { auth0Service } from './auth0/auth0-service'
+import { fileURLToPath } from 'node:url'
+import { app, Menu, ipcMain } from 'electron'
 import { auth0Config, validateAuth0Config } from '../config/auth.config'
-import { WindowManager } from './window-manager'
-import { AuthIPCHandlers } from './auth0/auth-ipc-handlers'
 import { AppLifecycleManager } from './app-lifecycle'
-import { ShortcutsManager } from './shortcuts-manager'
+import { AuthIPCHandlers } from './auth0/auth-ipc-handlers'
+import { auth0Service } from './auth0/auth0-service'
 import { AutoLaunchManager } from './auto-launch-manager'
+import { ShortcutsManager } from './shortcuts-manager'
+import { WindowManager } from './window-manager'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 

@@ -1,7 +1,7 @@
+import fs from 'fs'
+import path from 'path'
 import AutoLaunch from 'auto-launch'
 import { app, ipcMain } from 'electron'
-import path from 'path'
-import fs from 'fs'
 
 export class AutoLaunchManager {
   private autoLauncher: AutoLaunch
@@ -83,6 +83,7 @@ export class AutoLaunchManager {
    */
   async initializeAutoLaunch(): Promise<void> {
     try {
+      // eslint-disable-next-line security/detect-non-literal-fs-filename
       const isFirstRun = !fs.existsSync(this.settingsPath)
       const savedSetting = await this.loadAutoLaunchSetting()
       const currentlyEnabled = await this.isAutoLaunchEnabled()
@@ -109,6 +110,7 @@ export class AutoLaunchManager {
   private async saveAutoLaunchSetting(enabled: boolean): Promise<void> {
     try {
       const settings = { autoLaunch: enabled }
+      // eslint-disable-next-line security/detect-non-literal-fs-filename
       await fs.promises.writeFile(
         this.settingsPath,
         JSON.stringify(settings, null, 2)
@@ -123,10 +125,12 @@ export class AutoLaunchManager {
    */
   private async loadAutoLaunchSetting(): Promise<boolean> {
     try {
+      // eslint-disable-next-line security/detect-non-literal-fs-filename
       if (!fs.existsSync(this.settingsPath)) {
         return true // Default to enabled on first install
       }
 
+      // eslint-disable-next-line security/detect-non-literal-fs-filename
       const data = await fs.promises.readFile(this.settingsPath, 'utf-8')
       const settings = JSON.parse(data) as { autoLaunch?: boolean }
       return settings.autoLaunch === true

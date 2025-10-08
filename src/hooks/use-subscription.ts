@@ -150,6 +150,7 @@ export function useSubscription(): UseSubscriptionReturn {
   // Handle cancel button click
   const handleCancel = useCallback(async () => {
     // Confirm cancellation
+    // eslint-disable-next-line no-alert
     const confirmed = confirm(
       'Are you sure you want to cancel your subscription? You will continue to have access until the end of your billing period.'
     )

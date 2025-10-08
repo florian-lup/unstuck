@@ -1,10 +1,10 @@
-import React from 'react'
 import { Mic, Type, Menu, Settings, Info, Grip } from 'lucide-react'
+import React from 'react'
+import { Game } from '../lib/games'
+import { InteractiveArea } from './interactive-area'
+import { SelectGame } from './select-game'
 import { Button } from './ui/button'
 import { Tooltip } from './ui/tooltip'
-import { SelectGame } from './select-game'
-import { InteractiveArea } from './interactive-area'
-import { Game } from '../lib/games'
 import '../overlay.css'
 
 interface NavigationBarProps {

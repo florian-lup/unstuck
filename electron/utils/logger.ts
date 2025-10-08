@@ -14,7 +14,7 @@ class Logger {
    */
   debug(...args: unknown[]): void {
     if (this.isDevelopment) {
-      console.log('[DEBUG]', new Date().toISOString(), ...args)
+      console.debug('[DEBUG]', new Date().toISOString(), ...args)
     }
   }
 
@@ -54,21 +54,28 @@ class Logger {
    */
   security(message: string, data?: Record<string, unknown>): void {
     const sanitizedData = data ? this.sanitizeForLogging(data) : undefined
-    
+
     if (this.isDevelopment) {
-      console.log('[SECURITY]', new Date().toISOString(), message, sanitizedData)
+      console.info(
+        '[SECURITY]',
+        new Date().toISOString(),
+        message,
+        sanitizedData
+      )
     } else {
       // In production, only log the message without detailed data
-      console.log('[SECURITY]', new Date().toISOString(), message)
+      console.info('[SECURITY]', new Date().toISOString(), message)
     }
   }
 
   /**
    * Sanitize sensitive data from log output
    */
-  private sanitizeForLogging(data: Record<string, unknown>): Record<string, unknown> {
+  private sanitizeForLogging(
+    data: Record<string, unknown>
+  ): Record<string, unknown> {
     const sanitized = { ...data }
-    
+
     // Remove common sensitive fields
     const sensitiveFields = [
       'password',
@@ -83,20 +90,24 @@ class Logger {
       'cookie',
       'session',
     ]
-    
+
     for (const field of sensitiveFields) {
       if (field in sanitized) {
+        // eslint-disable-next-line security/detect-object-injection
         sanitized[field] = '[REDACTED]'
       }
     }
-    
+
     // Recursively sanitize nested objects
     for (const [key, value] of Object.entries(sanitized)) {
       if (value && typeof value === 'object' && !Array.isArray(value)) {
-        sanitized[key] = this.sanitizeForLogging(value as Record<string, unknown>)
+        // eslint-disable-next-line security/detect-object-injection
+        sanitized[key] = this.sanitizeForLogging(
+          value as Record<string, unknown>
+        )
       }
     }
-    
+
     return sanitized
   }
 
@@ -115,4 +126,3 @@ export const logger = new Logger()
 
 // Export type for external use
 export type { LogLevel }
-

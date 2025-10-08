@@ -40,11 +40,11 @@ contextBridge.exposeInMainWorld('ipcRenderer', {
     ipcRenderer.send(channel, ...args)
   },
 
-  invoke(channel: InvokeChannel, ...args: unknown[]) {
+  async invoke(channel: InvokeChannel, ...args: unknown[]): Promise<unknown> {
     if (!ALLOWED_INVOKE_CHANNELS.includes(channel)) {
       throw new Error(`Blocked invoke to unauthorized channel: ${channel}`)
     }
-    return ipcRenderer.invoke(channel, ...args)
+    return ipcRenderer.invoke(channel, ...args) as Promise<unknown>
   },
 
   on(channel: ListenChannel, listener: (...args: unknown[]) => void) {
@@ -95,8 +95,11 @@ contextBridge.exposeInMainWorld('electronAPI', {
   removeOpenSettingsMenuListener: () => {
     ipcRenderer.removeAllListeners('open-settings-menu')
   },
-  updateNavigationShortcut: (shortcut: string) => {
-    return ipcRenderer.invoke('update-navigation-shortcut', shortcut)
+  updateNavigationShortcut: async (shortcut: string): Promise<unknown> => {
+    return ipcRenderer.invoke(
+      'update-navigation-shortcut',
+      shortcut
+    ) as Promise<unknown>
   },
   setIgnoreMouseEvents: (ignore: boolean, options?: { forward?: boolean }) => {
     ipcRenderer.send('set-ignore-mouse-events', ignore, options)
@@ -107,16 +110,21 @@ contextBridge.exposeInMainWorld('electronAPI', {
   windowInteraction: () => {
     ipcRenderer.send('window-interaction')
   },
-  openExternalUrl: (url: string) => {
-    return ipcRenderer.invoke('open-external-url', url)
+  openExternalUrl: async (url: string): Promise<unknown> => {
+    return ipcRenderer.invoke('open-external-url', url) as Promise<unknown>
   },
   // Secure Auth0 authentication APIs (no direct Auth0 client exposure)
   auth: {
-    startAuthFlow: () => ipcRenderer.invoke('auth0-start-flow'),
-    getSession: () => ipcRenderer.invoke('auth0-get-session'),
-    signOut: () => ipcRenderer.invoke('auth0-sign-out'),
-    isSecureStorage: () => ipcRenderer.invoke('auth0-is-secure-storage'),
-    cancelDeviceFlow: () => ipcRenderer.invoke('auth0-cancel-device-flow'),
+    startAuthFlow: async (): Promise<unknown> =>
+      ipcRenderer.invoke('auth0-start-flow') as Promise<unknown>,
+    getSession: async (): Promise<unknown> =>
+      ipcRenderer.invoke('auth0-get-session') as Promise<unknown>,
+    signOut: async (): Promise<unknown> =>
+      ipcRenderer.invoke('auth0-sign-out') as Promise<unknown>,
+    isSecureStorage: async (): Promise<unknown> =>
+      ipcRenderer.invoke('auth0-is-secure-storage') as Promise<unknown>,
+    cancelDeviceFlow: async (): Promise<unknown> =>
+      ipcRenderer.invoke('auth0-cancel-device-flow') as Promise<unknown>,
     // Listen for auth events from main process
     onAuthSuccess: (callback: (session: unknown) => void) => {
       const listener = (
@@ -152,9 +160,13 @@ contextBridge.exposeInMainWorld('electronAPI', {
     },
   },
   autoLaunch: {
-    getStatus: () => ipcRenderer.invoke('auto-launch:get-status'),
-    enable: () => ipcRenderer.invoke('auto-launch:enable'),
-    disable: () => ipcRenderer.invoke('auto-launch:disable'),
-    toggle: () => ipcRenderer.invoke('auto-launch:toggle'),
+    getStatus: async (): Promise<unknown> =>
+      ipcRenderer.invoke('auto-launch:get-status') as Promise<unknown>,
+    enable: async (): Promise<unknown> =>
+      ipcRenderer.invoke('auto-launch:enable') as Promise<unknown>,
+    disable: async (): Promise<unknown> =>
+      ipcRenderer.invoke('auto-launch:disable') as Promise<unknown>,
+    toggle: async (): Promise<unknown> =>
+      ipcRenderer.invoke('auto-launch:toggle') as Promise<unknown>,
   },
 })

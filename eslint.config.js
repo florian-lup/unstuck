@@ -3,6 +3,8 @@ import tseslint from 'typescript-eslint'
 import reactHooks from 'eslint-plugin-react-hooks'
 import reactRefresh from 'eslint-plugin-react-refresh'
 import react from 'eslint-plugin-react'
+import security from 'eslint-plugin-security'
+import importPlugin from 'eslint-plugin-import'
 import globals from 'globals'
 import eslintConfigPrettier from 'eslint-config-prettier'
 
@@ -20,6 +22,9 @@ export default tseslint.config(
 
   // Base JS recommended rules
   js.configs.recommended,
+
+  // Security plugin recommended rules (applied globally)
+  security.configs.recommended,
 
   // Configuration files first (before type-checked rules)
   {
@@ -60,18 +65,49 @@ export default tseslint.config(
       react: {
         version: 'detect',
       },
+      'import/resolver': {
+        typescript: {
+          alwaysTryTypes: true,
+          project: ['./tsconfig.json', './tsconfig.node.json'],
+        },
+        node: true,
+      },
     },
     plugins: {
       react: react,
+      import: importPlugin,
     },
     rules: {
       ...react.configs.recommended.rules,
       ...react.configs['jsx-runtime'].rules,
-      // Turn off rules that require prop-types (we use TypeScript)
+
+      // ==========================================
+      // React Rules
+      // ==========================================
       'react/prop-types': 'off',
       'react/require-default-props': 'off',
-      // TypeScript specific rules
+      'react/jsx-no-target-blank': ['error', { enforceDynamicLinks: 'always' }],
+      'react/no-danger': 'warn',
+      'react/no-danger-with-children': 'error',
+
+      // ==========================================
+      // TypeScript Rules (Enhanced)
+      // ==========================================
       '@typescript-eslint/no-explicit-any': 'error',
+      '@typescript-eslint/no-unsafe-assignment': 'error',
+      '@typescript-eslint/no-unsafe-member-access': 'error',
+      '@typescript-eslint/no-unsafe-call': 'error',
+      '@typescript-eslint/no-unsafe-return': 'error',
+      '@typescript-eslint/no-floating-promises': 'error',
+      '@typescript-eslint/await-thenable': 'error',
+      '@typescript-eslint/no-misused-promises': [
+        'error',
+        {
+          checksVoidReturn: {
+            attributes: false,
+          },
+        },
+      ],
       '@typescript-eslint/no-unused-vars': [
         'error',
         {
@@ -82,7 +118,7 @@ export default tseslint.config(
       '@typescript-eslint/consistent-type-definitions': ['error', 'interface'],
       '@typescript-eslint/explicit-function-return-type': 'off',
       '@typescript-eslint/explicit-module-boundary-types': 'off',
-      '@typescript-eslint/no-non-null-assertion': 'warn',
+      '@typescript-eslint/no-non-null-assertion': 'error',
       '@typescript-eslint/no-use-before-define': [
         'error',
         {
@@ -91,7 +127,6 @@ export default tseslint.config(
           variables: true,
         },
       ],
-      // Relax some overly strict rules
       '@typescript-eslint/restrict-template-expressions': [
         'error',
         {
@@ -99,18 +134,76 @@ export default tseslint.config(
           allowBoolean: true,
         },
       ],
-      '@typescript-eslint/no-misused-promises': [
-        'error',
+      '@typescript-eslint/prefer-nullish-coalescing': 'warn',
+      '@typescript-eslint/prefer-optional-chain': 'warn',
+      '@typescript-eslint/no-unnecessary-condition': 'warn',
+
+      // ==========================================
+      // Import/Export Rules
+      // ==========================================
+      'import/no-unresolved': 'off', // TypeScript handles this
+      'import/named': 'error',
+      'import/default': 'error',
+      'import/namespace': 'error',
+      'import/no-absolute-path': 'error',
+      'import/no-self-import': 'error',
+      'import/no-cycle': ['error', { maxDepth: 10 }],
+      'import/no-useless-path-segments': 'error',
+      'import/no-deprecated': 'warn',
+      'import/no-mutable-exports': 'error',
+      'import/first': 'error',
+      'import/no-duplicates': 'error',
+      'import/order': [
+        'warn',
         {
-          checksVoidReturn: {
-            attributes: false,
-          },
+          groups: [
+            'builtin',
+            'external',
+            'internal',
+            'parent',
+            'sibling',
+            'index',
+          ],
+          'newlines-between': 'never',
+          alphabetize: { order: 'asc', caseInsensitive: true },
         },
       ],
+
+      // ==========================================
+      // General Security & Best Practices
+      // ==========================================
+      'no-eval': 'error',
+      'no-implied-eval': 'error',
+      'no-new-func': 'error',
+      'no-script-url': 'error',
+      'no-proto': 'error',
+      'no-iterator': 'error',
+      'no-restricted-globals': [
+        'error',
+        { name: 'event', message: 'Use local parameter instead.' },
+      ],
+      'no-restricted-properties': [
+        'error',
+        {
+          object: 'window',
+          property: 'localStorage',
+          message: 'Use secure storage mechanisms in Electron apps.',
+        },
+        {
+          object: 'window',
+          property: 'sessionStorage',
+          message: 'Use secure storage mechanisms in Electron apps.',
+        },
+      ],
+
+      // Production-ready error handling
+      'no-console': 'error', // Will be overridden per environment below
+      'no-debugger': 'error',
+      'no-alert': 'error',
     },
   },
 
-  // Renderer (browser) code
+  // Renderer (browser) code - Frontend React App
   {
     files: ['src/**/*.{ts,tsx}'],
     languageOptions: {
@@ -122,17 +215,32 @@ export default tseslint.config(
     },
     rules: {
       'react-hooks/rules-of-hooks': 'error',
-      'react-hooks/exhaustive-deps': 'warn',
+      'react-hooks/exhaustive-deps': 'error', // Upgraded from warn
       'react-refresh/only-export-components': [
         'warn',
         { allowConstantExport: true },
       ],
-      // Allow console.log in development
-      'no-console': ['warn', { allow: ['warn', 'error'] }],
+
+      // Console rules for renderer - strict for production
+      'no-console': ['error', { allow: ['warn', 'error'] }],
+
+      // Renderer-specific security
+      'no-restricted-globals': [
+        'error',
+        {
+          name: 'require',
+          message: 'Use import instead of require in renderer process.',
+        },
+        {
+          name: 'process',
+          message:
+            'Avoid accessing Node.js process in renderer. Use IPC instead.',
+        },
+      ],
     },
   },
 
-  // Electron main/preload (Node) code
+  // Electron main/preload (Node) code - Enhanced Security
   {
     files: ['electron/**/*.{ts,tsx}'],
     languageOptions: {
@@ -140,8 +248,82 @@ export default tseslint.config(
     },
     rules: {
       'react-refresh/only-export-components': 'off',
-      // Node.js often uses console for logging
-      'no-console': 'off',
+
+      // Logging is acceptable in main process but discourage console.log
+      'no-console': ['warn', { allow: ['warn', 'error', 'info', 'debug'] }],
+
+      // ==========================================
+      // Electron Security Rules
+      // ==========================================
+      'no-restricted-syntax': [
+        'error',
+        {
+          selector:
+            "MemberExpression[object.name='webPreferences'][property.name='nodeIntegration'][parent.Property.value.value=true]",
+          message: 'nodeIntegration should be false for security.',
+        },
+        {
+          selector:
+            "MemberExpression[object.name='webPreferences'][property.name='contextIsolation'][parent.Property.value.value=false]",
+          message: 'contextIsolation should be true for security.',
+        },
+      ],
+
+      'no-restricted-properties': [
+        'error',
+        {
+          object: 'electron',
+          property: 'remote',
+          message:
+            'The remote module is deprecated and insecure. Use IPC instead.',
+        },
+        {
+          property: 'enableRemoteModule',
+          message: 'Remote module is deprecated and insecure. Use IPC instead.',
+        },
+      ],
+
+      'no-restricted-imports': [
+        'error',
+        {
+          patterns: [
+            {
+              group: ['electron/remote', '@electron/remote'],
+              message:
+                'Remote module is deprecated and insecure. Use IPC instead.',
+            },
+          ],
+        },
+      ],
+
+      // Require proper error handling in main process
+      '@typescript-eslint/no-floating-promises': 'error',
+      '@typescript-eslint/promise-function-async': 'error',
+
+      // IPC security
+      'security/detect-object-injection': 'warn', // Can have false positives
+      'security/detect-non-literal-fs-filename': 'warn',
+      'security/detect-child-process': 'warn',
+    },
+  },
+
+  // Preload scripts - Extra strict security
+  {
+    files: ['electron/preload.ts', 'electron/**/preload*.ts'],
+    rules: {
+      'no-restricted-globals': [
+        'error',
+        {
+          name: 'eval',
+          message: 'eval is forbidden in preload scripts.',
+        },
+      ],
+      'security/detect-eval-with-expression': 'error',
+      'security/detect-non-literal-require': 'error',
+      '@typescript-eslint/no-explicit-any': 'error',
+      '@typescript-eslint/no-unsafe-assignment': 'error',
+      '@typescript-eslint/no-unsafe-member-access': 'error',
+      '@typescript-eslint/no-unsafe-call': 'error',
     },
   },
 

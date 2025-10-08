@@ -1,5 +1,3 @@
-import { Input } from './ui/input'
-import { InteractiveArea } from './interactive-area'
 import {
   CornerDownLeft,
   X,
@@ -10,10 +8,12 @@ import {
   Scroll,
   ClipboardList,
 } from 'lucide-react'
-import { Button } from './ui/button'
-import { Toggle } from './ui/toggle'
 import { useGamingChat } from '../hooks/use-gaming-chat'
 import { MarkdownContent } from '../utils/markdown-content'
+import { InteractiveArea } from './interactive-area'
+import { Button } from './ui/button'
+import { Input } from './ui/input'
+import { Toggle } from './ui/toggle'
 
 export interface Message {
   id: string

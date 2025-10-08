@@ -1,11 +1,11 @@
-import { useState, useEffect } from 'react'
 import { AlertCircle, Loader, Trash2 } from 'lucide-react'
-import { Button } from './ui/button'
-import { Badge } from './ui/badge'
-import { InteractiveArea } from './interactive-area'
+import { useState, useEffect } from 'react'
 import { apiClient, ConversationsResponse } from '../lib/api-client'
 import { secureAuth } from '../lib/auth-client'
 import { conversationCache } from '../services/conversation-cache'
+import { InteractiveArea } from './interactive-area'
+import { Badge } from './ui/badge'
+import { Button } from './ui/button'
 
 export interface Conversation {
   id: string

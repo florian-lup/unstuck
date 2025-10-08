@@ -1,15 +1,15 @@
 import { useState, useEffect, useMemo, useCallback } from 'react'
-import { useKeyboardToggle } from './use-keyboard-toggle'
-import { useClickThrough } from './use-click-through'
-import { useAuth } from './use-auth'
-import { useSubscription } from './use-subscription'
-import { type Game } from '../lib/games'
+import { type Conversation } from '../components/conversation-history'
 import { type Message } from '../components/gaming-chat'
-import { chatService } from '../lib/chat-service'
 import { apiClient } from '../lib/api-client'
 import { secureAuth } from '../lib/auth-client'
-import { type Conversation } from '../components/conversation-history'
+import { chatService } from '../lib/chat-service'
+import { type Game } from '../lib/games'
 import { conversationCache } from '../services/conversation-cache'
+import { useAuth } from './use-auth'
+import { useClickThrough } from './use-click-through'
+import { useKeyboardToggle } from './use-keyboard-toggle'
+import { useSubscription } from './use-subscription'
 
 // Helper function to convert keybind string to useKeyboardToggle format
 function parseKeybind(keybind: string) {
@@ -218,6 +218,7 @@ export function useAppLogic() {
       colorVars.forEach((cssVar) => {
         // Remove any existing inline styles to get CSS file values
         root.style.removeProperty(cssVar)
+        // eslint-disable-next-line security/detect-object-injection
         originalValues[cssVar] = computedStyles.getPropertyValue(cssVar).trim()
       })
     }
@@ -244,6 +245,7 @@ export function useAppLogic() {
 
       // Apply transparency to all overlay colors using stored original values
       colorVars.forEach((cssVar) => {
+        // eslint-disable-next-line security/detect-object-injection
         const originalValue = originalValues[cssVar]
         if (originalValue) {
           const newValue = applyTransparencyToColor(originalValue)

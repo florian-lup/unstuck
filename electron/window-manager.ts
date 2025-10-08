@@ -1,3 +1,4 @@
+import path from 'node:path'
 import {
   BrowserWindow,
   screen,
@@ -7,7 +8,6 @@ import {
   nativeImage,
   app,
 } from 'electron'
-import path from 'node:path'
 
 export class WindowManager {
   private overlayWindow: BrowserWindow | null = null

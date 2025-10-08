@@ -3,8 +3,8 @@
  * Handles OS-level encrypted storage using Electron's safeStorage
  */
 import fs from 'fs/promises'
-import path from 'path'
 import os from 'os'
+import path from 'path'
 
 export class SecureStorage {
   private secureDir = path.join(os.homedir(), '.unstuck-secure')
@@ -39,6 +39,7 @@ export class SecureStorage {
       }
 
       const filePath = path.join(this.secureDir, `${key}.dat`)
+      // eslint-disable-next-line security/detect-non-literal-fs-filename
       const encrypted = await fs.readFile(filePath)
       return safeStorage.decryptString(encrypted)
     } catch {
@@ -59,6 +60,7 @@ export class SecureStorage {
 
     const encrypted = safeStorage.encryptString(value)
     const filePath = path.join(this.secureDir, `${key}.dat`)
+    // eslint-disable-next-line security/detect-non-literal-fs-filename
     await fs.writeFile(filePath, encrypted, { mode: 0o600 })
   }
 
@@ -68,6 +70,7 @@ export class SecureStorage {
   async removeItem(key: string): Promise<void> {
     try {
       const filePath = path.join(this.secureDir, `${key}.dat`)
+      // eslint-disable-next-line security/detect-non-literal-fs-filename
       await fs.unlink(filePath)
     } catch {
       // File doesn't exist, consider it removed
@@ -79,6 +82,7 @@ export class SecureStorage {
    */
   private async ensureSecureDir(): Promise<void> {
     try {
+      // eslint-disable-next-line security/detect-non-literal-fs-filename
       await fs.mkdir(this.secureDir, { recursive: true, mode: 0o700 })
     } catch {
       // Directory might already exist

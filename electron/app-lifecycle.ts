@@ -1,8 +1,8 @@
 import { app, BrowserWindow, ipcMain } from 'electron'
-import { WindowManager } from './window-manager'
 import { AuthIPCHandlers } from './auth0/auth-ipc-handlers'
-import { ShortcutsManager } from './shortcuts-manager'
 import { AutoLaunchManager } from './auto-launch-manager'
+import { ShortcutsManager } from './shortcuts-manager'
+import { WindowManager } from './window-manager'
 
 export class AppLifecycleManager {
   private authIPCHandlers?: AuthIPCHandlers

@@ -1,8 +1,8 @@
 import { ipcMain, shell } from 'electron'
+import { Auth0Config } from '../../config/auth.config'
+import { WindowManager } from '../window-manager'
 import { auth0Service } from './auth0-service'
 import { SecurityValidator } from './security-validators'
-import { WindowManager } from '../window-manager'
-import { Auth0Config } from '../../config/auth.config'
 
 export class AuthIPCHandlers {
   private config!: Auth0Config // Will be initialized in setConfig() method

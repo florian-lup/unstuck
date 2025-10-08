@@ -225,7 +225,9 @@ export class ApiClient {
     timeoutMs: number
   ): Promise<Response> {
     const controller = new AbortController()
-    const timeout = setTimeout(() => controller.abort(), timeoutMs)
+    const timeout = setTimeout(() => {
+      controller.abort()
+    }, timeoutMs)
 
     try {
       const response = await fetch(url, {

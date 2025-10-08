@@ -8,12 +8,12 @@
  * - DeviceFlowManager: Handles OAuth2 Device Authorization Flow
  */
 import { Auth0Config } from '../../config/auth.config'
-import { TokenManager, Auth0Tokens } from './token-manager'
-import { SecureStorage } from './secure-storage'
 import {
   DeviceFlowManager,
   DeviceAuthorizationResult,
 } from './device-flow-manager'
+import { SecureStorage } from './secure-storage'
+import { TokenManager, Auth0Tokens } from './token-manager'
 
 export interface Auth0User {
   sub: string

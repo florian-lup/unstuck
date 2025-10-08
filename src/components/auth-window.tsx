@@ -1,8 +1,8 @@
 import { useEffect } from 'react'
-import { AuthUser } from '../lib/auth-client'
 import { useAuth } from '../hooks/use-auth'
 import { useAuthFlow } from '../hooks/use-auth-flow'
 import { useCountdownTimer } from '../hooks/use-countdown-timer'
+import { AuthUser } from '../lib/auth-client'
 import { formatTime } from '../lib/utils'
 import { Button } from './ui/button'
 

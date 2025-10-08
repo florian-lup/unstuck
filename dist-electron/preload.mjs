@@ -30,7 +30,7 @@ electron.contextBridge.exposeInMainWorld("ipcRenderer", {
     }
     electron.ipcRenderer.send(channel, ...args);
   },
-  invoke(channel, ...args) {
+  async invoke(channel, ...args) {
     if (!ALLOWED_INVOKE_CHANNELS.includes(channel)) {
       throw new Error(`Blocked invoke to unauthorized channel: ${channel}`);
     }
@@ -78,7 +78,7 @@ electron.contextBridge.exposeInMainWorld("electronAPI", {
   removeOpenSettingsMenuListener: () => {
     electron.ipcRenderer.removeAllListeners("open-settings-menu");
   },
-  updateNavigationShortcut: (shortcut) => {
+  updateNavigationShortcut: async (shortcut) => {
     return electron.ipcRenderer.invoke("update-navigation-shortcut", shortcut);
   },
   setIgnoreMouseEvents: (ignore, options) => {
@@ -90,16 +90,16 @@ electron.contextBridge.exposeInMainWorld("electronAPI", {
   windowInteraction: () => {
     electron.ipcRenderer.send("window-interaction");
   },
-  openExternalUrl: (url) => {
+  openExternalUrl: async (url) => {
     return electron.ipcRenderer.invoke("open-external-url", url);
   },
   // Secure Auth0 authentication APIs (no direct Auth0 client exposure)
   auth: {
-    startAuthFlow: () => electron.ipcRenderer.invoke("auth0-start-flow"),
-    getSession: () => electron.ipcRenderer.invoke("auth0-get-session"),
-    signOut: () => electron.ipcRenderer.invoke("auth0-sign-out"),
-    isSecureStorage: () => electron.ipcRenderer.invoke("auth0-is-secure-storage"),
-    cancelDeviceFlow: () => electron.ipcRenderer.invoke("auth0-cancel-device-flow"),
+    startAuthFlow: async () => electron.ipcRenderer.invoke("auth0-start-flow"),
+    getSession: async () => electron.ipcRenderer.invoke("auth0-get-session"),
+    signOut: async () => electron.ipcRenderer.invoke("auth0-sign-out"),
+    isSecureStorage: async () => electron.ipcRenderer.invoke("auth0-is-secure-storage"),
+    cancelDeviceFlow: async () => electron.ipcRenderer.invoke("auth0-cancel-device-flow"),
     // Listen for auth events from main process
     onAuthSuccess: (callback) => {
       const listener = (_event, session) => {
@@ -129,9 +129,9 @@ electron.contextBridge.exposeInMainWorld("electronAPI", {
     }
   },
   autoLaunch: {
-    getStatus: () => electron.ipcRenderer.invoke("auto-launch:get-status"),
-    enable: () => electron.ipcRenderer.invoke("auto-launch:enable"),
-    disable: () => electron.ipcRenderer.invoke("auto-launch:disable"),
-    toggle: () => electron.ipcRenderer.invoke("auto-launch:toggle")
+    getStatus: async () => electron.ipcRenderer.invoke("auto-launch:get-status"),
+    enable: async () => electron.ipcRenderer.invoke("auto-launch:enable"),
+    disable: async () => electron.ipcRenderer.invoke("auto-launch:disable"),
+    toggle: async () => electron.ipcRenderer.invoke("auto-launch:toggle")
   }
 });

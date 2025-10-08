@@ -11,8 +11,8 @@ import {
   Layers,
   Grip,
 } from 'lucide-react'
-import { Button } from './ui/button'
 import { InteractiveArea } from './interactive-area'
+import { Button } from './ui/button'
 
 interface AppInfoProps {
   isOpen: boolean
@@ -59,13 +59,23 @@ export function AppInfo({ isOpen, onClose }: AppInfoProps) {
               </div>
               <div className="ml-2 space-y-2">
                 <p className="text-xs text-overlay-text-secondary leading-relaxed">
-                  Use <span className="font-medium text-overlay-text-primary">Shift + \</span> to hide or show the overlay while gaming. This keybind can be customized in the settings menu.
+                  Use{' '}
+                  <span className="font-medium text-overlay-text-primary">
+                    Shift + \
+                  </span>{' '}
+                  to hide or show the overlay while gaming. This keybind can be
+                  customized in the settings menu.
                 </p>
                 <p className="text-xs text-overlay-text-secondary leading-relaxed">
-                  Drag <Grip className="w-3 h-3 inline-block mx-0.5" /> the window to move and position it anywhere on your screen.
+                  Drag <Grip className="w-3 h-3 inline-block mx-0.5" /> the
+                  window to move and position it anywhere on your screen.
                 </p>
                 <p className="text-xs text-overlay-text-secondary leading-relaxed">
-                  <span className="font-medium text-overlay-text-primary">Note:</span> Your game must be in borderless fullscreen mode for the overlay to work.
+                  <span className="font-medium text-overlay-text-primary">
+                    Note:
+                  </span>{' '}
+                  Your game must be in borderless fullscreen mode for the
+                  overlay to work.
                 </p>
               </div>
             </div>

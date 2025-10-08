@@ -3,6 +3,7 @@
  * Handles conversation IDs, message history, and API calls
  */
 
+import type { Message } from '../components/gaming-chat'
 import {
   apiClient,
   type GamingChatRequest,
@@ -12,7 +13,6 @@ import {
   SubscriptionError,
 } from './api-client'
 import { secureAuth } from './auth-client'
-import type { Message } from '../components/gaming-chat'
 import type { Game } from './games'
 
 export interface ConversationState {

@@ -1,10 +1,10 @@
 import { LogOut, User, Pencil, Power, ArrowUp, ArrowDown } from 'lucide-react'
-import { Button } from './ui/button'
-import { Slider } from './ui/slider'
-import { InteractiveArea } from './interactive-area'
-import { AuthUser } from '../lib/auth-client'
 import { useState, useEffect, useCallback } from 'react'
 import { useAutoLaunch } from '../hooks/use-auto-launch'
+import { AuthUser } from '../lib/auth-client'
+import { InteractiveArea } from './interactive-area'
+import { Button } from './ui/button'
+import { Slider } from './ui/slider'
 
 interface SettingsMenuProps {
   user: AuthUser | null
