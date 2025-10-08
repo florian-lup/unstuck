@@ -37,7 +37,6 @@ export class AuthIPCHandlers {
 
         return { success: true, ...deviceAuth }
       } catch (error) {
-        console.error('Start Auth0 device flow error:', error)
         return { success: false, error: (error as Error).message }
       }
     })
@@ -66,10 +65,6 @@ export class AuthIPCHandlers {
           tokens: tokens ?? null,
         }
       } catch (error) {
-        console.error(
-          'Get Auth0 session error:',
-          SecurityValidator.sanitizeUserForLogging(error)
-        )
         return { success: false, error: (error as Error).message }
       }
     })
@@ -86,10 +81,6 @@ export class AuthIPCHandlers {
         await auth0Service.signOut()
         return { success: true }
       } catch (error) {
-        console.error(
-          'Auth0 sign out error:',
-          SecurityValidator.sanitizeUserForLogging(error)
-        )
         return { success: false, error: (error as Error).message }
       }
     })
@@ -104,8 +95,7 @@ export class AuthIPCHandlers {
           rateLimitConfig.windowMs
         )
         return await auth0Service.isSecureStorage()
-      } catch (error) {
-        console.error('Secure storage check error:', error)
+      } catch {
         return false
       }
     })
@@ -122,7 +112,6 @@ export class AuthIPCHandlers {
         auth0Service.cancelDeviceAuthorization()
         return { success: true }
       } catch (error) {
-        console.error('Cancel device flow error:', error)
         return { success: false, error: (error as Error).message }
       }
     })
@@ -142,7 +131,6 @@ export class AuthIPCHandlers {
         await shell.openExternal(validUrl)
         return { success: true }
       } catch (error) {
-        console.error('Failed to open external URL:', error)
         return { success: false, error: (error as Error).message }
       }
     })
@@ -157,7 +145,6 @@ export class AuthIPCHandlers {
 
     // User logout handler
     ipcMain.on('user-logout', () => {
-      console.log('User logging out...')
       this.windowManager.closeOverlayWindow()
       this.windowManager.createAuthWindow()
     })
@@ -195,8 +182,8 @@ export class AuthIPCHandlers {
             validIgnore,
             validOptions ?? { forward: true }
           )
-        } catch (error) {
-          console.error('Mouse events error:', error)
+        } catch {
+          // Silently ignore mouse event errors
         }
       }
     )
@@ -258,8 +245,6 @@ export class AuthIPCHandlers {
    * Clean up all IPC handlers to prevent memory leaks
    */
   cleanup(): void {
-    console.log('Cleaning up Auth IPC handlers...')
-
     // Remove all IPC handlers
     ipcMain.removeHandler('auth0-start-flow')
     ipcMain.removeHandler('auth0-get-session')

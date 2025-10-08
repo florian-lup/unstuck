@@ -91,12 +91,6 @@ export class DeviceFlowManager {
         error?: string
         error_description?: string
       }
-      console.error('Auth0 API Error Response:', {
-        status: response.status,
-        statusText: response.statusText,
-        error: errorData.error,
-        error_description: errorData.error_description,
-      })
       throw new Error(
         `Device authorization request failed: ${errorData.error_description ?? errorData.error ?? response.statusText}`
       )
@@ -227,8 +221,7 @@ export class DeviceFlowManager {
               data.error_description ?? 'Authorization failed'
             )
           }
-        } catch (error) {
-          console.error('Polling error:', error)
+        } catch {
           // Continue polling on network errors
         }
       })()

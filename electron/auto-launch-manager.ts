@@ -32,11 +32,9 @@ export class AutoLaunchManager {
       if (!isEnabled) {
         await this.autoLauncher.enable()
         await this.saveAutoLaunchSetting(true)
-        console.log('Auto-launch enabled')
       }
       return true
-    } catch (error) {
-      console.error('Failed to enable auto-launch:', error)
+    } catch {
       return false
     }
   }
@@ -50,11 +48,9 @@ export class AutoLaunchManager {
       if (isEnabled) {
         await this.autoLauncher.disable()
         await this.saveAutoLaunchSetting(false)
-        console.log('Auto-launch disabled')
       }
       return true
-    } catch (error) {
-      console.error('Failed to disable auto-launch:', error)
+    } catch {
       return false
     }
   }
@@ -65,8 +61,7 @@ export class AutoLaunchManager {
   async isAutoLaunchEnabled(): Promise<boolean> {
     try {
       return await this.autoLauncher.isEnabled()
-    } catch (error) {
-      console.error('Failed to check auto-launch status:', error)
+    } catch {
       return false
     }
   }
@@ -94,7 +89,6 @@ export class AutoLaunchManager {
 
       // On first run, enable auto-launch by default and save the setting
       if (isFirstRun) {
-        console.log('First run detected, enabling auto-launch by default')
         await this.enableAutoLaunch()
       } else {
         // Sync the setting with the actual state for existing installations
@@ -104,10 +98,8 @@ export class AutoLaunchManager {
           await this.disableAutoLaunch()
         }
       }
-
-      console.log(`Auto-launch initialized. Enabled: ${savedSetting}`)
-    } catch (error) {
-      console.error('Failed to initialize auto-launch:', error)
+    } catch {
+      // Silently ignore errors during initialization
     }
   }
 
@@ -121,8 +113,8 @@ export class AutoLaunchManager {
         this.settingsPath,
         JSON.stringify(settings, null, 2)
       )
-    } catch (error) {
-      console.error('Failed to save auto-launch setting:', error)
+    } catch {
+      // Silently ignore save errors
     }
   }
 
@@ -138,8 +130,7 @@ export class AutoLaunchManager {
       const data = await fs.promises.readFile(this.settingsPath, 'utf-8')
       const settings = JSON.parse(data) as { autoLaunch?: boolean }
       return settings.autoLaunch === true
-    } catch (error) {
-      console.error('Failed to load auto-launch setting:', error)
+    } catch {
       return true // Default to enabled on error
     }
   }

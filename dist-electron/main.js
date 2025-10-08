@@ -222,7 +222,6 @@ class SecureStorage {
     try {
       const { safeStorage } = await import("electron");
       if (!safeStorage.isEncryptionAvailable()) {
-        console.error("OS-level encryption is required but not available");
         return null;
       }
       const filePath = path.join(this.secureDir, `${key}.dat`);
@@ -236,20 +235,15 @@ class SecureStorage {
    * Store an item in secure storage
    */
   async setItem(key, value) {
-    try {
-      const { safeStorage } = await import("electron");
-      if (!safeStorage.isEncryptionAvailable()) {
-        throw new Error(
-          "OS-level encryption is required but not available. Please ensure Windows Credential Manager is working properly."
-        );
-      }
-      const encrypted = safeStorage.encryptString(value);
-      const filePath = path.join(this.secureDir, `${key}.dat`);
-      await fs.writeFile(filePath, encrypted, { mode: 384 });
-    } catch (error) {
-      console.error("Failed to store secure item:", error);
-      throw error;
+    const { safeStorage } = await import("electron");
+    if (!safeStorage.isEncryptionAvailable()) {
+      throw new Error(
+        "OS-level encryption is required but not available. Please ensure Windows Credential Manager is working properly."
+      );
     }
+    const encrypted = safeStorage.encryptString(value);
+    const filePath = path.join(this.secureDir, `${key}.dat`);
+    await fs.writeFile(filePath, encrypted, { mode: 384 });
   }
   /**
    * Remove an item from secure storage
@@ -323,12 +317,6 @@ class DeviceFlowManager {
     });
     if (!response.ok) {
       const errorData = await response.json().catch(() => ({}));
-      console.error("Auth0 API Error Response:", {
-        status: response.status,
-        statusText: response.statusText,
-        error: errorData.error,
-        error_description: errorData.error_description
-      });
       throw new Error(
         `Device authorization request failed: ${errorData.error_description ?? errorData.error ?? response.statusText}`
       );
@@ -419,8 +407,7 @@ class DeviceFlowManager {
               data.error_description ?? "Authorization failed"
             );
           }
-        } catch (error) {
-          console.error("Polling error:", error);
+        } catch {
         }
       })();
     }, interval * 1e3);
@@ -486,9 +473,6 @@ class Auth0Service {
       }
     });
     await this.restoreSession();
-    console.log(
-      "Auth0 service initialized successfully with modular components"
-    );
   }
   /**
    * Start Device Authorization Flow
@@ -523,15 +507,10 @@ class Auth0Service {
           await this.storeSession(this.currentSession);
           this.notifyListeners("TOKEN_REFRESHED", this.currentSession);
         } catch (error) {
-          console.error(
-            "Automatic token refresh failed:",
-            error instanceof Error ? error.message : "Unknown error"
-          );
           if (error instanceof Error && (error.message.includes("re-authentication required") || error.message.includes("expired too long ago") || error.message.includes("Too many token refresh attempts"))) {
             await this.signOut();
             return { user: null, tokens: null };
           }
-          console.warn("Continuing with potentially expired tokens");
         }
       }
       return {
@@ -555,9 +534,7 @@ class Auth0Service {
       this.currentSession = null;
       this.deviceFlowManager.cancelDeviceAuthorization();
       this.notifyListeners("SIGNED_OUT", null);
-      console.log("🔒 Successfully signed out");
-    } catch (error) {
-      console.error("Sign out error:", error);
+    } catch {
       await this.clearSession();
       this.currentSession = null;
       this.notifyListeners("SIGNED_OUT", null);
@@ -591,8 +568,7 @@ class Auth0Service {
       await this.storeSession(session);
       this.currentSession = session;
       this.notifyListeners("SIGNED_IN", session);
-    } catch (error) {
-      console.error("Failed to complete device flow:", error);
+    } catch {
       this.notifyListeners("ERROR", null, "Failed to complete authentication");
     }
   }
@@ -626,9 +602,6 @@ class Auth0Service {
       if (sessionData) {
         const restoredSession = JSON.parse(sessionData);
         if (this.tokenManager.isTokenExpired(restoredSession.tokens)) {
-          console.log(
-            "Restored session has expired tokens, attempting refresh..."
-          );
           this.currentSession = restoredSession;
           try {
             const refreshedTokens = await this.tokenManager.refreshTokens(
@@ -637,11 +610,7 @@ class Auth0Service {
             this.currentSession.tokens = refreshedTokens;
             await this.storeSession(this.currentSession);
             this.notifyListeners("SIGNED_IN", this.currentSession);
-          } catch (refreshError) {
-            console.warn(
-              "Failed to refresh restored tokens:",
-              refreshError instanceof Error ? refreshError.message : "Unknown error"
-            );
+          } catch {
             await this.clearSession();
             this.currentSession = null;
           }
@@ -650,11 +619,7 @@ class Auth0Service {
           this.notifyListeners("SIGNED_IN", this.currentSession);
         }
       }
-    } catch (error) {
-      console.warn(
-        "Failed to restore session:",
-        error instanceof Error ? error.message : "Unknown error"
-      );
+    } catch {
       await this.clearSession();
       this.currentSession = null;
     }
@@ -672,8 +637,7 @@ class Auth0Service {
     this.listeners.forEach((listener) => {
       try {
         listener(event, session, error);
-      } catch (err) {
-        console.error("Auth listener error:", err);
+      } catch {
       }
     });
   }
@@ -792,8 +756,8 @@ class WindowManager {
         contextIsolation: true,
         allowRunningInsecureContent: false,
         experimentalFeatures: false,
-        devTools: true,
-        // Always enable dev tools for auth window debugging
+        devTools: process.env.NODE_ENV === "development",
+        // Only enable in development
         webSecurity: true,
         // Safe memory optimization
         spellcheck: false,
@@ -850,12 +814,10 @@ class WindowManager {
     this.authWindow.webContents.on("will-navigate", (event, navigationUrl) => {
       const parsedUrl = new URL(navigationUrl);
       if (parsedUrl.origin !== "http://localhost:5173" && parsedUrl.origin !== "file://" && !navigationUrl.includes("auth.html")) {
-        console.log("Blocked navigation to:", navigationUrl);
         event.preventDefault();
       }
     });
     this.authWindow.webContents.setWindowOpenHandler(({ url }) => {
-      console.log("Blocked new window creation for:", url);
       void shell.openExternal(url);
       return { action: "deny" };
     });
@@ -867,13 +829,11 @@ class WindowManager {
       (event, navigationUrl) => {
         const parsedUrl = new URL(navigationUrl);
         if (parsedUrl.origin !== "http://localhost:5173" && parsedUrl.origin !== "file://" && !navigationUrl.includes("index.html")) {
-          console.log("Blocked navigation to:", navigationUrl);
           event.preventDefault();
         }
       }
     );
     this.overlayWindow.webContents.setWindowOpenHandler(({ url }) => {
-      console.log("Blocked new window creation for:", url);
       void shell.openExternal(url);
       return { action: "deny" };
     });
@@ -1304,7 +1264,6 @@ class AuthIPCHandlers {
         await shell.openExternal(deviceAuth.verification_uri);
         return { success: true, ...deviceAuth };
       } catch (error) {
-        console.error("Start Auth0 device flow error:", error);
         return { success: false, error: error.message };
       }
     });
@@ -1327,10 +1286,6 @@ class AuthIPCHandlers {
           tokens: tokens ?? null
         };
       } catch (error) {
-        console.error(
-          "Get Auth0 session error:",
-          SecurityValidator.sanitizeUserForLogging(error)
-        );
         return { success: false, error: error.message };
       }
     });
@@ -1345,10 +1300,6 @@ class AuthIPCHandlers {
         await auth0Service.signOut();
         return { success: true };
       } catch (error) {
-        console.error(
-          "Auth0 sign out error:",
-          SecurityValidator.sanitizeUserForLogging(error)
-        );
         return { success: false, error: error.message };
       }
     });
@@ -1361,8 +1312,7 @@ class AuthIPCHandlers {
           rateLimitConfig.windowMs
         );
         return await auth0Service.isSecureStorage();
-      } catch (error) {
-        console.error("Secure storage check error:", error);
+      } catch {
         return false;
       }
     });
@@ -1377,7 +1327,6 @@ class AuthIPCHandlers {
         auth0Service.cancelDeviceAuthorization();
         return { success: true };
       } catch (error) {
-        console.error("Cancel device flow error:", error);
         return { success: false, error: error.message };
       }
     });
@@ -1393,7 +1342,6 @@ class AuthIPCHandlers {
         await shell.openExternal(validUrl);
         return { success: true };
       } catch (error) {
-        console.error("Failed to open external URL:", error);
         return { success: false, error: error.message };
       }
     });
@@ -1404,7 +1352,6 @@ class AuthIPCHandlers {
       this.windowManager.createOverlayWindow();
     });
     ipcMain.on("user-logout", () => {
-      console.log("User logging out...");
       this.windowManager.closeOverlayWindow();
       this.windowManager.createAuthWindow();
     });
@@ -1432,8 +1379,7 @@ class AuthIPCHandlers {
             validIgnore,
             validOptions ?? { forward: true }
           );
-        } catch (error) {
-          console.error("Mouse events error:", error);
+        } catch {
         }
       }
     );
@@ -1484,7 +1430,6 @@ class AuthIPCHandlers {
    * Clean up all IPC handlers to prevent memory leaks
    */
   cleanup() {
-    console.log("Cleaning up Auth IPC handlers...");
     ipcMain.removeHandler("auth0-start-flow");
     ipcMain.removeHandler("auth0-get-session");
     ipcMain.removeHandler("auth0-sign-out");
@@ -1518,7 +1463,6 @@ class AppLifecycleManager {
    * Clean up all IPC handlers and resources
    */
   cleanupAllResources() {
-    console.log("Cleaning up all app resources...");
     ipcMain.removeHandler("update-navigation-shortcut");
     this.authIPCHandlers?.cleanup();
     this.shortcutsManager?.unregisterAllShortcuts();
@@ -1542,7 +1486,6 @@ class AppLifecycleManager {
     });
     app.on("before-quit", () => {
       this.cleanupAllResources();
-      console.log("App is quitting...");
     });
     app.on("will-quit", () => {
       this.cleanupAllResources();
@@ -1574,10 +1517,7 @@ class ShortcutsManager {
         overlayWindow.webContents.send("toggle-navigation-bar");
       }
     });
-    if (!shortcutRegistered) {
-      console.warn(`Failed to register global shortcut ${shortcut}`);
-    } else {
-      console.log(`Global shortcut ${shortcut} registered successfully`);
+    if (shortcutRegistered) {
       this.currentShortcut = shortcut;
     }
   }
@@ -1617,11 +1557,9 @@ class AutoLaunchManager {
       if (!isEnabled) {
         await this.autoLauncher.enable();
         await this.saveAutoLaunchSetting(true);
-        console.log("Auto-launch enabled");
       }
       return true;
-    } catch (error) {
-      console.error("Failed to enable auto-launch:", error);
+    } catch {
       return false;
     }
   }
@@ -1634,11 +1572,9 @@ class AutoLaunchManager {
       if (isEnabled) {
         await this.autoLauncher.disable();
         await this.saveAutoLaunchSetting(false);
-        console.log("Auto-launch disabled");
       }
       return true;
-    } catch (error) {
-      console.error("Failed to disable auto-launch:", error);
+    } catch {
       return false;
     }
   }
@@ -1648,8 +1584,7 @@ class AutoLaunchManager {
   async isAutoLaunchEnabled() {
     try {
       return await this.autoLauncher.isEnabled();
-    } catch (error) {
-      console.error("Failed to check auto-launch status:", error);
+    } catch {
       return false;
     }
   }
@@ -1673,7 +1608,6 @@ class AutoLaunchManager {
       const savedSetting = await this.loadAutoLaunchSetting();
       const currentlyEnabled = await this.isAutoLaunchEnabled();
       if (isFirstRun) {
-        console.log("First run detected, enabling auto-launch by default");
         await this.enableAutoLaunch();
       } else {
         if (savedSetting && !currentlyEnabled) {
@@ -1682,9 +1616,7 @@ class AutoLaunchManager {
           await this.disableAutoLaunch();
         }
       }
-      console.log(`Auto-launch initialized. Enabled: ${savedSetting}`);
-    } catch (error) {
-      console.error("Failed to initialize auto-launch:", error);
+    } catch {
     }
   }
   /**
@@ -1697,8 +1629,7 @@ class AutoLaunchManager {
         this.settingsPath,
         JSON.stringify(settings, null, 2)
       );
-    } catch (error) {
-      console.error("Failed to save auto-launch setting:", error);
+    } catch {
     }
   }
   /**
@@ -1712,8 +1643,7 @@ class AutoLaunchManager {
       const data = await fs$1.promises.readFile(this.settingsPath, "utf-8");
       const settings = JSON.parse(data);
       return settings.autoLaunch === true;
-    } catch (error) {
-      console.error("Failed to load auto-launch setting:", error);
+    } catch {
       return true;
     }
   }
@@ -1801,14 +1731,11 @@ void app.whenReady().then(async () => {
     authIPCHandlers.setupAuthStateListeners();
     authIPCHandlers.registerHandlers();
     if (auth0Service.isSignedIn()) {
-      console.log("User already signed in, opening main application");
       windowManager.createOverlayWindow();
     } else {
-      console.log("No valid session found, showing authentication window");
       windowManager.createAuthWindow();
     }
-  } catch (error) {
-    console.error("Failed to initialize Auth0 configuration:", error);
+  } catch {
     app.quit();
     return;
   }

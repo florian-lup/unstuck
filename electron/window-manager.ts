@@ -40,7 +40,7 @@ export class WindowManager {
         contextIsolation: true,
         allowRunningInsecureContent: false,
         experimentalFeatures: false,
-        devTools: true, // Always enable dev tools for auth window debugging
+        devTools: process.env.NODE_ENV === 'development', // Only enable in development
         webSecurity: true,
         // Safe memory optimization
         spellcheck: false, // Disable spellcheck to save memory
@@ -113,14 +113,12 @@ export class WindowManager {
         parsedUrl.origin !== 'file://' &&
         !navigationUrl.includes('auth.html')
       ) {
-        console.log('Blocked navigation to:', navigationUrl)
         event.preventDefault()
       }
     })
 
     // Block new window creation
     this.authWindow.webContents.setWindowOpenHandler(({ url }) => {
-      console.log('Blocked new window creation for:', url)
       void shell.openExternal(url)
       return { action: 'deny' }
     })
@@ -140,7 +138,6 @@ export class WindowManager {
           parsedUrl.origin !== 'file://' &&
           !navigationUrl.includes('index.html')
         ) {
-          console.log('Blocked navigation to:', navigationUrl)
           event.preventDefault()
         }
       }
@@ -148,7 +145,6 @@ export class WindowManager {
 
     // Block new window creation
     this.overlayWindow.webContents.setWindowOpenHandler(({ url }) => {
-      console.log('Blocked new window creation for:', url)
       void shell.openExternal(url)
       return { action: 'deny' }
     })

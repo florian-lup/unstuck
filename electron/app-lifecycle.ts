@@ -28,8 +28,6 @@ export class AppLifecycleManager {
    * Clean up all IPC handlers and resources
    */
   private cleanupAllResources(): void {
-    console.log('Cleaning up all app resources...')
-
     // Clean up main IPC handlers
     ipcMain.removeHandler('update-navigation-shortcut')
 
@@ -70,7 +68,6 @@ export class AppLifecycleManager {
     app.on('before-quit', () => {
       // Clean up all resources before quitting
       this.cleanupAllResources()
-      console.log('App is quitting...')
     })
 
     // Handle app termination (forced quit)

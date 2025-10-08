@@ -115,14 +115,11 @@ void app.whenReady().then(async () => {
 
     // Check if user is already signed in and create appropriate window
     if (auth0Service.isSignedIn()) {
-      console.log('User already signed in, opening main application')
       windowManager.createOverlayWindow()
     } else {
-      console.log('No valid session found, showing authentication window')
       windowManager.createAuthWindow()
     }
-  } catch (error) {
-    console.error('Failed to initialize Auth0 configuration:', error)
+  } catch {
     app.quit()
     return
   }

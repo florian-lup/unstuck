@@ -109,10 +109,6 @@ export class Auth0Service {
 
     // Try to restore existing session
     await this.restoreSession()
-
-    console.log(
-      'Auth0 service initialized successfully with modular components'
-    )
   }
 
   /**
@@ -155,11 +151,6 @@ export class Auth0Service {
           await this.storeSession(this.currentSession)
           this.notifyListeners('TOKEN_REFRESHED', this.currentSession)
         } catch (error) {
-          console.error(
-            'Automatic token refresh failed:',
-            error instanceof Error ? error.message : 'Unknown error'
-          )
-
           // Handle specific refresh errors that require re-authentication
           if (
             error instanceof Error &&
@@ -170,8 +161,6 @@ export class Auth0Service {
             await this.signOut()
             return { user: null, tokens: null }
           }
-
-          console.warn('Continuing with potentially expired tokens')
         }
       }
 
@@ -205,10 +194,7 @@ export class Auth0Service {
 
       // Notify listeners
       this.notifyListeners('SIGNED_OUT', null)
-
-      console.log('🔒 Successfully signed out')
-    } catch (error) {
-      console.error('Sign out error:', error)
+    } catch {
       // Still clear local session even if revocation fails
       await this.clearSession()
       this.currentSession = null
@@ -261,8 +247,7 @@ export class Auth0Service {
 
       // Notify listeners
       this.notifyListeners('SIGNED_IN', session)
-    } catch (error) {
-      console.error('Failed to complete device flow:', error)
+    } catch {
       this.notifyListeners('ERROR', null, 'Failed to complete authentication')
     }
   }
@@ -304,9 +289,6 @@ export class Auth0Service {
 
         // Check if the restored tokens are still valid
         if (this.tokenManager.isTokenExpired(restoredSession.tokens)) {
-          console.log(
-            'Restored session has expired tokens, attempting refresh...'
-          )
           this.currentSession = restoredSession
 
           try {
@@ -317,13 +299,7 @@ export class Auth0Service {
             this.currentSession.tokens = refreshedTokens
             await this.storeSession(this.currentSession)
             this.notifyListeners('SIGNED_IN', this.currentSession)
-          } catch (refreshError) {
-            console.warn(
-              'Failed to refresh restored tokens:',
-              refreshError instanceof Error
-                ? refreshError.message
-                : 'Unknown error'
-            )
+          } catch {
             await this.clearSession()
             this.currentSession = null
           }
@@ -333,11 +309,7 @@ export class Auth0Service {
           this.notifyListeners('SIGNED_IN', this.currentSession)
         }
       }
-    } catch (error) {
-      console.warn(
-        'Failed to restore session:',
-        error instanceof Error ? error.message : 'Unknown error'
-      )
+    } catch {
       await this.clearSession()
       this.currentSession = null
     }
@@ -361,8 +333,8 @@ export class Auth0Service {
     this.listeners.forEach((listener) => {
       try {
         listener(event, session, error)
-      } catch (err) {
-        console.error('Auth listener error:', err)
+      } catch {
+        // Silently ignore listener errors
       }
     })
   }

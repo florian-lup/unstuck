@@ -20,10 +20,7 @@ export class ShortcutsManager {
       }
     })
 
-    if (!shortcutRegistered) {
-      console.warn(`Failed to register global shortcut ${shortcut}`)
-    } else {
-      console.log(`Global shortcut ${shortcut} registered successfully`)
+    if (shortcutRegistered) {
       this.currentShortcut = shortcut
     }
   }

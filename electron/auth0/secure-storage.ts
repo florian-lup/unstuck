@@ -35,7 +35,6 @@ export class SecureStorage {
     try {
       const { safeStorage } = await import('electron')
       if (!safeStorage.isEncryptionAvailable()) {
-        console.error('OS-level encryption is required but not available')
         return null
       }
 
@@ -51,21 +50,16 @@ export class SecureStorage {
    * Store an item in secure storage
    */
   async setItem(key: string, value: string): Promise<void> {
-    try {
-      const { safeStorage } = await import('electron')
-      if (!safeStorage.isEncryptionAvailable()) {
-        throw new Error(
-          'OS-level encryption is required but not available. Please ensure Windows Credential Manager is working properly.'
-        )
-      }
-
-      const encrypted = safeStorage.encryptString(value)
-      const filePath = path.join(this.secureDir, `${key}.dat`)
-      await fs.writeFile(filePath, encrypted, { mode: 0o600 })
-    } catch (error) {
-      console.error('Failed to store secure item:', error)
-      throw error
+    const { safeStorage } = await import('electron')
+    if (!safeStorage.isEncryptionAvailable()) {
+      throw new Error(
+        'OS-level encryption is required but not available. Please ensure Windows Credential Manager is working properly.'
+      )
     }
+
+    const encrypted = safeStorage.encryptString(value)
+    const filePath = path.join(this.secureDir, `${key}.dat`)
+    await fs.writeFile(filePath, encrypted, { mode: 0o600 })
   }
 
   /**
