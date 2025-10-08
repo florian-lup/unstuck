@@ -82,6 +82,42 @@ export function useAppLogic() {
     return 'Shift+\\'
   })
 
+  // Chat keybind management
+  const [chatKeybind, setChatKeybind] = useState<string>(() => {
+    // Load chat keybind from localStorage or use default
+    if (typeof window !== 'undefined') {
+      return localStorage.getItem('chat-keybind') ?? 'Shift+Z'
+    }
+    return 'Shift+Z'
+  })
+
+  // History keybind management
+  const [historyKeybind, setHistoryKeybind] = useState<string>(() => {
+    // Load history keybind from localStorage or use default
+    if (typeof window !== 'undefined') {
+      return localStorage.getItem('history-keybind') ?? 'Shift+X'
+    }
+    return 'Shift+X'
+  })
+
+  // Settings keybind management
+  const [settingsKeybind, setSettingsKeybind] = useState<string>(() => {
+    // Load settings keybind from localStorage or use default
+    if (typeof window !== 'undefined') {
+      return localStorage.getItem('settings-keybind') ?? 'Shift+C'
+    }
+    return 'Shift+C'
+  })
+
+  // New chat keybind management
+  const [newChatKeybind, setNewChatKeybind] = useState<string>(() => {
+    // Load new chat keybind from localStorage or use default
+    if (typeof window !== 'undefined') {
+      return localStorage.getItem('new-chat-keybind') ?? 'Ctrl+Z'
+    }
+    return 'Ctrl+Z'
+  })
+
   // Transparency management (0-100, where 100 is fully opaque)
   const [transparency, setTransparency] = useState<number>(90)
 
@@ -89,6 +125,30 @@ export function useAppLogic() {
   const parsedKeybind = useMemo(
     () => parseKeybind(customKeybind),
     [customKeybind]
+  )
+
+  // Parse chat keybind
+  const parsedChatKeybind = useMemo(
+    () => parseKeybind(chatKeybind),
+    [chatKeybind]
+  )
+
+  // Parse history keybind
+  const parsedHistoryKeybind = useMemo(
+    () => parseKeybind(historyKeybind),
+    [historyKeybind]
+  )
+
+  // Parse settings keybind
+  const parsedSettingsKeybind = useMemo(
+    () => parseKeybind(settingsKeybind),
+    [settingsKeybind]
+  )
+
+  // Parse new chat keybind
+  const parsedNewChatKeybind = useMemo(
+    () => parseKeybind(newChatKeybind),
+    [newChatKeybind]
   )
 
   // Navigation bar visibility toggle with dynamic keybind
@@ -218,6 +278,202 @@ export function useAppLogic() {
       window.electronAPI?.removeOpenSettingsMenuListener()
     }
   }, [])
+
+  // Listen for chat toggle keyboard shortcut
+  useEffect(() => {
+    const handleChatToggle = (event: KeyboardEvent) => {
+      // Check if the key matches
+      if (event.code !== parsedChatKeybind.key) return
+
+      // Check modifiers
+      if (
+        parsedChatKeybind.modifiers.shift !== undefined &&
+        event.shiftKey !== parsedChatKeybind.modifiers.shift
+      )
+        return
+      if (
+        parsedChatKeybind.modifiers.ctrl !== undefined &&
+        event.ctrlKey !== parsedChatKeybind.modifiers.ctrl
+      )
+        return
+      if (
+        parsedChatKeybind.modifiers.alt !== undefined &&
+        event.altKey !== parsedChatKeybind.modifiers.alt
+      )
+        return
+      if (
+        parsedChatKeybind.modifiers.meta !== undefined &&
+        event.metaKey !== parsedChatKeybind.modifiers.meta
+      )
+        return
+
+      // Prevent default behavior and toggle chat visibility
+      event.preventDefault()
+      setIsGamingChatVisible((prev) => {
+        const newValue = !prev
+        // Close other panels when opening chat
+        if (newValue) {
+          setShowSettingsMenu(false)
+          setShowHistoryPanel(false)
+          setShowInfoPanel(false)
+        }
+        return newValue
+      })
+    }
+
+    // Add event listener with capture: true to intercept before input elements
+    document.addEventListener('keydown', handleChatToggle, true)
+
+    // Cleanup function to remove event listeners
+    return () => {
+      document.removeEventListener('keydown', handleChatToggle, true)
+    }
+  }, [parsedChatKeybind])
+
+  // Listen for history toggle keyboard shortcut
+  useEffect(() => {
+    const handleHistoryToggle = (event: KeyboardEvent) => {
+      // Check if the key matches
+      if (event.code !== parsedHistoryKeybind.key) return
+
+      // Check modifiers
+      if (
+        parsedHistoryKeybind.modifiers.shift !== undefined &&
+        event.shiftKey !== parsedHistoryKeybind.modifiers.shift
+      )
+        return
+      if (
+        parsedHistoryKeybind.modifiers.ctrl !== undefined &&
+        event.ctrlKey !== parsedHistoryKeybind.modifiers.ctrl
+      )
+        return
+      if (
+        parsedHistoryKeybind.modifiers.alt !== undefined &&
+        event.altKey !== parsedHistoryKeybind.modifiers.alt
+      )
+        return
+      if (
+        parsedHistoryKeybind.modifiers.meta !== undefined &&
+        event.metaKey !== parsedHistoryKeybind.modifiers.meta
+      )
+        return
+
+      // Prevent default behavior and toggle history panel visibility
+      event.preventDefault()
+      setShowHistoryPanel((prev) => {
+        const newValue = !prev
+        // Close other panels when opening history
+        if (newValue) {
+          setIsGamingChatVisible(false)
+          setShowSettingsMenu(false)
+          setShowInfoPanel(false)
+        }
+        return newValue
+      })
+    }
+
+    // Add event listener with capture: true to intercept before input elements
+    document.addEventListener('keydown', handleHistoryToggle, true)
+
+    // Cleanup function to remove event listeners
+    return () => {
+      document.removeEventListener('keydown', handleHistoryToggle, true)
+    }
+  }, [parsedHistoryKeybind])
+
+  // Listen for settings toggle keyboard shortcut
+  useEffect(() => {
+    const handleSettingsToggle = (event: KeyboardEvent) => {
+      // Check if the key matches
+      if (event.code !== parsedSettingsKeybind.key) return
+
+      // Check modifiers
+      if (
+        parsedSettingsKeybind.modifiers.shift !== undefined &&
+        event.shiftKey !== parsedSettingsKeybind.modifiers.shift
+      )
+        return
+      if (
+        parsedSettingsKeybind.modifiers.ctrl !== undefined &&
+        event.ctrlKey !== parsedSettingsKeybind.modifiers.ctrl
+      )
+        return
+      if (
+        parsedSettingsKeybind.modifiers.alt !== undefined &&
+        event.altKey !== parsedSettingsKeybind.modifiers.alt
+      )
+        return
+      if (
+        parsedSettingsKeybind.modifiers.meta !== undefined &&
+        event.metaKey !== parsedSettingsKeybind.modifiers.meta
+      )
+        return
+
+      // Prevent default behavior and toggle settings menu visibility
+      event.preventDefault()
+      setShowSettingsMenu((prev) => {
+        const newValue = !prev
+        // Close other panels when opening settings
+        if (newValue) {
+          setIsGamingChatVisible(false)
+          setShowHistoryPanel(false)
+          setShowInfoPanel(false)
+        }
+        return newValue
+      })
+    }
+
+    // Add event listener with capture: true to intercept before input elements
+    document.addEventListener('keydown', handleSettingsToggle, true)
+
+    // Cleanup function to remove event listeners
+    return () => {
+      document.removeEventListener('keydown', handleSettingsToggle, true)
+    }
+  }, [parsedSettingsKeybind])
+
+  // Listen for new chat keyboard shortcut
+  useEffect(() => {
+    const handleNewChat = (event: KeyboardEvent) => {
+      // Check if the key matches
+      if (event.code !== parsedNewChatKeybind.key) return
+
+      // Check modifiers
+      if (
+        parsedNewChatKeybind.modifiers.shift !== undefined &&
+        event.shiftKey !== parsedNewChatKeybind.modifiers.shift
+      )
+        return
+      if (
+        parsedNewChatKeybind.modifiers.ctrl !== undefined &&
+        event.ctrlKey !== parsedNewChatKeybind.modifiers.ctrl
+      )
+        return
+      if (
+        parsedNewChatKeybind.modifiers.alt !== undefined &&
+        event.altKey !== parsedNewChatKeybind.modifiers.alt
+      )
+        return
+      if (
+        parsedNewChatKeybind.modifiers.meta !== undefined &&
+        event.metaKey !== parsedNewChatKeybind.modifiers.meta
+      )
+        return
+
+      // Prevent default behavior and start new conversation
+      event.preventDefault()
+      handleStartNewConversation()
+    }
+
+    // Add event listener with capture: true to intercept before input elements
+    document.addEventListener('keydown', handleNewChat, true)
+
+    // Cleanup function to remove event listeners
+    return () => {
+      document.removeEventListener('keydown', handleNewChat, true)
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [parsedNewChatKeybind])
 
   // Global click-through management
   useClickThrough({
@@ -520,6 +776,38 @@ export function useAppLogic() {
     }
   }
 
+  const handleChatKeybindChange = (newKeybind: string) => {
+    setChatKeybind(newKeybind)
+    // Persist to localStorage
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('chat-keybind', newKeybind)
+    }
+  }
+
+  const handleHistoryKeybindChange = (newKeybind: string) => {
+    setHistoryKeybind(newKeybind)
+    // Persist to localStorage
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('history-keybind', newKeybind)
+    }
+  }
+
+  const handleSettingsKeybindChange = (newKeybind: string) => {
+    setSettingsKeybind(newKeybind)
+    // Persist to localStorage
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('settings-keybind', newKeybind)
+    }
+  }
+
+  const handleNewChatKeybindChange = (newKeybind: string) => {
+    setNewChatKeybind(newKeybind)
+    // Persist to localStorage
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('new-chat-keybind', newKeybind)
+    }
+  }
+
   return {
     // State
     selectedGame,
@@ -531,6 +819,10 @@ export function useAppLogic() {
     showInfoPanel,
     user,
     customKeybind,
+    chatKeybind,
+    historyKeybind,
+    settingsKeybind,
+    newChatKeybind,
     transparency,
     isLoadingMessage,
     currentConversationId,
@@ -551,6 +843,10 @@ export function useAppLogic() {
     handleDropdownOpenChange,
     handleLogout,
     handleKeybindChange,
+    handleChatKeybindChange,
+    handleHistoryKeybindChange,
+    handleSettingsKeybindChange,
+    handleNewChatKeybindChange,
     handleTransparencyChange,
     handleUpgrade,
     handleCancel,

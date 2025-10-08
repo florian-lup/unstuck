@@ -19,6 +19,10 @@ function App() {
     showInfoPanel,
     user,
     customKeybind,
+    chatKeybind,
+    historyKeybind,
+    settingsKeybind,
+    newChatKeybind,
     transparency,
     isLoadingMessage,
     isSubscribed,
@@ -36,6 +40,10 @@ function App() {
     handleDropdownOpenChange,
     handleLogout,
     handleKeybindChange,
+    handleChatKeybindChange,
+    handleHistoryKeybindChange,
+    handleSettingsKeybindChange,
+    handleNewChatKeybindChange,
     handleTransparencyChange,
     handleUpgrade,
     handleCancel,
@@ -70,6 +78,14 @@ function App() {
               }}
               currentKeybind={customKeybind}
               onKeybindChange={handleKeybindChange}
+              currentChatKeybind={chatKeybind}
+              onChatKeybindChange={handleChatKeybindChange}
+              currentHistoryKeybind={historyKeybind}
+              onHistoryKeybindChange={handleHistoryKeybindChange}
+              currentSettingsKeybind={settingsKeybind}
+              onSettingsKeybindChange={handleSettingsKeybindChange}
+              currentNewChatKeybind={newChatKeybind}
+              onNewChatKeybindChange={handleNewChatKeybindChange}
               currentTransparency={transparency}
               onTransparencyChange={handleTransparencyChange}
               isSubscribed={isSubscribed}

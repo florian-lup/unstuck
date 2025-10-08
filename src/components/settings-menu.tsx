@@ -13,6 +13,14 @@ interface SettingsMenuProps {
   onClose: () => void
   currentKeybind?: string
   onKeybindChange?: (keybind: string) => void
+  currentChatKeybind?: string
+  onChatKeybindChange?: (keybind: string) => void
+  currentHistoryKeybind?: string
+  onHistoryKeybindChange?: (keybind: string) => void
+  currentSettingsKeybind?: string
+  onSettingsKeybindChange?: (keybind: string) => void
+  currentNewChatKeybind?: string
+  onNewChatKeybindChange?: (keybind: string) => void
   currentTransparency?: number
   onTransparencyChange?: (transparency: number) => void
   isSubscribed: boolean
@@ -28,6 +36,14 @@ export function SettingsMenu({
   onClose,
   currentKeybind = 'Shift+\\',
   onKeybindChange,
+  currentChatKeybind = 'Shift+Z',
+  onChatKeybindChange,
+  currentHistoryKeybind = 'Shift+X',
+  onHistoryKeybindChange,
+  currentSettingsKeybind = 'Shift+C',
+  onSettingsKeybindChange,
+  currentNewChatKeybind = 'Ctrl+Z',
+  onNewChatKeybindChange,
   currentTransparency = 90,
   onTransparencyChange,
   isSubscribed,
@@ -36,6 +52,13 @@ export function SettingsMenu({
   onCancel,
 }: SettingsMenuProps) {
   const [isCapturingKeybind, setIsCapturingKeybind] = useState(false)
+  const [isCapturingChatKeybind, setIsCapturingChatKeybind] = useState(false)
+  const [isCapturingHistoryKeybind, setIsCapturingHistoryKeybind] =
+    useState(false)
+  const [isCapturingSettingsKeybind, setIsCapturingSettingsKeybind] =
+    useState(false)
+  const [isCapturingNewChatKeybind, setIsCapturingNewChatKeybind] =
+    useState(false)
   const { isEnabled: autoLaunchEnabled, toggleAutoLaunch } = useAutoLaunch()
 
   const handleLogout = () => {
@@ -83,6 +106,158 @@ export function SettingsMenu({
     onKeybindChange?.(defaultKeybind)
   }
 
+  const handleChatKeybindCapture = useCallback(
+    (event: KeyboardEvent) => {
+      if (!isCapturingChatKeybind) return
+
+      event.preventDefault()
+      event.stopPropagation()
+
+      const keys = []
+      if (event.ctrlKey) keys.push('Ctrl')
+      if (event.altKey) keys.push('Alt')
+      if (event.shiftKey) keys.push('Shift')
+      if (event.metaKey) keys.push('Meta')
+
+      // Don't capture modifier keys alone
+      if (!['Control', 'Alt', 'Shift', 'Meta'].includes(event.key)) {
+        keys.push(event.key)
+        const newKeybind = keys.join('+')
+        setIsCapturingChatKeybind(false)
+        onChatKeybindChange?.(newKeybind)
+      }
+    },
+    [isCapturingChatKeybind, onChatKeybindChange]
+  )
+
+  const startCapturingChatKeybind = () => {
+    setIsCapturingChatKeybind(true)
+  }
+
+  const cancelCapturingChat = () => {
+    setIsCapturingChatKeybind(false)
+  }
+
+  const resetChatToDefault = () => {
+    const defaultChatKeybind = 'Shift+Z'
+    setIsCapturingChatKeybind(false)
+    onChatKeybindChange?.(defaultChatKeybind)
+  }
+
+  const handleHistoryKeybindCapture = useCallback(
+    (event: KeyboardEvent) => {
+      if (!isCapturingHistoryKeybind) return
+
+      event.preventDefault()
+      event.stopPropagation()
+
+      const keys = []
+      if (event.ctrlKey) keys.push('Ctrl')
+      if (event.altKey) keys.push('Alt')
+      if (event.shiftKey) keys.push('Shift')
+      if (event.metaKey) keys.push('Meta')
+
+      // Don't capture modifier keys alone
+      if (!['Control', 'Alt', 'Shift', 'Meta'].includes(event.key)) {
+        keys.push(event.key)
+        const newKeybind = keys.join('+')
+        setIsCapturingHistoryKeybind(false)
+        onHistoryKeybindChange?.(newKeybind)
+      }
+    },
+    [isCapturingHistoryKeybind, onHistoryKeybindChange]
+  )
+
+  const startCapturingHistoryKeybind = () => {
+    setIsCapturingHistoryKeybind(true)
+  }
+
+  const cancelCapturingHistory = () => {
+    setIsCapturingHistoryKeybind(false)
+  }
+
+  const resetHistoryToDefault = () => {
+    const defaultHistoryKeybind = 'Shift+X'
+    setIsCapturingHistoryKeybind(false)
+    onHistoryKeybindChange?.(defaultHistoryKeybind)
+  }
+
+  const handleSettingsKeybindCapture = useCallback(
+    (event: KeyboardEvent) => {
+      if (!isCapturingSettingsKeybind) return
+
+      event.preventDefault()
+      event.stopPropagation()
+
+      const keys = []
+      if (event.ctrlKey) keys.push('Ctrl')
+      if (event.altKey) keys.push('Alt')
+      if (event.shiftKey) keys.push('Shift')
+      if (event.metaKey) keys.push('Meta')
+
+      // Don't capture modifier keys alone
+      if (!['Control', 'Alt', 'Shift', 'Meta'].includes(event.key)) {
+        keys.push(event.key)
+        const newKeybind = keys.join('+')
+        setIsCapturingSettingsKeybind(false)
+        onSettingsKeybindChange?.(newKeybind)
+      }
+    },
+    [isCapturingSettingsKeybind, onSettingsKeybindChange]
+  )
+
+  const startCapturingSettingsKeybind = () => {
+    setIsCapturingSettingsKeybind(true)
+  }
+
+  const cancelCapturingSettings = () => {
+    setIsCapturingSettingsKeybind(false)
+  }
+
+  const resetSettingsToDefault = () => {
+    const defaultSettingsKeybind = 'Shift+C'
+    setIsCapturingSettingsKeybind(false)
+    onSettingsKeybindChange?.(defaultSettingsKeybind)
+  }
+
+  const handleNewChatKeybindCapture = useCallback(
+    (event: KeyboardEvent) => {
+      if (!isCapturingNewChatKeybind) return
+
+      event.preventDefault()
+      event.stopPropagation()
+
+      const keys = []
+      if (event.ctrlKey) keys.push('Ctrl')
+      if (event.altKey) keys.push('Alt')
+      if (event.shiftKey) keys.push('Shift')
+      if (event.metaKey) keys.push('Meta')
+
+      // Don't capture modifier keys alone
+      if (!['Control', 'Alt', 'Shift', 'Meta'].includes(event.key)) {
+        keys.push(event.key)
+        const newKeybind = keys.join('+')
+        setIsCapturingNewChatKeybind(false)
+        onNewChatKeybindChange?.(newKeybind)
+      }
+    },
+    [isCapturingNewChatKeybind, onNewChatKeybindChange]
+  )
+
+  const startCapturingNewChatKeybind = () => {
+    setIsCapturingNewChatKeybind(true)
+  }
+
+  const cancelCapturingNewChat = () => {
+    setIsCapturingNewChatKeybind(false)
+  }
+
+  const resetNewChatToDefault = () => {
+    const defaultNewChatKeybind = 'Ctrl+Z'
+    setIsCapturingNewChatKeybind(false)
+    onNewChatKeybindChange?.(defaultNewChatKeybind)
+  }
+
   // Add and remove event listener for key capture
   useEffect(() => {
     if (isCapturingKeybind) {
@@ -92,6 +267,46 @@ export function SettingsMenu({
       }
     }
   }, [isCapturingKeybind, handleKeybindCapture])
+
+  // Add and remove event listener for chat keybind capture
+  useEffect(() => {
+    if (isCapturingChatKeybind) {
+      document.addEventListener('keydown', handleChatKeybindCapture)
+      return () => {
+        document.removeEventListener('keydown', handleChatKeybindCapture)
+      }
+    }
+  }, [isCapturingChatKeybind, handleChatKeybindCapture])
+
+  // Add and remove event listener for history keybind capture
+  useEffect(() => {
+    if (isCapturingHistoryKeybind) {
+      document.addEventListener('keydown', handleHistoryKeybindCapture)
+      return () => {
+        document.removeEventListener('keydown', handleHistoryKeybindCapture)
+      }
+    }
+  }, [isCapturingHistoryKeybind, handleHistoryKeybindCapture])
+
+  // Add and remove event listener for settings keybind capture
+  useEffect(() => {
+    if (isCapturingSettingsKeybind) {
+      document.addEventListener('keydown', handleSettingsKeybindCapture)
+      return () => {
+        document.removeEventListener('keydown', handleSettingsKeybindCapture)
+      }
+    }
+  }, [isCapturingSettingsKeybind, handleSettingsKeybindCapture])
+
+  // Add and remove event listener for new chat keybind capture
+  useEffect(() => {
+    if (isCapturingNewChatKeybind) {
+      document.addEventListener('keydown', handleNewChatKeybindCapture)
+      return () => {
+        document.removeEventListener('keydown', handleNewChatKeybindCapture)
+      }
+    }
+  }, [isCapturingNewChatKeybind, handleNewChatKeybindCapture])
 
   // Format keybind for display
   const formatKeybindForDisplay = (keybind: string) => {
@@ -117,50 +332,236 @@ export function SettingsMenu({
           <h3 className="text-sm font-medium text-overlay-text-primary mb-2">
             Keyboard shortcuts
           </h3>
-          <div className="flex justify-between items-center">
-            <span className="text-xs text-overlay-text-muted">
-              Show / Hide toggle visibility
-            </span>
-            <div className="flex items-center gap-2">
-              {isCapturingKeybind ? (
-                <div className="flex items-center gap-2">
-                  <span className="text-xs text-overlay-accent-primary">
-                    Press keys...
-                  </span>
-                  <div className="flex gap-1">
-                    <Button
-                      onClick={resetToDefault}
-                      variant="gaming"
-                      size="sm"
-                      className="px-2 py-1 text-xs h-auto border border-overlay-border-primary"
-                    >
-                      Reset
-                    </Button>
-                    <Button
-                      onClick={cancelCapturing}
-                      variant="gaming"
-                      size="sm"
-                      className="px-2 py-1 text-xs h-auto border border-overlay-border-primary"
-                    >
-                      Cancel
-                    </Button>
+          <div className="space-y-3">
+            <div className="flex justify-between items-center">
+              <span className="text-xs text-overlay-text-muted">
+                Show / Hide toggle visibility
+              </span>
+              <div className="flex items-center gap-2">
+                {isCapturingKeybind ? (
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs text-overlay-accent-primary">
+                      Press keys...
+                    </span>
+                    <div className="flex gap-1">
+                      <Button
+                        onClick={resetToDefault}
+                        variant="gaming"
+                        size="sm"
+                        className="px-2 py-1 text-xs h-auto border border-overlay-border-primary"
+                      >
+                        Reset
+                      </Button>
+                      <Button
+                        onClick={cancelCapturing}
+                        variant="gaming"
+                        size="sm"
+                        className="px-2 py-1 text-xs h-auto border border-overlay-border-primary"
+                      >
+                        Cancel
+                      </Button>
+                    </div>
                   </div>
-                </div>
-              ) : (
-                <>
-                  <div className="flex items-center">
-                    {formatKeybindForDisplay(currentKeybind)}
+                ) : (
+                  <>
+                    <div className="flex items-center">
+                      {formatKeybindForDisplay(currentKeybind)}
+                    </div>
+                    <Button
+                      onClick={startCapturingKeybind}
+                      variant="gaming"
+                      size="icon"
+                      className="px-2 py-1 h-auto hover:!border-transparent"
+                    >
+                      <Pencil className="w-3 h-3" />
+                    </Button>
+                  </>
+                )}
+              </div>
+            </div>
+            <div className="flex justify-between items-center">
+              <span className="text-xs text-overlay-text-muted">
+                Open / Close chat
+              </span>
+              <div className="flex items-center gap-2">
+                {isCapturingChatKeybind ? (
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs text-overlay-accent-primary">
+                      Press keys...
+                    </span>
+                    <div className="flex gap-1">
+                      <Button
+                        onClick={resetChatToDefault}
+                        variant="gaming"
+                        size="sm"
+                        className="px-2 py-1 text-xs h-auto border border-overlay-border-primary"
+                      >
+                        Reset
+                      </Button>
+                      <Button
+                        onClick={cancelCapturingChat}
+                        variant="gaming"
+                        size="sm"
+                        className="px-2 py-1 text-xs h-auto border border-overlay-border-primary"
+                      >
+                        Cancel
+                      </Button>
+                    </div>
                   </div>
-                  <Button
-                    onClick={startCapturingKeybind}
-                    variant="gaming"
-                    size="icon"
-                    className="px-2 py-1 h-auto hover:!border-transparent"
-                  >
-                    <Pencil className="w-3 h-3" />
-                  </Button>
-                </>
-              )}
+                ) : (
+                  <>
+                    <div className="flex items-center">
+                      {formatKeybindForDisplay(currentChatKeybind)}
+                    </div>
+                    <Button
+                      onClick={startCapturingChatKeybind}
+                      variant="gaming"
+                      size="icon"
+                      className="px-2 py-1 h-auto hover:!border-transparent"
+                    >
+                      <Pencil className="w-3 h-3" />
+                    </Button>
+                  </>
+                )}
+              </div>
+            </div>
+            <div className="flex justify-between items-center">
+              <span className="text-xs text-overlay-text-muted">
+                Open / Close conversation history
+              </span>
+              <div className="flex items-center gap-2">
+                {isCapturingHistoryKeybind ? (
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs text-overlay-accent-primary">
+                      Press keys...
+                    </span>
+                    <div className="flex gap-1">
+                      <Button
+                        onClick={resetHistoryToDefault}
+                        variant="gaming"
+                        size="sm"
+                        className="px-2 py-1 text-xs h-auto border border-overlay-border-primary"
+                      >
+                        Reset
+                      </Button>
+                      <Button
+                        onClick={cancelCapturingHistory}
+                        variant="gaming"
+                        size="sm"
+                        className="px-2 py-1 text-xs h-auto border border-overlay-border-primary"
+                      >
+                        Cancel
+                      </Button>
+                    </div>
+                  </div>
+                ) : (
+                  <>
+                    <div className="flex items-center">
+                      {formatKeybindForDisplay(currentHistoryKeybind)}
+                    </div>
+                    <Button
+                      onClick={startCapturingHistoryKeybind}
+                      variant="gaming"
+                      size="icon"
+                      className="px-2 py-1 h-auto hover:!border-transparent"
+                    >
+                      <Pencil className="w-3 h-3" />
+                    </Button>
+                  </>
+                )}
+              </div>
+            </div>
+            <div className="flex justify-between items-center">
+              <span className="text-xs text-overlay-text-muted">
+                Open / Close settings
+              </span>
+              <div className="flex items-center gap-2">
+                {isCapturingSettingsKeybind ? (
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs text-overlay-accent-primary">
+                      Press keys...
+                    </span>
+                    <div className="flex gap-1">
+                      <Button
+                        onClick={resetSettingsToDefault}
+                        variant="gaming"
+                        size="sm"
+                        className="px-2 py-1 text-xs h-auto border border-overlay-border-primary"
+                      >
+                        Reset
+                      </Button>
+                      <Button
+                        onClick={cancelCapturingSettings}
+                        variant="gaming"
+                        size="sm"
+                        className="px-2 py-1 text-xs h-auto border border-overlay-border-primary"
+                      >
+                        Cancel
+                      </Button>
+                    </div>
+                  </div>
+                ) : (
+                  <>
+                    <div className="flex items-center">
+                      {formatKeybindForDisplay(currentSettingsKeybind)}
+                    </div>
+                    <Button
+                      onClick={startCapturingSettingsKeybind}
+                      variant="gaming"
+                      size="icon"
+                      className="px-2 py-1 h-auto hover:!border-transparent"
+                    >
+                      <Pencil className="w-3 h-3" />
+                    </Button>
+                  </>
+                )}
+              </div>
+            </div>
+            <div className="flex justify-between items-center">
+              <span className="text-xs text-overlay-text-muted">
+                Start new chat
+              </span>
+              <div className="flex items-center gap-2">
+                {isCapturingNewChatKeybind ? (
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs text-overlay-accent-primary">
+                      Press keys...
+                    </span>
+                    <div className="flex gap-1">
+                      <Button
+                        onClick={resetNewChatToDefault}
+                        variant="gaming"
+                        size="sm"
+                        className="px-2 py-1 text-xs h-auto border border-overlay-border-primary"
+                      >
+                        Reset
+                      </Button>
+                      <Button
+                        onClick={cancelCapturingNewChat}
+                        variant="gaming"
+                        size="sm"
+                        className="px-2 py-1 text-xs h-auto border border-overlay-border-primary"
+                      >
+                        Cancel
+                      </Button>
+                    </div>
+                  </div>
+                ) : (
+                  <>
+                    <div className="flex items-center">
+                      {formatKeybindForDisplay(currentNewChatKeybind)}
+                    </div>
+                    <Button
+                      onClick={startCapturingNewChatKeybind}
+                      variant="gaming"
+                      size="icon"
+                      className="px-2 py-1 h-auto hover:!border-transparent"
+                    >
+                      <Pencil className="w-3 h-3" />
+                    </Button>
+                  </>
+                )}
+              </div>
             </div>
           </div>
         </div>
