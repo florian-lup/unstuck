@@ -4,6 +4,7 @@ import { GamingChat } from './components/gaming-chat'
 import { NavigationBar } from './components/navigation-bar'
 import { SettingsMenu } from './components/settings-menu'
 import { useAppLogic } from './hooks/use-app-logic'
+import { useUpdater } from './hooks/use-updater'
 import './index.css'
 import './overlay.css'
 
@@ -54,6 +55,9 @@ function App() {
     handleConversationSelect,
   } = useAppLogic()
 
+  // Use updater hook
+  const { updateReady, restartAndInstall } = useUpdater()
+
   return (
     <>
       {isNavigationBarVisible && (
@@ -67,6 +71,8 @@ function App() {
             onGameSelect={handleGameSelect}
             selectedGame={selectedGame}
             onDropdownOpenChange={handleDropdownOpenChange}
+            updateReady={updateReady}
+            onUpdateClick={restartAndInstall}
           />
           {showSettingsMenu && (
             <SettingsMenu

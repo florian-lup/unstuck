@@ -1,4 +1,4 @@
-import { Mic, Type, Menu, Settings, Info, Grip } from 'lucide-react'
+import { Mic, Type, Menu, Settings, Info, Grip, Download } from 'lucide-react'
 import React from 'react'
 import { Game } from '../lib/games'
 import { InteractiveArea } from './interactive-area'
@@ -16,6 +16,8 @@ interface NavigationBarProps {
   onGameSelect?: (game: Game) => void
   selectedGame?: Game | null
   onDropdownOpenChange?: (open: boolean) => void
+  updateReady?: boolean
+  onUpdateClick?: () => void
 }
 
 export function NavigationBar({
@@ -27,6 +29,8 @@ export function NavigationBar({
   onGameSelect,
   selectedGame,
   onDropdownOpenChange,
+  updateReady,
+  onUpdateClick,
 }: NavigationBarProps) {
   const handleVoiceClick = () => {
     // Ensure window stays on top when button is clicked
@@ -62,6 +66,12 @@ export function NavigationBar({
     // Ensure window stays on top when dropdown is used
     window.electronAPI?.windowInteraction()
     onGameSelect?.(game)
+  }
+
+  const handleUpdateClick = () => {
+    // Ensure window stays on top when button is clicked
+    window.electronAPI?.windowInteraction()
+    onUpdateClick?.()
   }
 
   return (
@@ -136,6 +146,25 @@ export function NavigationBar({
               >
                 <Info className="w-3 h-3" />
               </Button>
+
+              {/* Update Button - Only shown when update is ready */}
+              {updateReady && (
+                <>
+                  {/* Divider */}
+                  <div className="w-px h-4 mx-1 bg-overlay-border-primary"></div>
+
+                  <Tooltip content="Update available - Click to restart and install">
+                    <Button
+                      onClick={handleUpdateClick}
+                      variant="gaming"
+                      size="icon"
+                      className="p-1 h-auto w-auto animate-pulse"
+                    >
+                      <Download className="w-3 h-3" />
+                    </Button>
+                  </Tooltip>
+                </>
+              )}
             </div>
 
             {/* Divider */}

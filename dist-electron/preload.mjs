@@ -15,13 +15,15 @@ const ALLOWED_INVOKE_CHANNELS = [
   "auto-launch:get-status",
   "auto-launch:enable",
   "auto-launch:disable",
-  "auto-launch:toggle"
+  "auto-launch:toggle",
+  "updater:restart-and-install"
 ];
 const ALLOWED_LISTEN_CHANNELS = [
   "toggle-navigation-bar",
   "open-settings-menu",
   "auth-success",
-  "auth-error"
+  "auth-error",
+  "updater:update-ready"
 ];
 electron.contextBridge.exposeInMainWorld("ipcRenderer", {
   send(channel, ...args) {
@@ -136,5 +138,18 @@ electron.contextBridge.exposeInMainWorld("electronAPI", {
     enable: async () => electron.ipcRenderer.invoke("auto-launch:enable"),
     disable: async () => electron.ipcRenderer.invoke("auto-launch:disable"),
     toggle: async () => electron.ipcRenderer.invoke("auto-launch:toggle")
+  },
+  updater: {
+    onUpdateReady: (callback) => {
+      const listener = (_event, version) => {
+        callback(version);
+      };
+      electron.ipcRenderer.on("updater:update-ready", listener);
+      return listener;
+    },
+    removeUpdateReadyListener: () => {
+      electron.ipcRenderer.removeAllListeners("updater:update-ready");
+    },
+    restartAndInstall: async () => electron.ipcRenderer.invoke("updater:restart-and-install")
   }
 });

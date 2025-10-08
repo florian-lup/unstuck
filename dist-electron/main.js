@@ -16112,6 +16112,7 @@ class AutoUpdaterManager {
   constructor() {
     this.configureAutoUpdater();
     this.setupEventHandlers();
+    this.registerIPCHandlers();
   }
   /**
    * Configure auto-updater settings
@@ -16125,6 +16126,16 @@ class AutoUpdaterManager {
       mainExports.autoUpdater.logger = logger;
       mainExports.autoUpdater.forceDevUpdateConfig = true;
     }
+  }
+  /**
+   * Register IPC handlers for update actions
+   */
+  registerIPCHandlers() {
+    ipcMain.handle("updater:restart-and-install", () => {
+      logger.info("Restart and install requested from renderer");
+      this.quitAndInstall();
+      return { success: true };
+    });
   }
   /**
    * Setup event handlers for auto-updater
@@ -16150,10 +16161,8 @@ class AutoUpdaterManager {
     mainExports.autoUpdater.on("update-downloaded", (info) => {
       logger.info("Update downloaded:", info.version);
       this.isUpdateDownloaded = true;
-      logger.info("Installing update and restarting...");
-      setTimeout(() => {
-        mainExports.autoUpdater.quitAndInstall(false, true);
-      }, 1e3);
+      this.sendStatusToWindow("update-ready", info.version);
+      logger.info("Update ready to install. Will be installed when app quits.");
     });
     mainExports.autoUpdater.on("error", (error2) => {
       logger.error("Error in auto-updater:", error2);
@@ -16207,6 +16216,7 @@ class AutoUpdaterManager {
    * Cleanup method for proper shutdown
    */
   cleanup() {
+    ipcMain.removeHandler("updater:restart-and-install");
     mainExports.autoUpdater.removeAllListeners();
   }
 }

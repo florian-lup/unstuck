@@ -1,4 +1,4 @@
-import { BrowserWindow } from 'electron'
+import { BrowserWindow, ipcMain } from 'electron'
 import { autoUpdater } from 'electron-updater'
 import { logger } from './utils/logger'
 
@@ -14,6 +14,7 @@ export class AutoUpdaterManager {
   constructor() {
     this.configureAutoUpdater()
     this.setupEventHandlers()
+    this.registerIPCHandlers()
   }
 
   /**
@@ -41,6 +42,18 @@ export class AutoUpdaterManager {
       autoUpdater.logger = logger
       autoUpdater.forceDevUpdateConfig = true
     }
+  }
+
+  /**
+   * Register IPC handlers for update actions
+   */
+  private registerIPCHandlers(): void {
+    // Handle restart request from renderer
+    ipcMain.handle('updater:restart-and-install', () => {
+      logger.info('Restart and install requested from renderer')
+      this.quitAndInstall()
+      return { success: true }
+    })
   }
 
   /**
@@ -80,13 +93,11 @@ export class AutoUpdaterManager {
       logger.info('Update downloaded:', info.version)
       this.isUpdateDownloaded = true
 
-      // Install and restart immediately without asking
-      logger.info('Installing update and restarting...')
-      
-      // Give a small delay to ensure any pending operations complete
-      setTimeout(() => {
-        autoUpdater.quitAndInstall(false, true)
-      }, 1000)
+      // Notify renderer that update is ready
+      this.sendStatusToWindow('update-ready', info.version)
+
+      // Update will be installed when user quits the app (autoInstallOnAppQuit = true)
+      logger.info('Update ready to install. Will be installed when app quits.')
     })
 
     // Event: Error occurred
@@ -153,6 +164,9 @@ export class AutoUpdaterManager {
    * Cleanup method for proper shutdown
    */
   public cleanup(): void {
+    // Remove IPC handlers
+    ipcMain.removeHandler('updater:restart-and-install')
+    
     // Remove all event listeners
     autoUpdater.removeAllListeners()
   }

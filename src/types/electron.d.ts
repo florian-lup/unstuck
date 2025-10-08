@@ -43,6 +43,11 @@ export interface IElectronAPI {
     disable: () => Promise<boolean>
     toggle: () => Promise<boolean>
   }
+  updater: {
+    onUpdateReady: (callback: (version: string) => void) => unknown
+    removeUpdateReadyListener: () => void
+    restartAndInstall: () => Promise<{ success: boolean }>
+  }
 }
 
 declare global {
