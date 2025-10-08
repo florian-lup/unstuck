@@ -1,6 +1,7 @@
 import { app, BrowserWindow, ipcMain } from 'electron'
 import { AuthIPCHandlers } from './auth0/auth-ipc-handlers'
 import { AutoLaunchManager } from './auto-launch-manager'
+import { AutoUpdaterManager } from './auto-updater-manager'
 import { ShortcutsManager } from './shortcuts-manager'
 import { WindowManager } from './window-manager'
 
@@ -8,6 +9,7 @@ export class AppLifecycleManager {
   private authIPCHandlers?: AuthIPCHandlers
   private shortcutsManager?: ShortcutsManager
   private autoLaunchManager?: AutoLaunchManager
+  private autoUpdaterManager?: AutoUpdaterManager
 
   constructor(private readonly windowManager: WindowManager) {}
 
@@ -17,11 +19,13 @@ export class AppLifecycleManager {
   registerManagers(
     authIPCHandlers: AuthIPCHandlers,
     shortcutsManager: ShortcutsManager,
-    autoLaunchManager: AutoLaunchManager
+    autoLaunchManager: AutoLaunchManager,
+    autoUpdaterManager: AutoUpdaterManager
   ): void {
     this.authIPCHandlers = authIPCHandlers
     this.shortcutsManager = shortcutsManager
     this.autoLaunchManager = autoLaunchManager
+    this.autoUpdaterManager = autoUpdaterManager
   }
 
   /**
@@ -35,6 +39,7 @@ export class AppLifecycleManager {
     this.authIPCHandlers?.cleanup()
     this.shortcutsManager?.unregisterAllShortcuts()
     this.autoLaunchManager?.cleanup()
+    this.autoUpdaterManager?.cleanup()
 
     // Clean up tray icon
     this.windowManager.destroyTray()

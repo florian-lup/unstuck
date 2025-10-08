@@ -8,6 +8,12 @@
     output: 'release/${version}',
   },
   files: ['dist', 'dist-electron'],
+  publish: {
+    provider: 'github',
+    owner: 'your-github-username',
+    repo: 'unstuck-client',
+    releaseType: 'release',
+  },
   mac: {
     target: ['dmg'],
     artifactName: '${productName}-Mac-${version}-Installer.${ext}',

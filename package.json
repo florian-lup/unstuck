@@ -7,6 +7,7 @@
   "scripts": {
     "dev": "vite",
     "build": "pnpm run lint && tsc && vite build && electron-builder",
+    "build:publish": "pnpm run lint && tsc && vite build && electron-builder --publish always",
     "lint": "eslint . --report-unused-disable-directives --max-warnings 0",
     "lint:fix": "eslint . --report-unused-disable-directives --fix",
     "lint:prod": "eslint . --report-unused-disable-directives --max-warnings 0 --quiet",
@@ -22,6 +23,7 @@
     "auto-launch": "^5.0.6",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
+    "electron-updater": "^6.6.2",
     "lucide-react": "^0.544.0",
     "pnpm": "^10.14.0",
     "react": "^18.2.0",

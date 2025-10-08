@@ -6,6 +6,7 @@ import { AppLifecycleManager } from './app-lifecycle'
 import { AuthIPCHandlers } from './auth0/auth-ipc-handlers'
 import { auth0Service } from './auth0/auth0-service'
 import { AutoLaunchManager } from './auto-launch-manager'
+import { AutoUpdaterManager } from './auto-updater-manager'
 import { ShortcutsManager } from './shortcuts-manager'
 import { WindowManager } from './window-manager'
 
@@ -54,6 +55,7 @@ const authIPCHandlers = new AuthIPCHandlers(windowManager)
 const appLifecycle = new AppLifecycleManager(windowManager)
 const shortcutsManager = new ShortcutsManager(windowManager)
 const autoLaunchManager = new AutoLaunchManager('Unstuck')
+const autoUpdaterManager = new AutoUpdaterManager()
 
 // App initialization
 void app.whenReady().then(async () => {
@@ -75,7 +77,8 @@ void app.whenReady().then(async () => {
   appLifecycle.registerManagers(
     authIPCHandlers,
     shortcutsManager,
-    autoLaunchManager
+    autoLaunchManager,
+    autoUpdaterManager
   )
 
   // Setup shortcuts
@@ -119,6 +122,10 @@ void app.whenReady().then(async () => {
     } else {
       windowManager.createAuthWindow()
     }
+
+    // Check for updates after windows are created
+    // This will automatically download and install updates without user interaction
+    await autoUpdaterManager.checkForUpdates()
   } catch {
     app.quit()
     return
