@@ -79,7 +79,10 @@ electron.contextBridge.exposeInMainWorld("electronAPI", {
     electron.ipcRenderer.removeAllListeners("open-settings-menu");
   },
   updateNavigationShortcut: async (shortcut) => {
-    return electron.ipcRenderer.invoke("update-navigation-shortcut", shortcut);
+    return electron.ipcRenderer.invoke(
+      "update-navigation-shortcut",
+      shortcut
+    );
   },
   setIgnoreMouseEvents: (ignore, options) => {
     electron.ipcRenderer.send("set-ignore-mouse-events", ignore, options);

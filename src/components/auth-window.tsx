@@ -118,9 +118,6 @@ export function AuthWindow({ onAuthSuccess }: AuthWindowProps) {
             </div>
             <h1 className="text-4xl font-bold text-foreground">Get Unstuck</h1>
           </div>
-          <p className="text-muted-foreground text-lg">
-            Ask questions without ever leaving the game screen
-          </p>
         </div>
 
         {/* Auth Buttons */}
