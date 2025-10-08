@@ -14,6 +14,7 @@ interface UseSubscriptionReturn {
 
 const POLL_INTERVAL = 3000 // Poll every 3 seconds
 const MAX_POLL_DURATION = 300000 // Stop polling after 5 minutes
+const PERIODIC_CHECK_INTERVAL = 24 * 60 * 60 * 1000 // Check every 24 hours
 
 export function useSubscription(): UseSubscriptionReturn {
   const [subscriptionStatus, setSubscriptionStatus] =
@@ -22,6 +23,7 @@ export function useSubscription(): UseSubscriptionReturn {
   const [error, setError] = useState<string | null>(null)
   const pollIntervalRef = useRef<NodeJS.Timeout | null>(null)
   const pollStartTimeRef = useRef<number | null>(null)
+  const periodicCheckIntervalRef = useRef<NodeJS.Timeout | null>(null)
 
   // Determine if user has an active subscription
   // User is subscribed when they have "community" tier with "active" status
@@ -179,9 +181,22 @@ export function useSubscription(): UseSubscriptionReturn {
     }
   }, [fetchStatus])
 
-  // Fetch initial status when component mounts
+  // Fetch initial status when component mounts and start periodic checks
   useEffect(() => {
     void fetchStatus()
+
+    // Start periodic 24-hour checks
+    periodicCheckIntervalRef.current = setInterval(() => {
+      void fetchStatus()
+    }, PERIODIC_CHECK_INTERVAL)
+
+    return () => {
+      // Cleanup periodic interval on unmount
+      if (periodicCheckIntervalRef.current) {
+        clearInterval(periodicCheckIntervalRef.current)
+        periodicCheckIntervalRef.current = null
+      }
+    }
   }, [fetchStatus])
 
   // Cleanup polling on unmount
