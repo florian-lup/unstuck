@@ -204,6 +204,47 @@ export class ApiClient {
     subscriptionCancel: '/subscription/cancel',
   } as const
 
+  // Timeout configurations (in milliseconds)
+  private readonly timeouts = {
+    aiRequests: 120000, // 2 minutes for AI-powered requests (chat, lore, guides, builds)
+    stripeRequests: 300000, // 5 minutes for Stripe operations (checkout, subscription)
+    standardRequests: 30000, // 30 seconds for standard API requests
+    quickRequests: 15000, // 15 seconds for quick operations
+  } as const
+
+  /**
+   * Fetch with timeout support
+   * @param url - The URL to fetch
+   * @param options - Fetch options
+   * @param timeoutMs - Timeout in milliseconds
+   * @returns Response promise
+   */
+  private async fetchWithTimeout(
+    url: string,
+    options: RequestInit,
+    timeoutMs: number
+  ): Promise<Response> {
+    const controller = new AbortController()
+    const timeout = setTimeout(() => controller.abort(), timeoutMs)
+
+    try {
+      const response = await fetch(url, {
+        ...options,
+        signal: controller.signal,
+      })
+      return response
+    } catch (error) {
+      if (error instanceof Error && error.name === 'AbortError') {
+        throw new Error(
+          'Request timed out. Please check your internet connection and try again.'
+        )
+      }
+      throw error
+    } finally {
+      clearTimeout(timeout)
+    }
+  }
+
   /**
    * Send a gaming search request to the API
    */
@@ -214,14 +255,18 @@ export class ApiClient {
     const url = `${this.baseUrl}${this.endpoints.gamingSearch}`
 
     try {
-      const response = await fetch(url, {
-        method: 'POST',
-        headers: {
-          Authorization: `Bearer ${accessToken}`,
-          'Content-Type': 'application/json',
+      const response = await this.fetchWithTimeout(
+        url,
+        {
+          method: 'POST',
+          headers: {
+            Authorization: `Bearer ${accessToken}`,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(request),
         },
-        body: JSON.stringify(request),
-      })
+        this.timeouts.aiRequests
+      )
 
       // Handle non-200 responses
       if (!response.ok) {
@@ -293,14 +338,18 @@ export class ApiClient {
     const url = `${this.baseUrl}${this.endpoints.gamingLore}`
 
     try {
-      const response = await fetch(url, {
-        method: 'POST',
-        headers: {
-          Authorization: `Bearer ${accessToken}`,
-          'Content-Type': 'application/json',
+      const response = await this.fetchWithTimeout(
+        url,
+        {
+          method: 'POST',
+          headers: {
+            Authorization: `Bearer ${accessToken}`,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(request),
         },
-        body: JSON.stringify(request),
-      })
+        this.timeouts.aiRequests
+      )
 
       // Handle non-200 responses
       if (!response.ok) {
@@ -361,14 +410,18 @@ export class ApiClient {
     const url = `${this.baseUrl}${this.endpoints.gamingGuides}`
 
     try {
-      const response = await fetch(url, {
-        method: 'POST',
-        headers: {
-          Authorization: `Bearer ${accessToken}`,
-          'Content-Type': 'application/json',
+      const response = await this.fetchWithTimeout(
+        url,
+        {
+          method: 'POST',
+          headers: {
+            Authorization: `Bearer ${accessToken}`,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(request),
         },
-        body: JSON.stringify(request),
-      })
+        this.timeouts.aiRequests
+      )
 
       // Handle non-200 responses
       if (!response.ok) {
@@ -429,14 +482,18 @@ export class ApiClient {
     const url = `${this.baseUrl}${this.endpoints.gamingBuilds}`
 
     try {
-      const response = await fetch(url, {
-        method: 'POST',
-        headers: {
-          Authorization: `Bearer ${accessToken}`,
-          'Content-Type': 'application/json',
+      const response = await this.fetchWithTimeout(
+        url,
+        {
+          method: 'POST',
+          headers: {
+            Authorization: `Bearer ${accessToken}`,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(request),
         },
-        body: JSON.stringify(request),
-      })
+        this.timeouts.aiRequests
+      )
 
       // Handle non-200 responses
       if (!response.ok) {
@@ -494,13 +551,17 @@ export class ApiClient {
     const url = `${this.baseUrl}${this.endpoints.conversations}`
 
     try {
-      const response = await fetch(url, {
-        method: 'GET',
-        headers: {
-          Authorization: `Bearer ${accessToken}`,
-          'Content-Type': 'application/json',
+      const response = await this.fetchWithTimeout(
+        url,
+        {
+          method: 'GET',
+          headers: {
+            Authorization: `Bearer ${accessToken}`,
+            'Content-Type': 'application/json',
+          },
         },
-      })
+        this.timeouts.standardRequests
+      )
 
       // Handle non-200 responses
       if (!response.ok) {
@@ -581,13 +642,17 @@ export class ApiClient {
     const url = `${this.baseUrl}/gaming/conversations/${conversationId}/history`
 
     try {
-      const response = await fetch(url, {
-        method: 'GET',
-        headers: {
-          Authorization: `Bearer ${accessToken}`,
-          'Content-Type': 'application/json',
+      const response = await this.fetchWithTimeout(
+        url,
+        {
+          method: 'GET',
+          headers: {
+            Authorization: `Bearer ${accessToken}`,
+            'Content-Type': 'application/json',
+          },
         },
-      })
+        this.timeouts.standardRequests
+      )
 
       // Handle non-200 responses
       if (!response.ok) {
@@ -667,13 +732,17 @@ export class ApiClient {
     const url = `${this.baseUrl}/gaming/conversations/${conversationId}`
 
     try {
-      const response = await fetch(url, {
-        method: 'DELETE',
-        headers: {
-          Authorization: `Bearer ${accessToken}`,
-          'Content-Type': 'application/json',
+      const response = await this.fetchWithTimeout(
+        url,
+        {
+          method: 'DELETE',
+          headers: {
+            Authorization: `Bearer ${accessToken}`,
+            'Content-Type': 'application/json',
+          },
         },
-      })
+        this.timeouts.quickRequests
+      )
 
       // Handle non-200 responses
       if (!response.ok) {
@@ -739,14 +808,18 @@ export class ApiClient {
     const url = `${this.baseUrl}${this.endpoints.subscriptionCheckout}`
 
     try {
-      const response = await fetch(url, {
-        method: 'POST',
-        headers: {
-          Authorization: `Bearer ${accessToken}`,
-          'Content-Type': 'application/json',
+      const response = await this.fetchWithTimeout(
+        url,
+        {
+          method: 'POST',
+          headers: {
+            Authorization: `Bearer ${accessToken}`,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({}),
         },
-        body: JSON.stringify({}),
-      })
+        this.timeouts.stripeRequests
+      )
 
       if (!response.ok) {
         let errorMessage = 'Failed to create checkout session'
@@ -804,13 +877,17 @@ export class ApiClient {
     const url = `${this.baseUrl}${this.endpoints.subscriptionStatus}`
 
     try {
-      const response = await fetch(url, {
-        method: 'GET',
-        headers: {
-          Authorization: `Bearer ${accessToken}`,
-          'Content-Type': 'application/json',
+      const response = await this.fetchWithTimeout(
+        url,
+        {
+          method: 'GET',
+          headers: {
+            Authorization: `Bearer ${accessToken}`,
+            'Content-Type': 'application/json',
+          },
         },
-      })
+        this.timeouts.quickRequests
+      )
 
       if (!response.ok) {
         let errorMessage = 'Failed to fetch subscription status'
@@ -872,14 +949,18 @@ export class ApiClient {
     const url = `${this.baseUrl}${this.endpoints.subscriptionCancel}`
 
     try {
-      const response = await fetch(url, {
-        method: 'POST',
-        headers: {
-          Authorization: `Bearer ${accessToken}`,
-          'Content-Type': 'application/json',
+      const response = await this.fetchWithTimeout(
+        url,
+        {
+          method: 'POST',
+          headers: {
+            Authorization: `Bearer ${accessToken}`,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({}),
         },
-        body: JSON.stringify({}),
-      })
+        this.timeouts.stripeRequests
+      )
 
       if (!response.ok) {
         let errorMessage = 'Failed to cancel subscription'
