@@ -49,28 +49,20 @@ export class OpenAIRealtimeManager {
     this.setConnectionState('connecting')
 
     try {
-      // Create WebSocket connection with ephemeral key authentication
-      // Browser WebSockets don't support custom headers, so we use subprotocol auth
-      const ephemeralKey = this.config.session.client_secret
+      // Create WebSocket connection using OpenAI GA (General Availability) API
+      // The backend provides a websocket_url with the ephemeral client_secret embedded
+      // as a query parameter - perfect for browser compatibility!
       const wsUrl = this.config.session.websocket_url
       
-      console.log('Connecting to OpenAI Realtime API...')
+      console.log('Connecting to OpenAI Realtime API (GA)...')
       console.log('Model:', this.config.session.model)
-      console.log('WebSocket URL:', wsUrl)
       
-      // Use browser-compatible subprotocol authentication method
-      // Backend provides both methods in connection_instructions:
-      // - Browser/Electron Renderer: Use subprotocols (this method)
-      // - Node.js: Use custom headers (not supported in browsers)
-      //
-      // Format: new WebSocket(url, [protocols])
-      // Required protocols: 'realtime', 'openai-insecure-api-key.<token>'
-      this.ws = new WebSocket(wsUrl, [
-        'realtime',
-        `openai-insecure-api-key.${ephemeralKey}`
-      ])
+      // Simple connection - no custom headers or subprotocols needed!
+      // The websocket_url already includes the client_secret as a query parameter
+      // Format: wss://api.openai.com/v1/realtime?model=...&client_secret=eph_...
+      this.ws = new WebSocket(wsUrl)
       
-      console.log('WebSocket created with ephemeral key in subprotocol')
+      console.log('WebSocket created with ephemeral key authentication')
 
       // Set up event handlers
       this.ws.onopen = this.handleOpen.bind(this)
