@@ -35,6 +35,11 @@ export class SecureAuthClient {
   >()
   private user: AuthUser | null = null
   private session: AuthSession | null = null
+  private pendingSessionRequest: Promise<{
+    user: AuthUser | null
+    session: AuthSession | null
+    tokens: AuthTokens | null
+  }> | null = null
 
   constructor() {
     this.setupIpcListeners()
@@ -76,9 +81,36 @@ export class SecureAuthClient {
   }
 
   /**
-   * Get current session
+   * Get current session with request deduplication
+   * If multiple calls happen simultaneously, they share the same IPC request
    */
   async getSession(): Promise<{
+    user: AuthUser | null
+    session: AuthSession | null
+    tokens: AuthTokens | null
+  }> {
+    // If there's already a pending request, return it
+    // This prevents multiple simultaneous IPC calls (React Strict Mode protection)
+    if (this.pendingSessionRequest) {
+      return this.pendingSessionRequest
+    }
+
+    // Create new request
+    this.pendingSessionRequest = this.fetchSession()
+    
+    try {
+      const result = await this.pendingSessionRequest
+      return result
+    } finally {
+      // Clear pending request after completion (success or error)
+      this.pendingSessionRequest = null
+    }
+  }
+
+  /**
+   * Internal method to actually fetch the session from IPC
+   */
+  private async fetchSession(): Promise<{
     user: AuthUser | null
     session: AuthSession | null
     tokens: AuthTokens | null
@@ -299,6 +331,7 @@ export class SecureAuthClient {
       window.electronAPI.auth.removeAuthListeners()
     }
     this.listeners.clear()
+    this.pendingSessionRequest = null
   }
 }
 

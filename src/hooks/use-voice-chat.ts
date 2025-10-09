@@ -1,8 +1,8 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
-import { OpenAIRealtimeManager, type ConnectionState } from '../lib/openai-realtime-manager'
-import { voiceSessionService } from '../lib/voice-session-service'
 import { secureAuth } from '../lib/auth-client'
 import type { Game } from '../lib/games'
+import { OpenAIRealtimeManager, type ConnectionState } from '../lib/openai-realtime-manager'
+import { voiceSessionService } from '../lib/voice-session-service'
 
 export interface VoiceChatState {
   isConnected: boolean

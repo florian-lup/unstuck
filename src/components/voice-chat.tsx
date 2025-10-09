@@ -1,7 +1,7 @@
 import { Mic, MicOff, PhoneOff, Loader2, AlertCircle, X } from 'lucide-react'
+import type { VoiceChatState } from '../hooks/use-voice-chat'
 import { InteractiveArea } from './interactive-area'
 import { Button } from './ui/button'
-import type { VoiceChatState } from '../hooks/use-voice-chat'
 
 export interface VoiceChatProps {
   state: VoiceChatState

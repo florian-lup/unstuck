@@ -241,7 +241,7 @@ export class OpenAIRealtimeManager {
     }
 
     if (this.mediaStream) {
-      this.mediaStream.getTracks().forEach((track) => track.stop())
+      this.mediaStream.getTracks().forEach((track) => { track.stop(); })
       this.mediaStream = null
     }
 
