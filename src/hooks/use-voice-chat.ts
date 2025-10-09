@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
 import { secureAuth } from '../lib/auth-client'
 import type { Game } from '../lib/games'
-import { OpenAIRealtimeManager, type ConnectionState } from '../lib/openai-realtime-manager'
+import { OpenAIRealtimeWebRTCManager, type ConnectionState } from '../lib/openai-realtime-webrtc-manager'
 import { voiceSessionService } from '../lib/voice-session-service'
 
 export interface VoiceChatState {
@@ -28,7 +28,7 @@ export function useVoiceChat({ selectedGame, onError }: UseVoiceChatOptions) {
     connectionState: 'disconnected',
   })
 
-  const realtimeManagerRef = useRef<OpenAIRealtimeManager | null>(null)
+  const realtimeManagerRef = useRef<OpenAIRealtimeWebRTCManager | null>(null)
   const audioContextRef = useRef<AudioContext | null>(null)
   const audioQueueRef = useRef<ArrayBuffer[]>([])
   const isPlayingRef = useRef(false)
@@ -157,20 +157,20 @@ export function useVoiceChat({ selectedGame, onError }: UseVoiceChatOptions) {
       
       console.log('Voice session created - expires:', new Date(session.expires_at * 1000).toISOString())
 
-      // Create WebSocket manager
-      realtimeManagerRef.current = new OpenAIRealtimeManager({
-        session,
+      // Create WebRTC manager
+      realtimeManagerRef.current = new OpenAIRealtimeWebRTCManager({
+        model: session.model,
+        ephemeralKey: session.client_secret,
         onConnectionStateChange: updateConnectionState,
         onTranscriptUpdate: updateTranscript,
         onAudioResponse: handleAudioResponse,
         onError: handleError,
       })
 
-      // Connect to OpenAI
+      // Connect to OpenAI via WebRTC
       await realtimeManagerRef.current.connect()
 
-      // Start audio capture (unmute)
-      await realtimeManagerRef.current.startAudioCapture()
+      // Audio capture starts automatically with WebRTC
       setState((prev) => ({ ...prev, isMuted: false }))
     } catch (error) {
       const errorMessage =
