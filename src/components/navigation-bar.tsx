@@ -118,34 +118,40 @@ export function NavigationBar({
               <div className="w-px h-4 mx-1 bg-overlay-border-primary"></div>
 
               {/* History Button */}
-              <Button
-                onClick={handleHistoryClick}
-                variant="gaming"
-                size="icon"
-                className="p-1 h-auto w-auto"
-              >
-                <Menu className="w-3 h-3" />
-              </Button>
+              <Tooltip content="History">
+                <Button
+                  onClick={handleHistoryClick}
+                  variant="gaming"
+                  size="icon"
+                  className="p-1 h-auto w-auto"
+                >
+                  <Menu className="w-3 h-3" />
+                </Button>
+              </Tooltip>
 
               {/* Settings Button */}
-              <Button
-                onClick={handleSettingsClick}
-                variant="gaming"
-                size="icon"
-                className="p-1 h-auto w-auto"
-              >
-                <Settings className="w-3 h-3" />
-              </Button>
+              <Tooltip content="Settings">
+                <Button
+                  onClick={handleSettingsClick}
+                  variant="gaming"
+                  size="icon"
+                  className="p-1 h-auto w-auto"
+                >
+                  <Settings className="w-3 h-3" />
+                </Button>
+              </Tooltip>
 
               {/* Info Button */}
-              <Button
-                onClick={handleInfoClick}
-                variant="gaming"
-                size="icon"
-                className="p-1 h-auto w-auto"
-              >
-                <Info className="w-3 h-3" />
-              </Button>
+              <Tooltip content="About">
+                <Button
+                  onClick={handleInfoClick}
+                  variant="gaming"
+                  size="icon"
+                  className="p-1 h-auto w-auto"
+                >
+                  <Info className="w-3 h-3" />
+                </Button>
+              </Tooltip>
 
               {/* Update Button - Only shown when update is ready */}
               {updateReady && (
@@ -153,14 +159,14 @@ export function NavigationBar({
                   {/* Divider */}
                   <div className="w-px h-4 mx-1 bg-overlay-border-primary"></div>
 
-                  <Tooltip content="Update available - Click to restart and install">
+                  <Tooltip content="Restart">
                     <Button
                       onClick={handleUpdateClick}
                       variant="gaming"
                       size="icon"
                       className="p-1 h-auto w-auto animate-pulse"
                     >
-                      <Download className="w-3 h-3" />
+                      <Download className="w-3 h-3 text-overlay-accent-primary" />
                     </Button>
                   </Tooltip>
                 </>

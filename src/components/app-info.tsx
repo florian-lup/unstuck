@@ -10,6 +10,7 @@ import {
   Mic,
   Layers,
   Grip,
+  Download,
 } from 'lucide-react'
 import { InteractiveArea } from './interactive-area'
 import { Button } from './ui/button'
@@ -78,6 +79,22 @@ export function AppInfo({ isOpen, onClose }: AppInfoProps) {
                   overlay to work.
                 </p>
               </div>
+            </div>
+
+            {/* Updates */}
+            <div className="mb-4">
+              <div className="flex items-center gap-2 mb-2">
+                <Download className="w-4 h-4 text-overlay-accent-primary" />
+                <h3 className="text-sm font-medium text-overlay-text-primary">
+                  Auto Updates
+                </h3>
+              </div>
+              <p className="text-xs text-overlay-text-secondary leading-relaxed ml-2">
+                Unstuck automatically checks for updates in the background. When a
+                new version is available, a pulsing download button will appear in
+                the navigation bar. Click it to restart and install the latest
+                features and improvements.
+              </p>
             </div>
 
             {/* Game Selection */}
