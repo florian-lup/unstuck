@@ -19,10 +19,19 @@ const ALLOWED_INVOKE_CHANNELS = [
   'auto-launch:disable',
   'auto-launch:toggle',
   'updater:restart-and-install',
+  'update-navigation-shortcut',
+  'update-chat-shortcut',
+  'update-history-shortcut',
+  'update-settings-shortcut',
+  'update-new-chat-shortcut',
 ] as const
 
 const ALLOWED_LISTEN_CHANNELS = [
   'toggle-navigation-bar',
+  'toggle-chat',
+  'toggle-history',
+  'toggle-settings',
+  'trigger-new-chat',
   'open-settings-menu',
   'auth-success',
   'auth-error',
@@ -102,6 +111,67 @@ contextBridge.exposeInMainWorld('electronAPI', {
       'update-navigation-shortcut',
       shortcut
     ) as Promise<unknown>
+  },
+  updateChatShortcut: async (shortcut: string): Promise<unknown> => {
+    return ipcRenderer.invoke('update-chat-shortcut', shortcut) as Promise<unknown>
+  },
+  updateHistoryShortcut: async (shortcut: string): Promise<unknown> => {
+    return ipcRenderer.invoke(
+      'update-history-shortcut',
+      shortcut
+    ) as Promise<unknown>
+  },
+  updateSettingsShortcut: async (shortcut: string): Promise<unknown> => {
+    return ipcRenderer.invoke(
+      'update-settings-shortcut',
+      shortcut
+    ) as Promise<unknown>
+  },
+  updateNewChatShortcut: async (shortcut: string): Promise<unknown> => {
+    return ipcRenderer.invoke(
+      'update-new-chat-shortcut',
+      shortcut
+    ) as Promise<unknown>
+  },
+  onChatToggle: (callback: () => void) => {
+    const listener = () => {
+      callback()
+    }
+    ipcRenderer.on('toggle-chat', listener)
+    return listener
+  },
+  removeChatToggleListener: () => {
+    ipcRenderer.removeAllListeners('toggle-chat')
+  },
+  onHistoryToggle: (callback: () => void) => {
+    const listener = () => {
+      callback()
+    }
+    ipcRenderer.on('toggle-history', listener)
+    return listener
+  },
+  removeHistoryToggleListener: () => {
+    ipcRenderer.removeAllListeners('toggle-history')
+  },
+  onSettingsToggle: (callback: () => void) => {
+    const listener = () => {
+      callback()
+    }
+    ipcRenderer.on('toggle-settings', listener)
+    return listener
+  },
+  removeSettingsToggleListener: () => {
+    ipcRenderer.removeAllListeners('toggle-settings')
+  },
+  onNewChatTrigger: (callback: () => void) => {
+    const listener = () => {
+      callback()
+    }
+    ipcRenderer.on('trigger-new-chat', listener)
+    return listener
+  },
+  removeNewChatTriggerListener: () => {
+    ipcRenderer.removeAllListeners('trigger-new-chat')
   },
   setIgnoreMouseEvents: (ignore: boolean, options?: { forward?: boolean }) => {
     ipcRenderer.send('set-ignore-mouse-events', ignore, options)

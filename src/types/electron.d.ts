@@ -1,9 +1,21 @@
 export interface IElectronAPI {
   onNavigationBarToggle: (callback: () => void) => void
   removeNavigationBarToggleListener: () => void
+  onChatToggle: (callback: () => void) => void
+  removeChatToggleListener: () => void
+  onHistoryToggle: (callback: () => void) => void
+  removeHistoryToggleListener: () => void
+  onSettingsToggle: (callback: () => void) => void
+  removeSettingsToggleListener: () => void
+  onNewChatTrigger: (callback: () => void) => void
+  removeNewChatTriggerListener: () => void
   onOpenSettingsMenu: (callback: () => void) => void
   removeOpenSettingsMenuListener: () => void
   updateNavigationShortcut: (shortcut: string) => Promise<void>
+  updateChatShortcut: (shortcut: string) => Promise<void>
+  updateHistoryShortcut: (shortcut: string) => Promise<void>
+  updateSettingsShortcut: (shortcut: string) => Promise<void>
+  updateNewChatShortcut: (shortcut: string) => Promise<void>
   setIgnoreMouseEvents: (
     ignore: boolean,
     options?: { forward?: boolean }

@@ -16,10 +16,19 @@ const ALLOWED_INVOKE_CHANNELS = [
   "auto-launch:enable",
   "auto-launch:disable",
   "auto-launch:toggle",
-  "updater:restart-and-install"
+  "updater:restart-and-install",
+  "update-navigation-shortcut",
+  "update-chat-shortcut",
+  "update-history-shortcut",
+  "update-settings-shortcut",
+  "update-new-chat-shortcut"
 ];
 const ALLOWED_LISTEN_CHANNELS = [
   "toggle-navigation-bar",
+  "toggle-chat",
+  "toggle-history",
+  "toggle-settings",
+  "trigger-new-chat",
   "open-settings-menu",
   "auth-success",
   "auth-error",
@@ -85,6 +94,67 @@ electron.contextBridge.exposeInMainWorld("electronAPI", {
       "update-navigation-shortcut",
       shortcut
     );
+  },
+  updateChatShortcut: async (shortcut) => {
+    return electron.ipcRenderer.invoke("update-chat-shortcut", shortcut);
+  },
+  updateHistoryShortcut: async (shortcut) => {
+    return electron.ipcRenderer.invoke(
+      "update-history-shortcut",
+      shortcut
+    );
+  },
+  updateSettingsShortcut: async (shortcut) => {
+    return electron.ipcRenderer.invoke(
+      "update-settings-shortcut",
+      shortcut
+    );
+  },
+  updateNewChatShortcut: async (shortcut) => {
+    return electron.ipcRenderer.invoke(
+      "update-new-chat-shortcut",
+      shortcut
+    );
+  },
+  onChatToggle: (callback) => {
+    const listener = () => {
+      callback();
+    };
+    electron.ipcRenderer.on("toggle-chat", listener);
+    return listener;
+  },
+  removeChatToggleListener: () => {
+    electron.ipcRenderer.removeAllListeners("toggle-chat");
+  },
+  onHistoryToggle: (callback) => {
+    const listener = () => {
+      callback();
+    };
+    electron.ipcRenderer.on("toggle-history", listener);
+    return listener;
+  },
+  removeHistoryToggleListener: () => {
+    electron.ipcRenderer.removeAllListeners("toggle-history");
+  },
+  onSettingsToggle: (callback) => {
+    const listener = () => {
+      callback();
+    };
+    electron.ipcRenderer.on("toggle-settings", listener);
+    return listener;
+  },
+  removeSettingsToggleListener: () => {
+    electron.ipcRenderer.removeAllListeners("toggle-settings");
+  },
+  onNewChatTrigger: (callback) => {
+    const listener = () => {
+      callback();
+    };
+    electron.ipcRenderer.on("trigger-new-chat", listener);
+    return listener;
+  },
+  removeNewChatTriggerListener: () => {
+    electron.ipcRenderer.removeAllListeners("trigger-new-chat");
   },
   setIgnoreMouseEvents: (ignore, options) => {
     electron.ipcRenderer.send("set-ignore-mouse-events", ignore, options);

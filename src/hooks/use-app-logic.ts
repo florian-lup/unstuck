@@ -121,34 +121,10 @@ export function useAppLogic() {
   // Transparency management (0-100, where 100 is fully opaque)
   const [transparency, setTransparency] = useState<number>(90)
 
-  // Parse keybind for useKeyboardToggle
+  // Parse keybind for useKeyboardToggle (only for navigation bar)
   const parsedKeybind = useMemo(
     () => parseKeybind(customKeybind),
     [customKeybind]
-  )
-
-  // Parse chat keybind
-  const parsedChatKeybind = useMemo(
-    () => parseKeybind(chatKeybind),
-    [chatKeybind]
-  )
-
-  // Parse history keybind
-  const parsedHistoryKeybind = useMemo(
-    () => parseKeybind(historyKeybind),
-    [historyKeybind]
-  )
-
-  // Parse settings keybind
-  const parsedSettingsKeybind = useMemo(
-    () => parseKeybind(settingsKeybind),
-    [settingsKeybind]
-  )
-
-  // Parse new chat keybind
-  const parsedNewChatKeybind = useMemo(
-    () => parseKeybind(newChatKeybind),
-    [newChatKeybind]
   )
 
   // Navigation bar visibility toggle with dynamic keybind
@@ -178,19 +154,42 @@ export function useAppLogic() {
     loadSavedTransparency()
   }, [])
 
-  // Sync initial keybind with Electron on app start
+  // Sync initial keybinds with Electron on app start
   useEffect(() => {
-    const syncKeybind = async () => {
-      if (customKeybind !== 'Shift+\\') {
-        try {
+    const syncKeybinds = async () => {
+      try {
+        // Sync navigation shortcut if it's not the default
+        if (customKeybind !== 'Shift+\\') {
           await window.electronAPI?.updateNavigationShortcut(customKeybind)
-        } catch (error) {
-          console.error('Failed to sync initial global shortcut:', error)
         }
+        // Sync chat shortcut if it's not the default
+        if (chatKeybind !== 'Shift+Z') {
+          await window.electronAPI?.updateChatShortcut(chatKeybind)
+        }
+        // Sync history shortcut if it's not the default
+        if (historyKeybind !== 'Shift+X') {
+          await window.electronAPI?.updateHistoryShortcut(historyKeybind)
+        }
+        // Sync settings shortcut if it's not the default
+        if (settingsKeybind !== 'Shift+C') {
+          await window.electronAPI?.updateSettingsShortcut(settingsKeybind)
+        }
+        // Sync new chat shortcut if it's not the default
+        if (newChatKeybind !== 'Ctrl+Z') {
+          await window.electronAPI?.updateNewChatShortcut(newChatKeybind)
+        }
+      } catch (error) {
+        console.error('Failed to sync initial global shortcuts:', error)
       }
     }
-    void syncKeybind()
-  }, [customKeybind])
+    void syncKeybinds()
+  }, [
+    customKeybind,
+    chatKeybind,
+    historyKeybind,
+    settingsKeybind,
+    newChatKeybind,
+  ])
 
   // Apply transparency changes to CSS custom properties
   useEffect(() => {
@@ -281,36 +280,9 @@ export function useAppLogic() {
     }
   }, [])
 
-  // Listen for chat toggle keyboard shortcut
+  // Listen for chat toggle keyboard shortcut (from Electron global shortcut)
   useEffect(() => {
-    const handleChatToggle = (event: KeyboardEvent) => {
-      // Check if the key matches
-      if (event.code !== parsedChatKeybind.key) return
-
-      // Check modifiers
-      if (
-        parsedChatKeybind.modifiers.shift !== undefined &&
-        event.shiftKey !== parsedChatKeybind.modifiers.shift
-      )
-        return
-      if (
-        parsedChatKeybind.modifiers.ctrl !== undefined &&
-        event.ctrlKey !== parsedChatKeybind.modifiers.ctrl
-      )
-        return
-      if (
-        parsedChatKeybind.modifiers.alt !== undefined &&
-        event.altKey !== parsedChatKeybind.modifiers.alt
-      )
-        return
-      if (
-        parsedChatKeybind.modifiers.meta !== undefined &&
-        event.metaKey !== parsedChatKeybind.modifiers.meta
-      )
-        return
-
-      // Prevent default behavior and toggle chat visibility
-      event.preventDefault()
+    const handleChatToggle = () => {
       setIsGamingChatVisible((prev) => {
         const newValue = !prev
         // Close other panels when opening chat
@@ -323,45 +295,22 @@ export function useAppLogic() {
       })
     }
 
-    // Add event listener with capture: true to intercept before input elements
-    document.addEventListener('keydown', handleChatToggle, true)
+    // Listen for Electron global shortcut
+    if (window.electronAPI?.onChatToggle) {
+      window.electronAPI.onChatToggle(handleChatToggle)
+    }
 
     // Cleanup function to remove event listeners
     return () => {
-      document.removeEventListener('keydown', handleChatToggle, true)
+      if (window.electronAPI?.removeChatToggleListener) {
+        window.electronAPI.removeChatToggleListener()
+      }
     }
-  }, [parsedChatKeybind])
+  }, [])
 
-  // Listen for history toggle keyboard shortcut
+  // Listen for history toggle keyboard shortcut (from Electron global shortcut)
   useEffect(() => {
-    const handleHistoryToggle = (event: KeyboardEvent) => {
-      // Check if the key matches
-      if (event.code !== parsedHistoryKeybind.key) return
-
-      // Check modifiers
-      if (
-        parsedHistoryKeybind.modifiers.shift !== undefined &&
-        event.shiftKey !== parsedHistoryKeybind.modifiers.shift
-      )
-        return
-      if (
-        parsedHistoryKeybind.modifiers.ctrl !== undefined &&
-        event.ctrlKey !== parsedHistoryKeybind.modifiers.ctrl
-      )
-        return
-      if (
-        parsedHistoryKeybind.modifiers.alt !== undefined &&
-        event.altKey !== parsedHistoryKeybind.modifiers.alt
-      )
-        return
-      if (
-        parsedHistoryKeybind.modifiers.meta !== undefined &&
-        event.metaKey !== parsedHistoryKeybind.modifiers.meta
-      )
-        return
-
-      // Prevent default behavior and toggle history panel visibility
-      event.preventDefault()
+    const handleHistoryToggle = () => {
       setShowHistoryPanel((prev) => {
         const newValue = !prev
         // Close other panels when opening history
@@ -374,45 +323,22 @@ export function useAppLogic() {
       })
     }
 
-    // Add event listener with capture: true to intercept before input elements
-    document.addEventListener('keydown', handleHistoryToggle, true)
+    // Listen for Electron global shortcut
+    if (window.electronAPI?.onHistoryToggle) {
+      window.electronAPI.onHistoryToggle(handleHistoryToggle)
+    }
 
     // Cleanup function to remove event listeners
     return () => {
-      document.removeEventListener('keydown', handleHistoryToggle, true)
+      if (window.electronAPI?.removeHistoryToggleListener) {
+        window.electronAPI.removeHistoryToggleListener()
+      }
     }
-  }, [parsedHistoryKeybind])
+  }, [])
 
-  // Listen for settings toggle keyboard shortcut
+  // Listen for settings toggle keyboard shortcut (from Electron global shortcut)
   useEffect(() => {
-    const handleSettingsToggle = (event: KeyboardEvent) => {
-      // Check if the key matches
-      if (event.code !== parsedSettingsKeybind.key) return
-
-      // Check modifiers
-      if (
-        parsedSettingsKeybind.modifiers.shift !== undefined &&
-        event.shiftKey !== parsedSettingsKeybind.modifiers.shift
-      )
-        return
-      if (
-        parsedSettingsKeybind.modifiers.ctrl !== undefined &&
-        event.ctrlKey !== parsedSettingsKeybind.modifiers.ctrl
-      )
-        return
-      if (
-        parsedSettingsKeybind.modifiers.alt !== undefined &&
-        event.altKey !== parsedSettingsKeybind.modifiers.alt
-      )
-        return
-      if (
-        parsedSettingsKeybind.modifiers.meta !== undefined &&
-        event.metaKey !== parsedSettingsKeybind.modifiers.meta
-      )
-        return
-
-      // Prevent default behavior and toggle settings menu visibility
-      event.preventDefault()
+    const handleSettingsToggle = () => {
       setShowSettingsMenu((prev) => {
         const newValue = !prev
         // Close other panels when opening settings
@@ -425,14 +351,18 @@ export function useAppLogic() {
       })
     }
 
-    // Add event listener with capture: true to intercept before input elements
-    document.addEventListener('keydown', handleSettingsToggle, true)
+    // Listen for Electron global shortcut
+    if (window.electronAPI?.onSettingsToggle) {
+      window.electronAPI.onSettingsToggle(handleSettingsToggle)
+    }
 
     // Cleanup function to remove event listeners
     return () => {
-      document.removeEventListener('keydown', handleSettingsToggle, true)
+      if (window.electronAPI?.removeSettingsToggleListener) {
+        window.electronAPI.removeSettingsToggleListener()
+      }
     }
-  }, [parsedSettingsKeybind])
+  }, [])
 
   // Handler functions (defined before they're used in effects)
   const handleStartNewConversation = useCallback(() => {
@@ -443,47 +373,24 @@ export function useAppLogic() {
     conversationCache.invalidateConversationList()
   }, [])
 
-  // Listen for new chat keyboard shortcut
+  // Listen for new chat keyboard shortcut (from Electron global shortcut)
   useEffect(() => {
-    const handleNewChat = (event: KeyboardEvent) => {
-      // Check if the key matches
-      if (event.code !== parsedNewChatKeybind.key) return
-
-      // Check modifiers
-      if (
-        parsedNewChatKeybind.modifiers.shift !== undefined &&
-        event.shiftKey !== parsedNewChatKeybind.modifiers.shift
-      )
-        return
-      if (
-        parsedNewChatKeybind.modifiers.ctrl !== undefined &&
-        event.ctrlKey !== parsedNewChatKeybind.modifiers.ctrl
-      )
-        return
-      if (
-        parsedNewChatKeybind.modifiers.alt !== undefined &&
-        event.altKey !== parsedNewChatKeybind.modifiers.alt
-      )
-        return
-      if (
-        parsedNewChatKeybind.modifiers.meta !== undefined &&
-        event.metaKey !== parsedNewChatKeybind.modifiers.meta
-      )
-        return
-
-      // Prevent default behavior and start new conversation
-      event.preventDefault()
+    const handleNewChat = () => {
       handleStartNewConversation()
     }
 
-    // Add event listener with capture: true to intercept before input elements
-    document.addEventListener('keydown', handleNewChat, true)
+    // Listen for Electron global shortcut
+    if (window.electronAPI?.onNewChatTrigger) {
+      window.electronAPI.onNewChatTrigger(handleNewChat)
+    }
 
     // Cleanup function to remove event listeners
     return () => {
-      document.removeEventListener('keydown', handleNewChat, true)
+      if (window.electronAPI?.removeNewChatTriggerListener) {
+        window.electronAPI.removeNewChatTriggerListener()
+      }
     }
-  }, [parsedNewChatKeybind, handleStartNewConversation])
+  }, [handleStartNewConversation])
 
   // Global click-through management
   useClickThrough({
@@ -769,35 +676,59 @@ export function useAppLogic() {
     }
   }
 
-  const handleChatKeybindChange = (newKeybind: string) => {
+  const handleChatKeybindChange = async (newKeybind: string) => {
     setChatKeybind(newKeybind)
     // Persist to localStorage
     if (typeof window !== 'undefined') {
       localStorage.setItem('chat-keybind', newKeybind)
     }
+    // Update Electron global shortcut
+    try {
+      await window.electronAPI?.updateChatShortcut(newKeybind)
+    } catch (error) {
+      console.error('Failed to update chat global shortcut:', error)
+    }
   }
 
-  const handleHistoryKeybindChange = (newKeybind: string) => {
+  const handleHistoryKeybindChange = async (newKeybind: string) => {
     setHistoryKeybind(newKeybind)
     // Persist to localStorage
     if (typeof window !== 'undefined') {
       localStorage.setItem('history-keybind', newKeybind)
     }
+    // Update Electron global shortcut
+    try {
+      await window.electronAPI?.updateHistoryShortcut(newKeybind)
+    } catch (error) {
+      console.error('Failed to update history global shortcut:', error)
+    }
   }
 
-  const handleSettingsKeybindChange = (newKeybind: string) => {
+  const handleSettingsKeybindChange = async (newKeybind: string) => {
     setSettingsKeybind(newKeybind)
     // Persist to localStorage
     if (typeof window !== 'undefined') {
       localStorage.setItem('settings-keybind', newKeybind)
     }
+    // Update Electron global shortcut
+    try {
+      await window.electronAPI?.updateSettingsShortcut(newKeybind)
+    } catch (error) {
+      console.error('Failed to update settings global shortcut:', error)
+    }
   }
 
-  const handleNewChatKeybindChange = (newKeybind: string) => {
+  const handleNewChatKeybindChange = async (newKeybind: string) => {
     setNewChatKeybind(newKeybind)
     // Persist to localStorage
     if (typeof window !== 'undefined') {
       localStorage.setItem('new-chat-keybind', newKeybind)
+    }
+    // Update Electron global shortcut
+    try {
+      await window.electronAPI?.updateNewChatShortcut(newKeybind)
+    } catch (error) {
+      console.error('Failed to update new chat global shortcut:', error)
     }
   }
 

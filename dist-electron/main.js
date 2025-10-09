@@ -16224,10 +16224,14 @@ class ShortcutsManager {
   constructor(windowManager2) {
     this.windowManager = windowManager2;
   }
-  currentShortcut = null;
+  navigationShortcut = null;
+  chatShortcut = null;
+  historyShortcut = null;
+  settingsShortcut = null;
+  newChatShortcut = null;
   registerNavigationToggleShortcut(shortcut) {
-    if (this.currentShortcut) {
-      globalShortcut.unregister(this.currentShortcut);
+    if (this.navigationShortcut) {
+      globalShortcut.unregister(this.navigationShortcut);
     }
     const shortcutRegistered = globalShortcut.register(shortcut, () => {
       const overlayWindow = this.windowManager.getOverlayWindow();
@@ -16236,15 +16240,79 @@ class ShortcutsManager {
       }
     });
     if (shortcutRegistered) {
-      this.currentShortcut = shortcut;
+      this.navigationShortcut = shortcut;
+    }
+  }
+  registerChatToggleShortcut(shortcut) {
+    if (this.chatShortcut) {
+      globalShortcut.unregister(this.chatShortcut);
+    }
+    const shortcutRegistered = globalShortcut.register(shortcut, () => {
+      const overlayWindow = this.windowManager.getOverlayWindow();
+      if (overlayWindow && !overlayWindow.isDestroyed()) {
+        overlayWindow.webContents.send("toggle-chat");
+      }
+    });
+    if (shortcutRegistered) {
+      this.chatShortcut = shortcut;
+    }
+  }
+  registerHistoryToggleShortcut(shortcut) {
+    if (this.historyShortcut) {
+      globalShortcut.unregister(this.historyShortcut);
+    }
+    const shortcutRegistered = globalShortcut.register(shortcut, () => {
+      const overlayWindow = this.windowManager.getOverlayWindow();
+      if (overlayWindow && !overlayWindow.isDestroyed()) {
+        overlayWindow.webContents.send("toggle-history");
+      }
+    });
+    if (shortcutRegistered) {
+      this.historyShortcut = shortcut;
+    }
+  }
+  registerSettingsToggleShortcut(shortcut) {
+    if (this.settingsShortcut) {
+      globalShortcut.unregister(this.settingsShortcut);
+    }
+    const shortcutRegistered = globalShortcut.register(shortcut, () => {
+      const overlayWindow = this.windowManager.getOverlayWindow();
+      if (overlayWindow && !overlayWindow.isDestroyed()) {
+        overlayWindow.webContents.send("toggle-settings");
+      }
+    });
+    if (shortcutRegistered) {
+      this.settingsShortcut = shortcut;
+    }
+  }
+  registerNewChatShortcut(shortcut) {
+    if (this.newChatShortcut) {
+      globalShortcut.unregister(this.newChatShortcut);
+    }
+    const shortcutRegistered = globalShortcut.register(shortcut, () => {
+      const overlayWindow = this.windowManager.getOverlayWindow();
+      if (overlayWindow && !overlayWindow.isDestroyed()) {
+        overlayWindow.webContents.send("trigger-new-chat");
+      }
+    });
+    if (shortcutRegistered) {
+      this.newChatShortcut = shortcut;
     }
   }
   registerGlobalShortcuts() {
     this.registerNavigationToggleShortcut("Shift+\\");
+    this.registerChatToggleShortcut("Shift+Z");
+    this.registerHistoryToggleShortcut("Shift+X");
+    this.registerSettingsToggleShortcut("Shift+C");
+    this.registerNewChatShortcut("Ctrl+Z");
   }
   unregisterAllShortcuts() {
     globalShortcut.unregisterAll();
-    this.currentShortcut = null;
+    this.navigationShortcut = null;
+    this.chatShortcut = null;
+    this.historyShortcut = null;
+    this.settingsShortcut = null;
+    this.newChatShortcut = null;
   }
   setupShortcutCleanup() {
     app.on("will-quit", () => {
@@ -16688,6 +16756,18 @@ void app.whenReady().then(async () => {
   shortcutsManager.setupShortcutCleanup();
   ipcMain.handle("update-navigation-shortcut", (_event, shortcut) => {
     shortcutsManager.registerNavigationToggleShortcut(shortcut);
+  });
+  ipcMain.handle("update-chat-shortcut", (_event, shortcut) => {
+    shortcutsManager.registerChatToggleShortcut(shortcut);
+  });
+  ipcMain.handle("update-history-shortcut", (_event, shortcut) => {
+    shortcutsManager.registerHistoryToggleShortcut(shortcut);
+  });
+  ipcMain.handle("update-settings-shortcut", (_event, shortcut) => {
+    shortcutsManager.registerSettingsToggleShortcut(shortcut);
+  });
+  ipcMain.handle("update-new-chat-shortcut", (_event, shortcut) => {
+    shortcutsManager.registerNewChatShortcut(shortcut);
   });
   await autoLaunchManager.initializeAutoLaunch();
   windowManager.createSystemTray();

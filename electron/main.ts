@@ -90,6 +90,22 @@ void app.whenReady().then(async () => {
     shortcutsManager.registerNavigationToggleShortcut(shortcut)
   })
 
+  ipcMain.handle('update-chat-shortcut', (_event, shortcut: string) => {
+    shortcutsManager.registerChatToggleShortcut(shortcut)
+  })
+
+  ipcMain.handle('update-history-shortcut', (_event, shortcut: string) => {
+    shortcutsManager.registerHistoryToggleShortcut(shortcut)
+  })
+
+  ipcMain.handle('update-settings-shortcut', (_event, shortcut: string) => {
+    shortcutsManager.registerSettingsToggleShortcut(shortcut)
+  })
+
+  ipcMain.handle('update-new-chat-shortcut', (_event, shortcut: string) => {
+    shortcutsManager.registerNewChatShortcut(shortcut)
+  })
+
   // Initialize auto-launch functionality
   await autoLaunchManager.initializeAutoLaunch()
 
