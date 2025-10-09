@@ -10,6 +10,7 @@ import { useAuth } from './use-auth'
 import { useClickThrough } from './use-click-through'
 import { useKeyboardToggle } from './use-keyboard-toggle'
 import { useSubscription } from './use-subscription'
+import { useVoiceChat } from './use-voice-chat'
 
 // Helper function to convert keybind string to useKeyboardToggle format
 function parseKeybind(keybind: string) {
@@ -64,6 +65,7 @@ export function useAppLogic() {
   // Core application state
   const [selectedGame, setSelectedGame] = useState<Game | null>(null)
   const [isGamingChatVisible, setIsGamingChatVisible] = useState(false)
+  const [isVoiceChatVisible, setIsVoiceChatVisible] = useState(false)
   const [messages, setMessages] = useState<Message[]>([])
   const [showSettingsMenu, setShowSettingsMenu] = useState(false)
   const [showHistoryPanel, setShowHistoryPanel] = useState(false)
@@ -72,6 +74,15 @@ export function useAppLogic() {
   const [currentConversationId, setCurrentConversationId] = useState<
     string | null
   >(null)
+
+  // Voice chat hook
+  const voiceChat = useVoiceChat({
+    selectedGame,
+    onError: (error) => {
+      console.error('Voice chat error:', error)
+      // Optionally show error to user
+    },
+  })
 
   // Keybind management
   const [customKeybind, setCustomKeybind] = useState<string>(() => {
@@ -397,6 +408,7 @@ export function useAppLogic() {
     interactiveSelectors:
       isNavigationBarVisible ||
       isGamingChatVisible ||
+      isVoiceChatVisible ||
       showSettingsMenu ||
       showHistoryPanel ||
       showInfoPanel
@@ -405,15 +417,47 @@ export function useAppLogic() {
   })
 
   // Event handlers
-  const handleVoiceClick = () => {
-    // Handle speak functionality here
-    // TODO: Implement actual speech recognition
+  const handleVoiceClick = async () => {
+    // Toggle voice chat visibility
+    if (isVoiceChatVisible) {
+      // If already visible, stop it
+      voiceChat.stopVoiceChat()
+      setIsVoiceChatVisible(false)
+    } else {
+      // Start voice chat
+      setIsVoiceChatVisible(true)
+      // Close other panels
+      if (isGamingChatVisible) {
+        setIsGamingChatVisible(false)
+      }
+      if (showSettingsMenu) {
+        setShowSettingsMenu(false)
+      }
+      if (showHistoryPanel) {
+        setShowHistoryPanel(false)
+      }
+      if (showInfoPanel) {
+        setShowInfoPanel(false)
+      }
+      
+      // Start voice chat connection
+      try {
+        await voiceChat.startVoiceChat()
+      } catch (error) {
+        console.error('Failed to start voice chat:', error)
+        setIsVoiceChatVisible(false)
+      }
+    }
   }
 
   const handleTextClick = () => {
     setIsGamingChatVisible(!isGamingChatVisible)
     // Close other panels when text chat opens
     if (!isGamingChatVisible) {
+      if (isVoiceChatVisible) {
+        voiceChat.stopVoiceChat()
+        setIsVoiceChatVisible(false)
+      }
       if (showSettingsMenu) {
         setShowSettingsMenu(false)
       }
@@ -433,6 +477,10 @@ export function useAppLogic() {
       if (isGamingChatVisible) {
         setIsGamingChatVisible(false)
       }
+      if (isVoiceChatVisible) {
+        voiceChat.stopVoiceChat()
+        setIsVoiceChatVisible(false)
+      }
       if (showSettingsMenu) {
         setShowSettingsMenu(false)
       }
@@ -449,6 +497,10 @@ export function useAppLogic() {
       if (isGamingChatVisible) {
         setIsGamingChatVisible(false)
       }
+      if (isVoiceChatVisible) {
+        voiceChat.stopVoiceChat()
+        setIsVoiceChatVisible(false)
+      }
       if (showHistoryPanel) {
         setShowHistoryPanel(false)
       }
@@ -464,6 +516,10 @@ export function useAppLogic() {
     if (!showInfoPanel) {
       if (isGamingChatVisible) {
         setIsGamingChatVisible(false)
+      }
+      if (isVoiceChatVisible) {
+        voiceChat.stopVoiceChat()
+        setIsVoiceChatVisible(false)
       }
       if (showSettingsMenu) {
         setShowSettingsMenu(false)
@@ -544,6 +600,20 @@ export function useAppLogic() {
     setIsGamingChatVisible(false)
     // Optionally clear messages when closing chat
     // setMessages([])
+  }
+
+  const handleVoiceChatClose = () => {
+    voiceChat.stopVoiceChat()
+    setIsVoiceChatVisible(false)
+  }
+
+  const handleVoiceChatStop = () => {
+    voiceChat.stopVoiceChat()
+    setIsVoiceChatVisible(false)
+  }
+
+  const handleVoiceChatToggleMute = () => {
+    voiceChat.toggleMute()
   }
 
   const handleConversationSelect = async (conversation: Conversation) => {
@@ -642,6 +712,10 @@ export function useAppLogic() {
       if (isGamingChatVisible) {
         setIsGamingChatVisible(false)
       }
+      if (isVoiceChatVisible) {
+        voiceChat.stopVoiceChat()
+        setIsVoiceChatVisible(false)
+      }
       if (showSettingsMenu) {
         setShowSettingsMenu(false)
       }
@@ -736,6 +810,7 @@ export function useAppLogic() {
     // State
     selectedGame,
     isGamingChatVisible,
+    isVoiceChatVisible,
     messages,
     isNavigationBarVisible,
     showSettingsMenu,
@@ -752,6 +827,7 @@ export function useAppLogic() {
     currentConversationId,
     isSubscribed,
     subscriptionLoading,
+    voiceChatState: voiceChat,
 
     // Actions
     handleVoiceClick,
@@ -762,6 +838,9 @@ export function useAppLogic() {
     handleGameSelect,
     handleSendMessage,
     handleGamingChatClose,
+    handleVoiceChatClose,
+    handleVoiceChatStop,
+    handleVoiceChatToggleMute,
     handleStartNewConversation,
     handleConversationSelect,
     handleDropdownOpenChange,

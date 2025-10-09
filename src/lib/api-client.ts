@@ -94,6 +94,31 @@ export interface CancelSubscriptionResponse {
   message: string
 }
 
+export interface VoiceSessionRequest {
+  game: string | null
+}
+
+export interface VoiceSessionResponse {
+  client_secret: string
+  ephemeral_key_id: string
+  model: string
+  expires_at: number
+  websocket_url: string
+  connection_instructions: {
+    url: string
+    auth_header: string
+    protocol: string
+    expires_in_seconds: string
+    note: string
+  }
+}
+
+export interface VoiceSessionError {
+  error: string
+  message: string
+  request_id: string
+}
+
 export class ApiClient {
   private readonly baseUrl =
     'https://unstuck-backend-production-d9c1.up.railway.app/api/v1'
@@ -103,6 +128,7 @@ export class ApiClient {
     subscriptionCheckout: '/subscription/create-checkout-session',
     subscriptionStatus: '/subscription/status',
     subscriptionCancel: '/subscription/cancel',
+    voiceSession: '/voice/session',
   } as const
 
   // Timeout configurations (in milliseconds)
@@ -680,6 +706,82 @@ export class ApiClient {
 
       if (typeof data.success !== 'boolean') {
         throw new Error('Invalid cancellation response from server')
+      }
+
+      return data
+    } catch (networkError) {
+      if (
+        networkError instanceof TypeError &&
+        networkError.message.includes('fetch')
+      ) {
+        throw new Error(
+          'Connection failed. Please check your internet connection and try again.'
+        )
+      }
+      throw networkError
+    }
+  }
+
+  /**
+   * Create a voice session with ephemeral token
+   */
+  async createVoiceSession(
+    request: VoiceSessionRequest,
+    accessToken: string
+  ): Promise<VoiceSessionResponse> {
+    const url = `${this.baseUrl}${this.endpoints.voiceSession}`
+
+    try {
+      const response = await this.fetchWithTimeout(
+        url,
+        {
+          method: 'POST',
+          headers: {
+            Authorization: `Bearer ${accessToken}`,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(request),
+        },
+        this.timeouts.quickRequests
+      )
+
+      if (!response.ok) {
+        let errorMessage = 'Failed to create voice session'
+        let errorType = 'voice_session_error'
+
+        try {
+          const errorData = (await response.json()) as VoiceSessionError
+          errorMessage = errorData.message || errorMessage
+          errorType = errorData.error || errorType
+        } catch {
+          errorMessage = response.statusText || `HTTP ${response.status}`
+        }
+
+        if (response.status === 401) {
+          throw new Error('Authentication failed. Please sign in again.')
+        } else if (response.status === 403) {
+          throw new Error(errorMessage || 'Access denied.')
+        } else if (response.status === 429) {
+          throw new Error(
+            errorMessage ||
+              'Rate limit exceeded. Please wait a moment and try again.'
+          )
+        } else if (response.status >= 500) {
+          throw new Error('Server error. Please try again later.')
+        } else {
+          throw new Error(`${errorType}: ${errorMessage}`)
+        }
+      }
+
+      const data = (await response.json()) as VoiceSessionResponse
+
+      if (
+        !data.client_secret ||
+        !data.ephemeral_key_id ||
+        !data.websocket_url ||
+        !data.model
+      ) {
+        throw new Error('Invalid voice session response from server')
       }
 
       return data

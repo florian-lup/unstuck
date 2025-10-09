@@ -6,10 +6,10 @@
     <meta
       http-equiv="Content-Security-Policy"
       content="default-src 'self'; 
-               script-src 'self'; 
+               script-src 'self' blob:; 
                style-src 'self' 'unsafe-inline'; 
                img-src 'self' data: blob: https:; 
-               connect-src 'self' https://unstuck-backend-production-d9c1.up.railway.app https://auth.unstuck.gg https://*.stripe.com; 
+               connect-src 'self' https://unstuck-backend-production-d9c1.up.railway.app https://auth.unstuck.gg https://*.stripe.com wss://api.openai.com https://api.openai.com; 
                font-src 'self'; 
                object-src 'none'; 
                base-uri 'self'; 
