@@ -78,102 +78,6 @@ export interface ConversationHistoryResponse {
   updated_at: number
 }
 
-export interface GamingLoreRequest {
-  query: string
-  game: string
-  version?: string
-  conversation_id?: string
-}
-
-export interface GamingLoreResponse {
-  id: string
-  conversation_id: string
-  model: string
-  created: number
-  content: string
-  search_results: {
-    title: string
-    url: string
-    date: string
-  }[]
-  usage: {
-    prompt_tokens: number
-    completion_tokens: number
-    total_tokens: number
-    search_context_size: string
-    citation_tokens: number
-    num_search_queries: number
-  }
-  finish_reason: string
-  request_limit_info: {
-    remaining_requests: number
-  }
-}
-
-export interface GamingGuidesRequest {
-  query: string
-  game: string
-  version?: string
-  conversation_id?: string
-}
-
-export interface GamingGuidesResponse {
-  id: string
-  conversation_id: string
-  model: string
-  created: number
-  content: string
-  search_results: {
-    title: string
-    url: string
-    date: string
-  }[]
-  usage: {
-    prompt_tokens: number
-    completion_tokens: number
-    total_tokens: number
-    search_context_size: string
-    citation_tokens: number
-    num_search_queries: number
-  }
-  finish_reason: string
-  request_limit_info: {
-    remaining_requests: number
-  }
-}
-
-export interface GamingBuildsRequest {
-  query: string
-  game: string
-  version?: string
-  conversation_id?: string
-}
-
-export interface GamingBuildsResponse {
-  id: string
-  conversation_id: string
-  model: string
-  created: number
-  content: string
-  search_results: {
-    title: string
-    url: string
-    date: string
-  }[]
-  usage: {
-    prompt_tokens: number
-    completion_tokens: number
-    total_tokens: number
-    search_context_size: string
-    citation_tokens: number
-    num_search_queries: number
-  }
-  finish_reason: string
-  request_limit_info: {
-    remaining_requests: number
-  }
-}
-
 export interface CreateCheckoutSessionResponse {
   checkout_url: string
   session_id: string
@@ -195,9 +99,6 @@ export class ApiClient {
     'https://unstuck-backend-production-d9c1.up.railway.app/api/v1'
   private readonly endpoints = {
     gamingSearch: '/gaming/chat',
-    gamingLore: '/gaming/lore',
-    gamingGuides: '/gaming/guides',
-    gamingBuilds: '/gaming/builds',
     conversations: '/gaming/conversations',
     subscriptionCheckout: '/subscription/create-checkout-session',
     subscriptionStatus: '/subscription/status',
@@ -206,7 +107,7 @@ export class ApiClient {
 
   // Timeout configurations (in milliseconds)
   private readonly timeouts = {
-    aiRequests: 120000, // 2 minutes for AI-powered requests (chat, lore, guides, builds)
+    aiRequests: 120000, // 2 minutes for AI-powered requests (chat)
     stripeRequests: 300000, // 5 minutes for Stripe operations (checkout, subscription)
     standardRequests: 30000, // 30 seconds for standard API requests
     quickRequests: 15000, // 15 seconds for quick operations
@@ -250,7 +151,7 @@ export class ApiClient {
   /**
    * Send a gaming search request to the API
    */
-  async searchGaming(
+  async GamingChatQuerie(
     request: GamingChatRequest,
     accessToken: string
   ): Promise<GamingChatResponse> {
@@ -326,222 +227,6 @@ export class ApiClient {
       }
 
       // Re-throw other errors
-      throw networkError
-    }
-  }
-
-  /**
-   * Send a gaming lore request to the API
-   */
-  async searchLore(
-    request: GamingLoreRequest,
-    accessToken: string
-  ): Promise<GamingLoreResponse> {
-    const url = `${this.baseUrl}${this.endpoints.gamingLore}`
-
-    try {
-      const response = await this.fetchWithTimeout(
-        url,
-        {
-          method: 'POST',
-          headers: {
-            Authorization: `Bearer ${accessToken}`,
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify(request),
-        },
-        this.timeouts.aiRequests
-      )
-
-      // Handle non-200 responses
-      if (!response.ok) {
-        // Try to parse error response
-        let errorData: ApiErrorResponse | null = null
-        try {
-          errorData = (await response.json()) as ApiErrorResponse
-        } catch {
-          // If JSON parsing fails, use status text
-          throw new SubscriptionError(`Request failed: ${response.statusText}`)
-        }
-
-        // Lore is a restricted feature - treat all API errors as subscription errors
-        // This ensures the backend's error message is displayed without modification
-        const message = errorData.detail?.message ?? errorData.message
-        throw new SubscriptionError(message)
-      }
-
-      // Parse and validate the successful response
-      try {
-        const data = (await response.json()) as GamingLoreResponse
-
-        // Basic validation of required fields
-        if (!data.id || !data.conversation_id || !data.content) {
-          throw new Error('Invalid response format from server')
-        }
-
-        return data
-      } catch (error) {
-        if (error instanceof Error) {
-          throw error
-        }
-        throw new Error('Failed to parse server response')
-      }
-    } catch (networkError) {
-      // Check if it's a fetch error (network issues)
-      if (
-        networkError instanceof TypeError &&
-        networkError.message.includes('fetch')
-      ) {
-        throw new Error(
-          'Connection failed. Please check your internet connection and try again.'
-        )
-      }
-
-      // Re-throw other errors (including SubscriptionError from above)
-      throw networkError
-    }
-  }
-
-  /**
-   * Send a gaming guides request to the API
-   */
-  async searchGuides(
-    request: GamingGuidesRequest,
-    accessToken: string
-  ): Promise<GamingGuidesResponse> {
-    const url = `${this.baseUrl}${this.endpoints.gamingGuides}`
-
-    try {
-      const response = await this.fetchWithTimeout(
-        url,
-        {
-          method: 'POST',
-          headers: {
-            Authorization: `Bearer ${accessToken}`,
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify(request),
-        },
-        this.timeouts.aiRequests
-      )
-
-      // Handle non-200 responses
-      if (!response.ok) {
-        // Try to parse error response
-        let errorData: ApiErrorResponse | null = null
-        try {
-          errorData = (await response.json()) as ApiErrorResponse
-        } catch {
-          // If JSON parsing fails, use status text
-          throw new SubscriptionError(`Request failed: ${response.statusText}`)
-        }
-
-        // Guides is a restricted feature - treat all API errors as subscription errors
-        // This ensures the backend's error message is displayed without modification
-        const message = errorData.detail?.message ?? errorData.message
-        throw new SubscriptionError(message)
-      }
-
-      // Parse and validate the successful response
-      try {
-        const data = (await response.json()) as GamingGuidesResponse
-
-        // Basic validation of required fields
-        if (!data.id || !data.conversation_id || !data.content) {
-          throw new Error('Invalid response format from server')
-        }
-
-        return data
-      } catch (error) {
-        if (error instanceof Error) {
-          throw error
-        }
-        throw new Error('Failed to parse server response')
-      }
-    } catch (networkError) {
-      // Check if it's a fetch error (network issues)
-      if (
-        networkError instanceof TypeError &&
-        networkError.message.includes('fetch')
-      ) {
-        throw new Error(
-          'Connection failed. Please check your internet connection and try again.'
-        )
-      }
-
-      // Re-throw other errors (including SubscriptionError from above)
-      throw networkError
-    }
-  }
-
-  /**
-   * Send a gaming builds request to the API
-   */
-  async searchBuilds(
-    request: GamingBuildsRequest,
-    accessToken: string
-  ): Promise<GamingBuildsResponse> {
-    const url = `${this.baseUrl}${this.endpoints.gamingBuilds}`
-
-    try {
-      const response = await this.fetchWithTimeout(
-        url,
-        {
-          method: 'POST',
-          headers: {
-            Authorization: `Bearer ${accessToken}`,
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify(request),
-        },
-        this.timeouts.aiRequests
-      )
-
-      // Handle non-200 responses
-      if (!response.ok) {
-        // Try to parse error response
-        let errorData: ApiErrorResponse | null = null
-        try {
-          errorData = (await response.json()) as ApiErrorResponse
-        } catch {
-          // If JSON parsing fails, use status text
-          throw new SubscriptionError(`Request failed: ${response.statusText}`)
-        }
-
-        // Builds is a restricted feature - treat all API errors as subscription errors
-        // This ensures the backend's error message is displayed without modification
-        const message = errorData.detail?.message ?? errorData.message
-        throw new SubscriptionError(message)
-      }
-
-      // Parse and validate the successful response
-      try {
-        const data = (await response.json()) as GamingBuildsResponse
-
-        // Basic validation of required fields
-        if (!data.id || !data.conversation_id || !data.content) {
-          throw new Error('Invalid response format from server')
-        }
-
-        return data
-      } catch (error) {
-        if (error instanceof Error) {
-          throw error
-        }
-        throw new Error('Failed to parse server response')
-      }
-    } catch (networkError) {
-      // Check if it's a fetch error (network issues)
-      if (
-        networkError instanceof TypeError &&
-        networkError.message.includes('fetch')
-      ) {
-        throw new Error(
-          'Connection failed. Please check your internet connection and try again.'
-        )
-      }
-
-      // Re-throw other errors (including SubscriptionError from above)
       throw networkError
     }
   }

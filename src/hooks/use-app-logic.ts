@@ -585,7 +585,7 @@ export function useAppLogic() {
 
   const handleSendMessage = async (
     messageContent: string,
-    activeToggle?: 'guides' | 'builds' | 'lore' | 'fix' | null
+    _activeToggle?: 'guides' | 'builds' | 'lore' | 'fix' | null
   ) => {
     // Remember if we had a conversation ID before sending
     const hadConversation = !!currentConversationId
@@ -606,16 +606,7 @@ export function useAppLogic() {
       // Send message through appropriate service based on active toggle
       // Let the backend handle JWT verification
       const { assistantMessage, conversationId } =
-        activeToggle === 'lore'
-          ? await chatService.sendLoreMessage(messageContent, selectedGame)
-          : activeToggle === 'guides'
-            ? await chatService.sendGuidesMessage(messageContent, selectedGame)
-            : activeToggle === 'builds'
-              ? await chatService.sendBuildsMessage(
-                  messageContent,
-                  selectedGame
-                )
-              : await chatService.sendMessage(messageContent, selectedGame)
+        await chatService.sendMessage(messageContent, selectedGame)
 
       // If this was a new conversation (we didn't have one before), update the ID and invalidate cache
       if (!hadConversation && conversationId) {
