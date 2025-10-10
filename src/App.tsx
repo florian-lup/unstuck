@@ -24,6 +24,7 @@ function App() {
     historyKeybind,
     settingsKeybind,
     newChatKeybind,
+    voiceChatKeybind,
     transparency,
     isLoadingMessage,
     isSubscribed,
@@ -46,6 +47,7 @@ function App() {
     handleHistoryKeybindChange,
     handleSettingsKeybindChange,
     handleNewChatKeybindChange,
+    handleVoiceChatKeybindChange,
     handleTransparencyChange,
     handleUpgrade,
     handleCancel,
@@ -94,6 +96,8 @@ function App() {
               onSettingsKeybindChange={handleSettingsKeybindChange}
               currentNewChatKeybind={newChatKeybind}
               onNewChatKeybindChange={handleNewChatKeybindChange}
+              currentVoiceChatKeybind={voiceChatKeybind}
+              onVoiceChatKeybindChange={handleVoiceChatKeybindChange}
               currentTransparency={transparency}
               onTransparencyChange={handleTransparencyChange}
               isSubscribed={isSubscribed}

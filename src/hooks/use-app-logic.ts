@@ -94,38 +94,47 @@ export function useAppLogic() {
 
   // Chat keybind management
   const [chatKeybind, setChatKeybind] = useState<string>(() => {
-    // Load chat keybind from localStorage or use default
+    // Load chat keybind from localStorage or use empty default
     if (typeof window !== 'undefined') {
-      return localStorage.getItem('chat-keybind') ?? 'Shift+Z'
+      return localStorage.getItem('chat-keybind') ?? ''
     }
-    return 'Shift+Z'
+    return ''
   })
 
   // History keybind management
   const [historyKeybind, setHistoryKeybind] = useState<string>(() => {
-    // Load history keybind from localStorage or use default
+    // Load history keybind from localStorage or use empty default
     if (typeof window !== 'undefined') {
-      return localStorage.getItem('history-keybind') ?? 'Shift+X'
+      return localStorage.getItem('history-keybind') ?? ''
     }
-    return 'Shift+X'
+    return ''
   })
 
   // Settings keybind management
   const [settingsKeybind, setSettingsKeybind] = useState<string>(() => {
-    // Load settings keybind from localStorage or use default
+    // Load settings keybind from localStorage or use empty default
     if (typeof window !== 'undefined') {
-      return localStorage.getItem('settings-keybind') ?? 'Shift+C'
+      return localStorage.getItem('settings-keybind') ?? ''
     }
-    return 'Shift+C'
+    return ''
   })
 
   // New chat keybind management
   const [newChatKeybind, setNewChatKeybind] = useState<string>(() => {
-    // Load new chat keybind from localStorage or use default
+    // Load new chat keybind from localStorage or use empty default
     if (typeof window !== 'undefined') {
-      return localStorage.getItem('new-chat-keybind') ?? 'Ctrl+Z'
+      return localStorage.getItem('new-chat-keybind') ?? ''
     }
-    return 'Ctrl+Z'
+    return ''
+  })
+
+  // Voice chat keybind management
+  const [voiceChatKeybind, setVoiceChatKeybind] = useState<string>(() => {
+    // Load voice chat keybind from localStorage or use empty default
+    if (typeof window !== 'undefined') {
+      return localStorage.getItem('voice-chat-keybind') ?? ''
+    }
+    return ''
   })
 
   // Transparency management (0-100, where 100 is fully opaque)
@@ -172,21 +181,25 @@ export function useAppLogic() {
         if (customKeybind !== 'Shift+\\') {
           await window.electronAPI?.updateNavigationShortcut(customKeybind)
         }
-        // Sync chat shortcut if it's not the default
-        if (chatKeybind !== 'Shift+Z') {
+        // Sync chat shortcut if user has set one
+        if (chatKeybind && chatKeybind !== '') {
           await window.electronAPI?.updateChatShortcut(chatKeybind)
         }
-        // Sync history shortcut if it's not the default
-        if (historyKeybind !== 'Shift+X') {
+        // Sync history shortcut if user has set one
+        if (historyKeybind && historyKeybind !== '') {
           await window.electronAPI?.updateHistoryShortcut(historyKeybind)
         }
-        // Sync settings shortcut if it's not the default
-        if (settingsKeybind !== 'Shift+C') {
+        // Sync settings shortcut if user has set one
+        if (settingsKeybind && settingsKeybind !== '') {
           await window.electronAPI?.updateSettingsShortcut(settingsKeybind)
         }
-        // Sync new chat shortcut if it's not the default
-        if (newChatKeybind !== 'Ctrl+Z') {
+        // Sync new chat shortcut if user has set one
+        if (newChatKeybind && newChatKeybind !== '') {
           await window.electronAPI?.updateNewChatShortcut(newChatKeybind)
+        }
+        // Sync voice chat shortcut if user has set one
+        if (voiceChatKeybind && voiceChatKeybind !== '') {
+          await window.electronAPI?.updateVoiceChatShortcut(voiceChatKeybind)
         }
       } catch (error) {
         console.error('Failed to sync initial global shortcuts:', error)
@@ -199,6 +212,7 @@ export function useAppLogic() {
     historyKeybind,
     settingsKeybind,
     newChatKeybind,
+    voiceChatKeybind,
   ])
 
   // Apply transparency changes to CSS custom properties
@@ -383,39 +397,8 @@ export function useAppLogic() {
     conversationCache.invalidateConversationList()
   }, [])
 
-  // Listen for new chat keyboard shortcut (from Electron global shortcut)
-  useEffect(() => {
-    const handleNewChat = () => {
-      handleStartNewConversation()
-    }
-
-    // Listen for Electron global shortcut
-    if (window.electronAPI?.onNewChatTrigger) {
-      window.electronAPI.onNewChatTrigger(handleNewChat)
-    }
-
-    // Cleanup function to remove event listeners
-    return () => {
-      if (window.electronAPI?.removeNewChatTriggerListener) {
-        window.electronAPI.removeNewChatTriggerListener()
-      }
-    }
-  }, [handleStartNewConversation])
-
-  // Global click-through management
-  useClickThrough({
-    interactiveSelectors:
-      isNavigationBarVisible ||
-      isGamingChatVisible ||
-      showSettingsMenu ||
-      showHistoryPanel ||
-      showInfoPanel
-        ? ['[data-interactive-area]']
-        : [],
-  })
-
   // Event handlers
-  const handleVoiceClick = async () => {
+  const handleVoiceClick = useCallback(async () => {
     // Toggle voice chat based on connection state
     if (voiceChat.isConnected || voiceChat.isConnecting) {
       // If already connected or connecting, stop it
@@ -442,7 +425,63 @@ export function useAppLogic() {
         console.error('Failed to start voice chat:', error)
       }
     }
-  }
+  }, [
+    voiceChat,
+    isGamingChatVisible,
+    showSettingsMenu,
+    showHistoryPanel,
+    showInfoPanel,
+  ])
+
+  // Listen for new chat keyboard shortcut (from Electron global shortcut)
+  useEffect(() => {
+    const handleNewChat = () => {
+      handleStartNewConversation()
+    }
+
+    // Listen for Electron global shortcut
+    if (window.electronAPI?.onNewChatTrigger) {
+      window.electronAPI.onNewChatTrigger(handleNewChat)
+    }
+
+    // Cleanup function to remove event listeners
+    return () => {
+      if (window.electronAPI?.removeNewChatTriggerListener) {
+        window.electronAPI.removeNewChatTriggerListener()
+      }
+    }
+  }, [handleStartNewConversation])
+
+  // Listen for voice chat toggle keyboard shortcut (from Electron global shortcut)
+  useEffect(() => {
+    const handleVoiceChatToggle = () => {
+      void handleVoiceClick()
+    }
+
+    // Listen for Electron global shortcut
+    if (window.electronAPI?.onVoiceChatToggle) {
+      window.electronAPI.onVoiceChatToggle(handleVoiceChatToggle)
+    }
+
+    // Cleanup function to remove event listeners
+    return () => {
+      if (window.electronAPI?.removeVoiceChatToggleListener) {
+        window.electronAPI.removeVoiceChatToggleListener()
+      }
+    }
+  }, [handleVoiceClick])
+
+  // Global click-through management
+  useClickThrough({
+    interactiveSelectors:
+      isNavigationBarVisible ||
+      isGamingChatVisible ||
+      showSettingsMenu ||
+      showHistoryPanel ||
+      showInfoPanel
+        ? ['[data-interactive-area]']
+        : [],
+  })
 
   const handleTextClick = () => {
     setIsGamingChatVisible(!isGamingChatVisible)
@@ -737,7 +776,7 @@ export function useAppLogic() {
     if (typeof window !== 'undefined') {
       localStorage.setItem('chat-keybind', newKeybind)
     }
-    // Update Electron global shortcut
+    // Always update Electron global shortcut (empty string will unregister)
     try {
       await window.electronAPI?.updateChatShortcut(newKeybind)
     } catch (error) {
@@ -751,7 +790,7 @@ export function useAppLogic() {
     if (typeof window !== 'undefined') {
       localStorage.setItem('history-keybind', newKeybind)
     }
-    // Update Electron global shortcut
+    // Always update Electron global shortcut (empty string will unregister)
     try {
       await window.electronAPI?.updateHistoryShortcut(newKeybind)
     } catch (error) {
@@ -765,7 +804,7 @@ export function useAppLogic() {
     if (typeof window !== 'undefined') {
       localStorage.setItem('settings-keybind', newKeybind)
     }
-    // Update Electron global shortcut
+    // Always update Electron global shortcut (empty string will unregister)
     try {
       await window.electronAPI?.updateSettingsShortcut(newKeybind)
     } catch (error) {
@@ -779,11 +818,25 @@ export function useAppLogic() {
     if (typeof window !== 'undefined') {
       localStorage.setItem('new-chat-keybind', newKeybind)
     }
-    // Update Electron global shortcut
+    // Always update Electron global shortcut (empty string will unregister)
     try {
       await window.electronAPI?.updateNewChatShortcut(newKeybind)
     } catch (error) {
       console.error('Failed to update new chat global shortcut:', error)
+    }
+  }
+
+  const handleVoiceChatKeybindChange = async (newKeybind: string) => {
+    setVoiceChatKeybind(newKeybind)
+    // Persist to localStorage
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('voice-chat-keybind', newKeybind)
+    }
+    // Always update Electron global shortcut (empty string will unregister)
+    try {
+      await window.electronAPI?.updateVoiceChatShortcut(newKeybind)
+    } catch (error) {
+      console.error('Failed to update voice chat global shortcut:', error)
     }
   }
 
@@ -802,6 +855,7 @@ export function useAppLogic() {
     historyKeybind,
     settingsKeybind,
     newChatKeybind,
+    voiceChatKeybind,
     transparency,
     isLoadingMessage,
     currentConversationId,
@@ -830,6 +884,7 @@ export function useAppLogic() {
     handleHistoryKeybindChange,
     handleSettingsKeybindChange,
     handleNewChatKeybindChange,
+    handleVoiceChatKeybindChange,
     handleTransparencyChange,
     handleUpgrade,
     handleCancel,

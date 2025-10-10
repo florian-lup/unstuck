@@ -21,7 +21,8 @@ const ALLOWED_INVOKE_CHANNELS = [
   "update-chat-shortcut",
   "update-history-shortcut",
   "update-settings-shortcut",
-  "update-new-chat-shortcut"
+  "update-new-chat-shortcut",
+  "update-voice-chat-shortcut"
 ];
 const ALLOWED_LISTEN_CHANNELS = [
   "toggle-navigation-bar",
@@ -29,6 +30,7 @@ const ALLOWED_LISTEN_CHANNELS = [
   "toggle-history",
   "toggle-settings",
   "trigger-new-chat",
+  "toggle-voice-chat",
   "open-settings-menu",
   "auth-success",
   "auth-error",
@@ -116,6 +118,12 @@ electron.contextBridge.exposeInMainWorld("electronAPI", {
       shortcut
     );
   },
+  updateVoiceChatShortcut: async (shortcut) => {
+    return electron.ipcRenderer.invoke(
+      "update-voice-chat-shortcut",
+      shortcut
+    );
+  },
   onChatToggle: (callback) => {
     const listener = () => {
       callback();
@@ -155,6 +163,16 @@ electron.contextBridge.exposeInMainWorld("electronAPI", {
   },
   removeNewChatTriggerListener: () => {
     electron.ipcRenderer.removeAllListeners("trigger-new-chat");
+  },
+  onVoiceChatToggle: (callback) => {
+    const listener = () => {
+      callback();
+    };
+    electron.ipcRenderer.on("toggle-voice-chat", listener);
+    return listener;
+  },
+  removeVoiceChatToggleListener: () => {
+    electron.ipcRenderer.removeAllListeners("toggle-voice-chat");
   },
   setIgnoreMouseEvents: (ignore, options) => {
     electron.ipcRenderer.send("set-ignore-mouse-events", ignore, options);

@@ -7,6 +7,7 @@ export class ShortcutsManager {
   private historyShortcut: string | null = null
   private settingsShortcut: string | null = null
   private newChatShortcut: string | null = null
+  private voiceChatShortcut: string | null = null
 
   constructor(private readonly windowManager: WindowManager) {}
 
@@ -33,6 +34,12 @@ export class ShortcutsManager {
     // Unregister existing shortcut first
     if (this.chatShortcut) {
       globalShortcut.unregister(this.chatShortcut)
+      this.chatShortcut = null
+    }
+
+    // If empty string, just unregister and return
+    if (!shortcut || shortcut === '') {
+      return
     }
 
     // Register new shortcut
@@ -52,6 +59,12 @@ export class ShortcutsManager {
     // Unregister existing shortcut first
     if (this.historyShortcut) {
       globalShortcut.unregister(this.historyShortcut)
+      this.historyShortcut = null
+    }
+
+    // If empty string, just unregister and return
+    if (!shortcut || shortcut === '') {
+      return
     }
 
     // Register new shortcut
@@ -71,6 +84,12 @@ export class ShortcutsManager {
     // Unregister existing shortcut first
     if (this.settingsShortcut) {
       globalShortcut.unregister(this.settingsShortcut)
+      this.settingsShortcut = null
+    }
+
+    // If empty string, just unregister and return
+    if (!shortcut || shortcut === '') {
+      return
     }
 
     // Register new shortcut
@@ -90,6 +109,12 @@ export class ShortcutsManager {
     // Unregister existing shortcut first
     if (this.newChatShortcut) {
       globalShortcut.unregister(this.newChatShortcut)
+      this.newChatShortcut = null
+    }
+
+    // If empty string, just unregister and return
+    if (!shortcut || shortcut === '') {
+      return
     }
 
     // Register new shortcut
@@ -105,13 +130,35 @@ export class ShortcutsManager {
     }
   }
 
+  registerVoiceChatShortcut(shortcut: string): void {
+    // Unregister existing shortcut first
+    if (this.voiceChatShortcut) {
+      globalShortcut.unregister(this.voiceChatShortcut)
+      this.voiceChatShortcut = null
+    }
+
+    // If empty string, just unregister and return
+    if (!shortcut || shortcut === '') {
+      return
+    }
+
+    // Register new shortcut
+    const shortcutRegistered = globalShortcut.register(shortcut, () => {
+      const overlayWindow = this.windowManager.getOverlayWindow()
+      if (overlayWindow && !overlayWindow.isDestroyed()) {
+        overlayWindow.webContents.send('toggle-voice-chat')
+      }
+    })
+
+    if (shortcutRegistered) {
+      this.voiceChatShortcut = shortcut
+    }
+  }
+
   registerGlobalShortcuts(): void {
     // Register default shortcuts
     this.registerNavigationToggleShortcut('Shift+\\')
-    this.registerChatToggleShortcut('Shift+Z')
-    this.registerHistoryToggleShortcut('Shift+X')
-    this.registerSettingsToggleShortcut('Shift+C')
-    this.registerNewChatShortcut('Ctrl+Z')
+    // Other shortcuts are user-configurable with no defaults
   }
 
   unregisterAllShortcuts(): void {
@@ -121,6 +168,7 @@ export class ShortcutsManager {
     this.historyShortcut = null
     this.settingsShortcut = null
     this.newChatShortcut = null
+    this.voiceChatShortcut = null
   }
 
   setupShortcutCleanup(): void {

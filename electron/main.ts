@@ -106,6 +106,10 @@ void app.whenReady().then(async () => {
     shortcutsManager.registerNewChatShortcut(shortcut)
   })
 
+  ipcMain.handle('update-voice-chat-shortcut', (_event, shortcut: string) => {
+    shortcutsManager.registerVoiceChatShortcut(shortcut)
+  })
+
   // Initialize auto-launch functionality
   await autoLaunchManager.initializeAutoLaunch()
 

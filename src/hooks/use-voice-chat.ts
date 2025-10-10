@@ -98,7 +98,6 @@ export function useVoiceChat({ selectedGame, onError }: UseVoiceChatOptions) {
 
       source.start()
     } catch (error) {
-      console.error('Error playing audio:', error)
       isPlayingRef.current = false
     }
   }, [])
@@ -136,7 +135,6 @@ export function useVoiceChat({ selectedGame, onError }: UseVoiceChatOptions) {
    */
   const startVoiceChat = useCallback(async () => {
     if (state.isConnected || state.isConnecting) {
-      console.warn('Already connected or connecting')
       return
     }
 
@@ -238,7 +236,6 @@ export function useVoiceChat({ selectedGame, onError }: UseVoiceChatOptions) {
           setState((prev) => ({ ...prev, isMuted: false }))
         })
         .catch((error: unknown) => {
-          console.error('Failed to start audio capture:', error)
           handleError(error instanceof Error ? error : new Error('Failed to start audio capture'))
         })
     } else {

@@ -9,6 +9,8 @@ export interface IElectronAPI {
   removeSettingsToggleListener: () => void
   onNewChatTrigger: (callback: () => void) => void
   removeNewChatTriggerListener: () => void
+  onVoiceChatToggle: (callback: () => void) => void
+  removeVoiceChatToggleListener: () => void
   onOpenSettingsMenu: (callback: () => void) => void
   removeOpenSettingsMenuListener: () => void
   updateNavigationShortcut: (shortcut: string) => Promise<void>
@@ -16,6 +18,7 @@ export interface IElectronAPI {
   updateHistoryShortcut: (shortcut: string) => Promise<void>
   updateSettingsShortcut: (shortcut: string) => Promise<void>
   updateNewChatShortcut: (shortcut: string) => Promise<void>
+  updateVoiceChatShortcut: (shortcut: string) => Promise<void>
   setIgnoreMouseEvents: (
     ignore: boolean,
     options?: { forward?: boolean }

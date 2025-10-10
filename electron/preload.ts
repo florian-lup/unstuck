@@ -24,6 +24,7 @@ const ALLOWED_INVOKE_CHANNELS = [
   'update-history-shortcut',
   'update-settings-shortcut',
   'update-new-chat-shortcut',
+  'update-voice-chat-shortcut',
 ] as const
 
 const ALLOWED_LISTEN_CHANNELS = [
@@ -32,6 +33,7 @@ const ALLOWED_LISTEN_CHANNELS = [
   'toggle-history',
   'toggle-settings',
   'trigger-new-chat',
+  'toggle-voice-chat',
   'open-settings-menu',
   'auth-success',
   'auth-error',
@@ -133,6 +135,12 @@ contextBridge.exposeInMainWorld('electronAPI', {
       shortcut
     ) as Promise<unknown>
   },
+  updateVoiceChatShortcut: async (shortcut: string): Promise<unknown> => {
+    return ipcRenderer.invoke(
+      'update-voice-chat-shortcut',
+      shortcut
+    ) as Promise<unknown>
+  },
   onChatToggle: (callback: () => void) => {
     const listener = () => {
       callback()
@@ -172,6 +180,16 @@ contextBridge.exposeInMainWorld('electronAPI', {
   },
   removeNewChatTriggerListener: () => {
     ipcRenderer.removeAllListeners('trigger-new-chat')
+  },
+  onVoiceChatToggle: (callback: () => void) => {
+    const listener = () => {
+      callback()
+    }
+    ipcRenderer.on('toggle-voice-chat', listener)
+    return listener
+  },
+  removeVoiceChatToggleListener: () => {
+    ipcRenderer.removeAllListeners('toggle-voice-chat')
   },
   setIgnoreMouseEvents: (ignore: boolean, options?: { forward?: boolean }) => {
     ipcRenderer.send('set-ignore-mouse-events', ignore, options)

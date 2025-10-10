@@ -47,7 +47,6 @@ export class OpenAIRealtimeWebRTCManager {
    */
   async connect(): Promise<void> {
     if (this.connectionState === 'connected' || this.connectionState === 'connecting') {
-      console.warn('Already connected or connecting')
       return
     }
 
@@ -153,7 +152,6 @@ export class OpenAIRealtimeWebRTCManager {
         this.peerConnection.addTrack(audioTrack, this.mediaStream)
       }
     } catch (error) {
-      console.error('Failed to access microphone:', error)
       throw new Error('Microphone access denied')
     }
   }
@@ -237,7 +235,6 @@ export class OpenAIRealtimeWebRTCManager {
         sdp: answerSDP,
       }
     } catch (error) {
-      console.error('Failed to exchange SDP:', error)
       throw new Error('Failed to establish WebRTC connection with OpenAI')
     }
   }
@@ -506,7 +503,7 @@ export class OpenAIRealtimeWebRTCManager {
           break
       }
     } catch (error) {
-      console.error('Failed to parse data channel message:', error)
+      // Ignore parsing errors
     }
   }
 
@@ -514,7 +511,6 @@ export class OpenAIRealtimeWebRTCManager {
    * Handle data channel error
    */
   private handleDataChannelError(error: Event): void {
-    console.error('Data channel error:', error)
     this.config.onError?.(new Error('Data channel error'))
   }
 
@@ -528,8 +524,8 @@ export class OpenAIRealtimeWebRTCManager {
     if (!this.intentionalDisconnect && this.reconnectAttempts < this.maxReconnectAttempts) {
       this.reconnectAttempts++
       setTimeout(() => {
-        void this.connect().catch((error: unknown) => {
-          console.error('Reconnection failed:', error)
+        void this.connect().catch(() => {
+          // Reconnection failed silently
         })
       }, 2000)
     }
@@ -539,7 +535,6 @@ export class OpenAIRealtimeWebRTCManager {
    * Handle connection error
    */
   private handleConnectionError(error: Error): void {
-    console.error('Connection error:', error)
     this.setConnectionState('error')
     this.config.onError?.(error)
   }

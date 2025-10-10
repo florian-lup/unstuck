@@ -16229,6 +16229,7 @@ class ShortcutsManager {
   historyShortcut = null;
   settingsShortcut = null;
   newChatShortcut = null;
+  voiceChatShortcut = null;
   registerNavigationToggleShortcut(shortcut) {
     if (this.navigationShortcut) {
       globalShortcut.unregister(this.navigationShortcut);
@@ -16246,6 +16247,10 @@ class ShortcutsManager {
   registerChatToggleShortcut(shortcut) {
     if (this.chatShortcut) {
       globalShortcut.unregister(this.chatShortcut);
+      this.chatShortcut = null;
+    }
+    if (!shortcut || shortcut === "") {
+      return;
     }
     const shortcutRegistered = globalShortcut.register(shortcut, () => {
       const overlayWindow = this.windowManager.getOverlayWindow();
@@ -16260,6 +16265,10 @@ class ShortcutsManager {
   registerHistoryToggleShortcut(shortcut) {
     if (this.historyShortcut) {
       globalShortcut.unregister(this.historyShortcut);
+      this.historyShortcut = null;
+    }
+    if (!shortcut || shortcut === "") {
+      return;
     }
     const shortcutRegistered = globalShortcut.register(shortcut, () => {
       const overlayWindow = this.windowManager.getOverlayWindow();
@@ -16274,6 +16283,10 @@ class ShortcutsManager {
   registerSettingsToggleShortcut(shortcut) {
     if (this.settingsShortcut) {
       globalShortcut.unregister(this.settingsShortcut);
+      this.settingsShortcut = null;
+    }
+    if (!shortcut || shortcut === "") {
+      return;
     }
     const shortcutRegistered = globalShortcut.register(shortcut, () => {
       const overlayWindow = this.windowManager.getOverlayWindow();
@@ -16288,6 +16301,10 @@ class ShortcutsManager {
   registerNewChatShortcut(shortcut) {
     if (this.newChatShortcut) {
       globalShortcut.unregister(this.newChatShortcut);
+      this.newChatShortcut = null;
+    }
+    if (!shortcut || shortcut === "") {
+      return;
     }
     const shortcutRegistered = globalShortcut.register(shortcut, () => {
       const overlayWindow = this.windowManager.getOverlayWindow();
@@ -16299,12 +16316,26 @@ class ShortcutsManager {
       this.newChatShortcut = shortcut;
     }
   }
+  registerVoiceChatShortcut(shortcut) {
+    if (this.voiceChatShortcut) {
+      globalShortcut.unregister(this.voiceChatShortcut);
+      this.voiceChatShortcut = null;
+    }
+    if (!shortcut || shortcut === "") {
+      return;
+    }
+    const shortcutRegistered = globalShortcut.register(shortcut, () => {
+      const overlayWindow = this.windowManager.getOverlayWindow();
+      if (overlayWindow && !overlayWindow.isDestroyed()) {
+        overlayWindow.webContents.send("toggle-voice-chat");
+      }
+    });
+    if (shortcutRegistered) {
+      this.voiceChatShortcut = shortcut;
+    }
+  }
   registerGlobalShortcuts() {
     this.registerNavigationToggleShortcut("Shift+\\");
-    this.registerChatToggleShortcut("Shift+Z");
-    this.registerHistoryToggleShortcut("Shift+X");
-    this.registerSettingsToggleShortcut("Shift+C");
-    this.registerNewChatShortcut("Ctrl+Z");
   }
   unregisterAllShortcuts() {
     globalShortcut.unregisterAll();
@@ -16313,6 +16344,7 @@ class ShortcutsManager {
     this.historyShortcut = null;
     this.settingsShortcut = null;
     this.newChatShortcut = null;
+    this.voiceChatShortcut = null;
   }
   setupShortcutCleanup() {
     app.on("will-quit", () => {
@@ -16768,6 +16800,9 @@ void app.whenReady().then(async () => {
   });
   ipcMain.handle("update-new-chat-shortcut", (_event, shortcut) => {
     shortcutsManager.registerNewChatShortcut(shortcut);
+  });
+  ipcMain.handle("update-voice-chat-shortcut", (_event, shortcut) => {
+    shortcutsManager.registerVoiceChatShortcut(shortcut);
   });
   await autoLaunchManager.initializeAutoLaunch();
   windowManager.createSystemTray();

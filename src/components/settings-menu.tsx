@@ -21,6 +21,8 @@ interface SettingsMenuProps {
   onSettingsKeybindChange?: (keybind: string) => void
   currentNewChatKeybind?: string
   onNewChatKeybindChange?: (keybind: string) => void
+  currentVoiceChatKeybind?: string
+  onVoiceChatKeybindChange?: (keybind: string) => void
   currentTransparency?: number
   onTransparencyChange?: (transparency: number) => void
   isSubscribed: boolean
@@ -36,14 +38,16 @@ export function SettingsMenu({
   onClose,
   currentKeybind = 'Shift+\\',
   onKeybindChange,
-  currentChatKeybind = 'Shift+Z',
+  currentChatKeybind = '',
   onChatKeybindChange,
-  currentHistoryKeybind = 'Shift+X',
+  currentHistoryKeybind = '',
   onHistoryKeybindChange,
-  currentSettingsKeybind = 'Shift+C',
+  currentSettingsKeybind = '',
   onSettingsKeybindChange,
-  currentNewChatKeybind = 'Ctrl+Z',
+  currentNewChatKeybind = '',
   onNewChatKeybindChange,
+  currentVoiceChatKeybind = '',
+  onVoiceChatKeybindChange,
   currentTransparency = 90,
   onTransparencyChange,
   isSubscribed,
@@ -58,6 +62,8 @@ export function SettingsMenu({
   const [isCapturingSettingsKeybind, setIsCapturingSettingsKeybind] =
     useState(false)
   const [isCapturingNewChatKeybind, setIsCapturingNewChatKeybind] =
+    useState(false)
+  const [isCapturingVoiceChatKeybind, setIsCapturingVoiceChatKeybind] =
     useState(false)
   const { isEnabled: autoLaunchEnabled, toggleAutoLaunch } = useAutoLaunch()
 
@@ -139,7 +145,7 @@ export function SettingsMenu({
   }
 
   const resetChatToDefault = () => {
-    const defaultChatKeybind = 'Shift+Z'
+    const defaultChatKeybind = ''
     setIsCapturingChatKeybind(false)
     onChatKeybindChange?.(defaultChatKeybind)
   }
@@ -177,7 +183,7 @@ export function SettingsMenu({
   }
 
   const resetHistoryToDefault = () => {
-    const defaultHistoryKeybind = 'Shift+X'
+    const defaultHistoryKeybind = ''
     setIsCapturingHistoryKeybind(false)
     onHistoryKeybindChange?.(defaultHistoryKeybind)
   }
@@ -215,7 +221,7 @@ export function SettingsMenu({
   }
 
   const resetSettingsToDefault = () => {
-    const defaultSettingsKeybind = 'Shift+C'
+    const defaultSettingsKeybind = ''
     setIsCapturingSettingsKeybind(false)
     onSettingsKeybindChange?.(defaultSettingsKeybind)
   }
@@ -253,9 +259,47 @@ export function SettingsMenu({
   }
 
   const resetNewChatToDefault = () => {
-    const defaultNewChatKeybind = 'Ctrl+Z'
+    const defaultNewChatKeybind = ''
     setIsCapturingNewChatKeybind(false)
     onNewChatKeybindChange?.(defaultNewChatKeybind)
+  }
+
+  const handleVoiceChatKeybindCapture = useCallback(
+    (event: KeyboardEvent) => {
+      if (!isCapturingVoiceChatKeybind) return
+
+      event.preventDefault()
+      event.stopPropagation()
+
+      const keys = []
+      if (event.ctrlKey) keys.push('Ctrl')
+      if (event.altKey) keys.push('Alt')
+      if (event.shiftKey) keys.push('Shift')
+      if (event.metaKey) keys.push('Meta')
+
+      // Don't capture modifier keys alone
+      if (!['Control', 'Alt', 'Shift', 'Meta'].includes(event.key)) {
+        keys.push(event.key)
+        const newKeybind = keys.join('+')
+        setIsCapturingVoiceChatKeybind(false)
+        onVoiceChatKeybindChange?.(newKeybind)
+      }
+    },
+    [isCapturingVoiceChatKeybind, onVoiceChatKeybindChange]
+  )
+
+  const startCapturingVoiceChatKeybind = () => {
+    setIsCapturingVoiceChatKeybind(true)
+  }
+
+  const cancelCapturingVoiceChat = () => {
+    setIsCapturingVoiceChatKeybind(false)
+  }
+
+  const resetVoiceChatToDefault = () => {
+    const defaultVoiceChatKeybind = ''
+    setIsCapturingVoiceChatKeybind(false)
+    onVoiceChatKeybindChange?.(defaultVoiceChatKeybind)
   }
 
   // Add and remove event listener for key capture
@@ -308,8 +352,23 @@ export function SettingsMenu({
     }
   }, [isCapturingNewChatKeybind, handleNewChatKeybindCapture])
 
+  // Add and remove event listener for voice chat keybind capture
+  useEffect(() => {
+    if (isCapturingVoiceChatKeybind) {
+      document.addEventListener('keydown', handleVoiceChatKeybindCapture)
+      return () => {
+        document.removeEventListener('keydown', handleVoiceChatKeybindCapture)
+      }
+    }
+  }, [isCapturingVoiceChatKeybind, handleVoiceChatKeybindCapture])
+
   // Format keybind for display
   const formatKeybindForDisplay = (keybind: string) => {
+    if (!keybind || keybind === '') {
+      return (
+        <span className="text-xs text-overlay-text-muted italic">Not set</span>
+      )
+    }
     return keybind.split('+').map((key, index, array) => (
       <div key={key} className="flex items-center">
         <kbd className="px-2 py-1 text-xs border border-overlay-border-primary rounded text-overlay-text-primary">
@@ -553,6 +612,52 @@ export function SettingsMenu({
                     </div>
                     <Button
                       onClick={startCapturingNewChatKeybind}
+                      variant="gaming"
+                      size="icon"
+                      className="px-2 py-1 h-auto hover:!border-transparent"
+                    >
+                      <Pencil className="w-3 h-3" />
+                    </Button>
+                  </>
+                )}
+              </div>
+            </div>
+            <div className="flex justify-between items-center">
+              <span className="text-xs text-overlay-text-muted">
+                Start / Stop voice chat
+              </span>
+              <div className="flex items-center gap-2">
+                {isCapturingVoiceChatKeybind ? (
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs text-overlay-accent-primary">
+                      Press keys...
+                    </span>
+                    <div className="flex gap-1">
+                      <Button
+                        onClick={resetVoiceChatToDefault}
+                        variant="gaming"
+                        size="sm"
+                        className="px-2 py-1 text-xs h-auto border border-overlay-border-primary"
+                      >
+                        Reset
+                      </Button>
+                      <Button
+                        onClick={cancelCapturingVoiceChat}
+                        variant="gaming"
+                        size="sm"
+                        className="px-2 py-1 text-xs h-auto border border-overlay-border-primary"
+                      >
+                        Cancel
+                      </Button>
+                    </div>
+                  </div>
+                ) : (
+                  <>
+                    <div className="flex items-center">
+                      {formatKeybindForDisplay(currentVoiceChatKeybind)}
+                    </div>
+                    <Button
+                      onClick={startCapturingVoiceChatKeybind}
                       variant="gaming"
                       size="icon"
                       className="px-2 py-1 h-auto hover:!border-transparent"
