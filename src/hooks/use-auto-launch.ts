@@ -24,8 +24,7 @@ export function useAutoLaunch() {
       const finalStatus = status ?? false
       setIsEnabled(finalStatus)
       cachedAutoLaunchStatus = finalStatus // Cache the result
-    } catch (err) {
-      console.error('Failed to load auto-launch status:', err)
+    } catch {
       setError('Failed to load auto-launch status')
     } finally {
       setIsLoading(false)
@@ -47,8 +46,7 @@ export function useAutoLaunch() {
       } else {
         setError('Failed to toggle auto-launch')
       }
-    } catch (err) {
-      console.error('Failed to toggle auto-launch:', err)
+    } catch {
       setError('Failed to toggle auto-launch')
     }
   }, [isEnabled, loadAutoLaunchStatus])
@@ -64,8 +62,7 @@ export function useAutoLaunch() {
       } else {
         setError('Failed to enable auto-launch')
       }
-    } catch (err) {
-      console.error('Failed to enable auto-launch:', err)
+    } catch {
       setError('Failed to enable auto-launch')
     }
   }, [])
@@ -81,8 +78,7 @@ export function useAutoLaunch() {
       } else {
         setError('Failed to disable auto-launch')
       }
-    } catch (err) {
-      console.error('Failed to disable auto-launch:', err)
+    } catch {
       setError('Failed to disable auto-launch')
     }
   }, [])

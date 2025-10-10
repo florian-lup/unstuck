@@ -39,15 +39,9 @@ export function useSubscription(): UseSubscriptionReturn {
 
     try {
       const status = await apiClient.getSubscriptionStatus(accessToken)
-      // Log subscription status for debugging
-      // eslint-disable-next-line no-console
-      console.log('Subscription tier:', status.subscription_tier)
-      // eslint-disable-next-line no-console
-      console.log('Subscription status:', status.subscription_status)
       setSubscriptionStatus(status)
       setError(null)
     } catch (err) {
-      console.error('Failed to fetch subscription status:', err)
       setError(err instanceof Error ? err.message : 'Failed to fetch status')
     }
   }, [])
@@ -107,8 +101,8 @@ export function useSubscription(): UseSubscriptionReturn {
           ) {
             stopPolling()
           }
-        } catch (err) {
-          console.error('Error polling subscription status:', err)
+        } catch {
+          // Error polling subscription status
         }
       })()
     }, POLL_INTERVAL)
@@ -140,7 +134,6 @@ export function useSubscription(): UseSubscriptionReturn {
       // Start polling for subscription status
       startPolling()
     } catch (err) {
-      console.error('Failed to create checkout session:', err)
       setError(err instanceof Error ? err.message : 'Failed to upgrade')
     } finally {
       setIsLoading(false)
@@ -175,7 +168,6 @@ export function useSubscription(): UseSubscriptionReturn {
         throw new Error(result.message || 'Failed to cancel subscription')
       }
     } catch (err) {
-      console.error('Failed to cancel subscription:', err)
       setError(err instanceof Error ? err.message : 'Failed to cancel')
     } finally {
       setIsLoading(false)

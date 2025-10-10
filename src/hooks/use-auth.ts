@@ -19,21 +19,13 @@ export function useAuth() {
         setSession(session)
         setLoading(false)
       })
-      .catch((error: unknown) => {
-        console.error(
-          'Failed to get initial session:',
-          error instanceof Error ? error.message : 'Unknown error'
-        )
+      .catch(() => {
         setLoading(false)
       })
 
     // Listen for auth changes via secure IPC
     const { unsubscribe } = secureAuth.onAuthStateChange(
-      (event, session, error) => {
-        if (event === 'ERROR' && error) {
-          console.error('Authentication error:', error)
-        }
-
+      (event, session) => {
         setUser(session?.user ?? null)
         setSession(session)
         setLoading(false)
@@ -48,12 +40,9 @@ export function useAuth() {
   const signOut = async () => {
     try {
       await secureAuth.signOut()
-      // Successfully signed out - log removed per linting rules
-    } catch (error) {
-      console.error(
-        'Sign out error:',
-        error instanceof Error ? error.message : 'Unknown sign out error'
-      )
+      // Successfully signed out
+    } catch {
+      // Sign out error
     }
   }
 

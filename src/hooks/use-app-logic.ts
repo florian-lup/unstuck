@@ -77,8 +77,7 @@ export function useAppLogic() {
   // Voice chat hook
   const voiceChat = useVoiceChat({
     selectedGame,
-    onError: (error) => {
-      console.error('Voice chat error:', error)
+    onError: () => {
       // Optionally show error to user
     },
   })
@@ -201,8 +200,8 @@ export function useAppLogic() {
         if (voiceChatKeybind && voiceChatKeybind !== '') {
           await window.electronAPI?.updateVoiceChatShortcut(voiceChatKeybind)
         }
-      } catch (error) {
-        console.error('Failed to sync initial global shortcuts:', error)
+      } catch {
+        // Failed to sync shortcuts
       }
     }
     void syncKeybinds()
@@ -421,8 +420,8 @@ export function useAppLogic() {
       // Start voice chat connection
       try {
         await voiceChat.startVoiceChat()
-      } catch (error) {
-        console.error('Failed to start voice chat:', error)
+      } catch {
+        // Failed to start voice chat
       }
     }
   }, [
@@ -568,8 +567,8 @@ export function useAppLogic() {
       await signOut()
       // Send message to main process to show auth window again
       window.ipcRenderer.send('user-logout')
-    } catch (error) {
-      console.error('Logout error:', error)
+    } catch {
+      // Logout error
     }
   }
 
@@ -623,7 +622,6 @@ export function useAppLogic() {
       }
 
       setMessages((prev) => [...prev, errorMessage])
-      console.error('Error sending message:', error)
     } finally {
       setIsLoadingMessage(false)
     }
@@ -708,8 +706,6 @@ export function useAppLogic() {
       setIsGamingChatVisible(true)
       setShowHistoryPanel(false)
     } catch (error) {
-      console.error('Error loading conversation history:', error)
-
       // Show error message
       const errorMessage: Message = {
         id: `${Date.now()}-error`,
@@ -757,8 +753,8 @@ export function useAppLogic() {
     // Update Electron global shortcut
     try {
       await window.electronAPI?.updateNavigationShortcut(newKeybind)
-    } catch (error) {
-      console.error('Failed to update global shortcut:', error)
+    } catch {
+      // Failed to update global shortcut
     }
   }
 
@@ -779,8 +775,8 @@ export function useAppLogic() {
     // Always update Electron global shortcut (empty string will unregister)
     try {
       await window.electronAPI?.updateChatShortcut(newKeybind)
-    } catch (error) {
-      console.error('Failed to update chat global shortcut:', error)
+    } catch {
+      // Failed to update chat global shortcut
     }
   }
 
@@ -793,8 +789,8 @@ export function useAppLogic() {
     // Always update Electron global shortcut (empty string will unregister)
     try {
       await window.electronAPI?.updateHistoryShortcut(newKeybind)
-    } catch (error) {
-      console.error('Failed to update history global shortcut:', error)
+    } catch {
+      // Failed to update history global shortcut
     }
   }
 
@@ -807,8 +803,8 @@ export function useAppLogic() {
     // Always update Electron global shortcut (empty string will unregister)
     try {
       await window.electronAPI?.updateSettingsShortcut(newKeybind)
-    } catch (error) {
-      console.error('Failed to update settings global shortcut:', error)
+    } catch {
+      // Failed to update settings global shortcut
     }
   }
 
@@ -821,8 +817,8 @@ export function useAppLogic() {
     // Always update Electron global shortcut (empty string will unregister)
     try {
       await window.electronAPI?.updateNewChatShortcut(newKeybind)
-    } catch (error) {
-      console.error('Failed to update new chat global shortcut:', error)
+    } catch {
+      // Failed to update new chat global shortcut
     }
   }
 
@@ -835,8 +831,8 @@ export function useAppLogic() {
     // Always update Electron global shortcut (empty string will unregister)
     try {
       await window.electronAPI?.updateVoiceChatShortcut(newKeybind)
-    } catch (error) {
-      console.error('Failed to update voice chat global shortcut:', error)
+    } catch {
+      // Failed to update voice chat global shortcut
     }
   }
 

@@ -151,7 +151,7 @@ export class OpenAIRealtimeWebRTCManager {
       if (audioTrack && this.peerConnection) {
         this.peerConnection.addTrack(audioTrack, this.mediaStream)
       }
-    } catch (error) {
+    } catch {
       throw new Error('Microphone access denied')
     }
   }
@@ -234,7 +234,7 @@ export class OpenAIRealtimeWebRTCManager {
         type: 'answer',
         sdp: answerSDP,
       }
-    } catch (error) {
+    } catch {
       throw new Error('Failed to establish WebRTC connection with OpenAI')
     }
   }
@@ -502,7 +502,7 @@ export class OpenAIRealtimeWebRTCManager {
           // Unhandled message types are ignored
           break
       }
-    } catch (error) {
+    } catch {
       // Ignore parsing errors
     }
   }
@@ -510,7 +510,7 @@ export class OpenAIRealtimeWebRTCManager {
   /**
    * Handle data channel error
    */
-  private handleDataChannelError(error: Event): void {
+  private handleDataChannelError(): void {
     this.config.onError?.(new Error('Data channel error'))
   }
 

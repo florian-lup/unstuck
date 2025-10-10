@@ -97,7 +97,7 @@ export function useVoiceChat({ selectedGame, onError }: UseVoiceChatOptions) {
       }
 
       source.start()
-    } catch (error) {
+    } catch {
       isPlayingRef.current = false
     }
   }, [])

@@ -261,15 +261,13 @@ export class SecureAuthClient {
     try {
       const sessionData = await this.getSession()
       return sessionData.tokens?.access_token ?? null
-    } catch (error) {
-      console.error('Failed to get valid access token:', error)
+    } catch {
       return null
     }
   }
 
   private setupIpcListeners() {
     if (!window.electronAPI?.auth) {
-      console.warn('Auth API not available, skipping IPC listeners')
       return
     }
 
@@ -290,7 +288,6 @@ export class SecureAuthClient {
 
     // Listen for authentication errors
     window.electronAPI.auth.onAuthError((error: string) => {
-      console.error('Authentication error:', error)
       this.notifyListeners('ERROR', null, error)
     })
 
@@ -317,8 +314,8 @@ export class SecureAuthClient {
     this.listeners.forEach((listener) => {
       try {
         listener(event, session, error)
-      } catch (err) {
-        console.error('Auth listener error:', err)
+      } catch {
+        // Auth listener error
       }
     })
   }

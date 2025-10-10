@@ -32,8 +32,8 @@ export function useUpdater() {
 
     try {
       await window.electronAPI.updater.restartAndInstall()
-    } catch (error) {
-      console.error('Failed to restart and install update:', error)
+    } catch {
+      // Failed to restart and install update
     }
   }
 

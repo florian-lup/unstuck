@@ -75,7 +75,6 @@ export function ConversationHistory({
         const errorMessage =
           err instanceof Error ? err.message : 'Failed to fetch conversations'
         setError(errorMessage)
-        console.error('Error fetching conversations:', err)
       } finally {
         setIsLoading(false)
         setHasInitialized(true)
@@ -119,7 +118,6 @@ export function ConversationHistory({
       const errorMessage =
         err instanceof Error ? err.message : 'Failed to delete conversation'
       setError(errorMessage)
-      console.error('Error deleting conversation:', err)
     } finally {
       setDeletingId(null)
     }
@@ -148,7 +146,6 @@ export function ConversationHistory({
         const errorMessage =
           err instanceof Error ? err.message : 'Failed to fetch conversations'
         setError(errorMessage)
-        console.error('Error fetching conversations:', err)
       } finally {
         setIsLoading(false)
         setHasInitialized(true)
