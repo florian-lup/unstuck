@@ -1,4 +1,4 @@
-import { Mic, Type, Menu, Settings, Info, Grip, Download } from 'lucide-react'
+import { Mic, Type, Menu, Settings, Info, Grip, Download, Loader2, PhoneOff } from 'lucide-react'
 import React from 'react'
 import { Game } from '../lib/games'
 import { InteractiveArea } from './interactive-area'
@@ -18,6 +18,10 @@ interface NavigationBarProps {
   onDropdownOpenChange?: (open: boolean) => void
   updateReady?: boolean
   onUpdateClick?: () => void
+  voiceState?: {
+    isConnected: boolean
+    isConnecting: boolean
+  }
 }
 
 export function NavigationBar({
@@ -31,6 +35,7 @@ export function NavigationBar({
   onDropdownOpenChange,
   updateReady,
   onUpdateClick,
+  voiceState,
 }: NavigationBarProps) {
   const handleVoiceClick = () => {
     // Ensure window stays on top when button is clicked
@@ -91,24 +96,37 @@ export function NavigationBar({
             {/* Action Buttons */}
             <div className="flex items-center gap-1">
               {/* Voice Button */}
-              <Tooltip content="Voice Chat Coming Soon">
-                <Button
-                  onClick={handleVoiceClick}
-                  variant="gaming"
-                  size="sm"
-                  className="gap-1 p-1 h-auto"
-                >
-                  <Mic className="w-3 h-3" />
-                  <span className="text-xs">Voice</span>
-                </Button>
-              </Tooltip>
+              <Button
+                onClick={handleVoiceClick}
+                variant="gaming"
+                size="sm"
+                className={`gap-1 p-1 h-auto w-[65px] ${voiceState?.isConnected ? 'bg-overlay-accent-error hover:bg-overlay-accent-error/80' : ''}`}
+                disabled={voiceState?.isConnecting}
+              >
+                {voiceState?.isConnecting ? (
+                  <>
+                    <Loader2 className="w-3 h-3 animate-spin" />
+                    <span className="text-xs">Wait</span>
+                  </>
+                ) : voiceState?.isConnected ? (
+                  <>
+                    <PhoneOff className="w-3 h-3" />
+                    <span className="text-xs">Stop</span>
+                  </>
+                ) : (
+                  <>
+                    <Mic className="w-3 h-3" />
+                    <span className="text-xs">Voice</span>
+                  </>
+                )}
+              </Button>
 
               {/* Text Button */}
               <Button
                 onClick={handleTextClick}
                 variant="gaming"
                 size="sm"
-                className="gap-1 p-1 h-auto"
+                className="gap-1 p-1 h-auto w-[65px]"
               >
                 <Type className="w-3 h-3" />
                 <span className="text-xs">Chat</span>

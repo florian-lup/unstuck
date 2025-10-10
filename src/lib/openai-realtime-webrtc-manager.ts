@@ -36,6 +36,7 @@ export class OpenAIRealtimeWebRTCManager {
   private interruptionThreshold = 0.01
   private interruptionEnabled = true
   private remoteAudioElement: HTMLAudioElement | null = null
+  private intentionalDisconnect = false
 
   constructor(config: RealtimeConfig) {
     this.config = config
@@ -50,6 +51,8 @@ export class OpenAIRealtimeWebRTCManager {
       return
     }
 
+    // Reset intentional disconnect flag when starting a new connection
+    this.intentionalDisconnect = false
     this.setConnectionState('connecting')
 
     try {
@@ -245,6 +248,9 @@ export class OpenAIRealtimeWebRTCManager {
    */
   disconnect(): void {
     console.log('Disconnecting WebRTC...')
+
+    // Mark as intentional disconnect to prevent auto-reconnect
+    this.intentionalDisconnect = true
 
     // Close data channel
     if (this.dataChannel) {
@@ -540,8 +546,8 @@ export class OpenAIRealtimeWebRTCManager {
     console.log('Data channel closed')
     this.setConnectionState('disconnected')
 
-    // Attempt reconnect
-    if (this.reconnectAttempts < this.maxReconnectAttempts) {
+    // Only attempt reconnect if disconnect was not intentional
+    if (!this.intentionalDisconnect && this.reconnectAttempts < this.maxReconnectAttempts) {
       this.reconnectAttempts++
       console.log(
         `Attempting to reconnect (${this.reconnectAttempts}/${this.maxReconnectAttempts})...`

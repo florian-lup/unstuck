@@ -3,7 +3,6 @@ import { ConversationHistory } from './components/conversation-history'
 import { GamingChat } from './components/gaming-chat'
 import { NavigationBar } from './components/navigation-bar'
 import { SettingsMenu } from './components/settings-menu'
-import { VoiceChat } from './components/voice-chat'
 import { useAppLogic } from './hooks/use-app-logic'
 import { useUpdater } from './hooks/use-updater'
 import './index.css'
@@ -14,7 +13,6 @@ function App() {
     // State
     selectedGame,
     isGamingChatVisible,
-    isVoiceChatVisible,
     messages,
     isNavigationBarVisible,
     showSettingsMenu,
@@ -41,9 +39,6 @@ function App() {
     handleGameSelect,
     handleSendMessage,
     handleGamingChatClose,
-    handleVoiceChatClose,
-    handleVoiceChatStop,
-    handleVoiceChatToggleMute,
     handleDropdownOpenChange,
     handleLogout,
     handleKeybindChange,
@@ -79,6 +74,7 @@ function App() {
             onDropdownOpenChange={handleDropdownOpenChange}
             updateReady={updateReady}
             onUpdateClick={restartAndInstall}
+            voiceState={voiceChatState}
           />
           {showSettingsMenu && (
             <SettingsMenu
@@ -132,14 +128,6 @@ function App() {
           onStartNewConversation={handleStartNewConversation}
           messages={messages}
           isLoading={isLoadingMessage}
-        />
-      )}
-      {isNavigationBarVisible && isVoiceChatVisible && voiceChatState && (
-        <VoiceChat
-          state={voiceChatState}
-          onStop={handleVoiceChatStop}
-          onToggleMute={handleVoiceChatToggleMute}
-          onClose={handleVoiceChatClose}
         />
       )}
     </>

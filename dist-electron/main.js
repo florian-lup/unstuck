@@ -16365,7 +16365,7 @@ class WindowManager {
   }
   createOverlayWindow() {
     const { width: screenWidth } = screen.getPrimaryDisplay().workAreaSize;
-    const windowWidth = 500;
+    const windowWidth = 520;
     const windowHeight = 650;
     this.overlayWindow = new BrowserWindow({
       title: "Unstuck",
