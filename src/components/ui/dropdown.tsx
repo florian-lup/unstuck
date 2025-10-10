@@ -101,8 +101,9 @@ interface DropdownProps {
 }
 
 interface DropdownContentProps {
-  children: React.ReactNode
+  children: React.ReactNode | ((props: { close?: () => void }) => React.ReactNode)
   className?: string
+  noScroll?: boolean
 }
 
 // Main Dropdown Container
@@ -165,6 +166,7 @@ export function DropdownContent({
   isOpen,
   close,
   maxWidth = 'max-w-[250px]',
+  noScroll = false,
 }: DropdownContentProps & {
   isOpen?: boolean
   close?: () => void
@@ -179,16 +181,30 @@ export function DropdownContent({
       <InteractiveArea
         className={`bg-overlay-bg-primary border border-overlay-border-primary rounded-2xl px-2 py-2 ${className}`}
       >
-        <div
-          className="max-h-[300px] overflow-y-auto overflow-x-hidden overlay-scrollbar pr-2"
-          role="listbox"
-        >
-          {React.Children.map(children, (child) =>
-            React.isValidElement(child)
-              ? React.cloneElement(child as React.ReactElement, { close })
-              : child
-          )}
-        </div>
+        {noScroll ? (
+          <div role="listbox">
+            {typeof children === 'function'
+              ? children({ close })
+              : React.Children.map(children, (child) =>
+                  React.isValidElement(child)
+                    ? React.cloneElement(child as React.ReactElement, { close })
+                    : child
+                )}
+          </div>
+        ) : (
+          <div
+            className="max-h-[300px] overflow-y-auto overflow-x-hidden overlay-scrollbar pr-2"
+            role="listbox"
+          >
+            {typeof children === 'function'
+              ? children({ close })
+              : React.Children.map(children, (child) =>
+                  React.isValidElement(child)
+                    ? React.cloneElement(child as React.ReactElement, { close })
+                    : child
+                )}
+          </div>
+        )}
       </InteractiveArea>
     </div>
   )
