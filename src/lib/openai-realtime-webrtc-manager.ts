@@ -56,8 +56,6 @@ export class OpenAIRealtimeWebRTCManager {
     this.setConnectionState('connecting')
 
     try {
-      console.log('Connecting to OpenAI Realtime API (WebRTC)...')
-      console.log('Model:', this.config.model)
 
       // Create RTCPeerConnection with STUN servers
       this.peerConnection = new RTCPeerConnection({
@@ -93,12 +91,14 @@ export class OpenAIRealtimeWebRTCManager {
       await this.waitForICEGathering()
 
       // Send offer to OpenAI and get answer
-      const answer = await this.exchangeSDP(this.peerConnection.localDescription!)
+      const localDesc = this.peerConnection.localDescription
+      if (!localDesc) {
+        throw new Error('Failed to create local description')
+      }
+      const answer = await this.exchangeSDP(localDesc)
 
       // Set remote description with the answer from OpenAI
       await this.peerConnection.setRemoteDescription(answer)
-
-      console.log('WebRTC connection established')
 
       // Wait for data channel to open
       await new Promise<void>((resolve, reject) => {
@@ -148,9 +148,9 @@ export class OpenAIRealtimeWebRTCManager {
 
       // Add audio track to peer connection
       const audioTrack = this.mediaStream.getAudioTracks()[0]
+      // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
       if (audioTrack && this.peerConnection) {
         this.peerConnection.addTrack(audioTrack, this.mediaStream)
-        console.log('Audio track added to peer connection')
       }
     } catch (error) {
       console.error('Failed to access microphone:', error)
@@ -209,11 +209,10 @@ export class OpenAIRealtimeWebRTCManager {
 
       if (!response.ok) {
         let errorText = await response.text()
-        console.error('SDP exchange failed:', errorText)
         
         // Try to parse as JSON for better error message
         try {
-          const errorJson = JSON.parse(errorText)
+          const errorJson = JSON.parse(errorText) as { error?: { message?: string } }
           if (errorJson.error?.message) {
             errorText = errorJson.error.message
           }
@@ -247,8 +246,6 @@ export class OpenAIRealtimeWebRTCManager {
    * Disconnect from WebRTC
    */
   disconnect(): void {
-    console.log('Disconnecting WebRTC...')
-
     // Mark as intentional disconnect to prevent auto-reconnect
     this.intentionalDisconnect = true
 
@@ -275,7 +272,7 @@ export class OpenAIRealtimeWebRTCManager {
     }
 
     if (this.audioContext) {
-      this.audioContext.close()
+      void this.audioContext.close()
       this.audioContext = null
     }
 
@@ -285,10 +282,10 @@ export class OpenAIRealtimeWebRTCManager {
   /**
    * Start capturing audio from microphone
    */
-  async startAudioCapture(): Promise<void> {
+  startAudioCapture(): Promise<void> {
     // Audio is already being captured via the media track
     // This method exists for API compatibility
-    console.log('Audio capture is active via WebRTC media track')
+    return Promise.resolve()
   }
 
   /**
@@ -300,7 +297,6 @@ export class OpenAIRealtimeWebRTCManager {
         track.stop()
       })
       this.mediaStream = null
-      console.log('Audio capture stopped')
     }
   }
 
@@ -337,7 +333,6 @@ export class OpenAIRealtimeWebRTCManager {
       return
     }
 
-    console.log('Canceling AI response')
     this.dataChannel.send(
       JSON.stringify({
         type: 'response.cancel',
@@ -358,10 +353,6 @@ export class OpenAIRealtimeWebRTCManager {
     if (config.threshold !== undefined) {
       this.interruptionThreshold = config.threshold
     }
-    console.log('Interruption config:', {
-      enabled: this.interruptionEnabled,
-      threshold: this.interruptionThreshold,
-    })
   }
 
   /**
@@ -369,8 +360,6 @@ export class OpenAIRealtimeWebRTCManager {
    */
   private handleICEStateChange(): void {
     if (!this.peerConnection) return
-
-    console.log('ICE connection state:', this.peerConnection.iceConnectionState)
 
     switch (this.peerConnection.iceConnectionState) {
       case 'failed':
@@ -389,11 +378,8 @@ export class OpenAIRealtimeWebRTCManager {
   private handleConnectionStateChange(): void {
     if (!this.peerConnection) return
 
-    console.log('Peer connection state:', this.peerConnection.connectionState)
-
     switch (this.peerConnection.connectionState) {
       case 'connected':
-        console.log('Peer connection established')
         break
       case 'failed':
         this.handleConnectionError(new Error('Peer connection failed'))
@@ -409,8 +395,6 @@ export class OpenAIRealtimeWebRTCManager {
    * Handle incoming media track (audio from OpenAI)
    */
   private handleTrack(event: RTCTrackEvent): void {
-    console.log('Received remote track:', event.track.kind)
-
     if (event.track.kind === 'audio') {
       // Create audio element to play remote audio
       if (!this.remoteAudioElement) {
@@ -420,8 +404,6 @@ export class OpenAIRealtimeWebRTCManager {
 
       const stream = new MediaStream([event.track])
       this.remoteAudioElement.srcObject = stream
-
-      console.log('Remote audio track connected')
     }
   }
 
@@ -429,7 +411,6 @@ export class OpenAIRealtimeWebRTCManager {
    * Handle data channel open
    */
   private handleDataChannelOpen(): void {
-    console.log('Data channel opened')
     this.setConnectionState('connected')
     this.reconnectAttempts = 0
 
@@ -440,7 +421,6 @@ export class OpenAIRealtimeWebRTCManager {
     // - Turn detection (server VAD)
     // - Transcription settings
     // Client can send session.update later if runtime changes are needed
-    console.log('Session ready - configured by backend')
   }
 
   /**
@@ -448,13 +428,17 @@ export class OpenAIRealtimeWebRTCManager {
    */
   private handleDataChannelMessage(event: MessageEvent): void {
     try {
-      const message = JSON.parse(event.data as string)
+      const message = JSON.parse(event.data as string) as {
+        type: string
+        transcript?: string
+        delta?: string
+        error?: { message?: string; type?: string }
+      }
 
       // Handle different message types
       switch (message.type) {
         case 'session.created':
         case 'session.updated':
-          console.log('Session configured:', message)
           break
 
         case 'input_audio_buffer.speech_started':
@@ -468,7 +452,6 @@ export class OpenAIRealtimeWebRTCManager {
         case 'conversation.item.input_audio_transcription.completed':
           // User's speech was transcribed
           if (message.transcript) {
-            console.log('User transcript:', message.transcript)
             this.config.onTranscriptUpdate?.(message.transcript, true)
           }
           break
@@ -490,7 +473,6 @@ export class OpenAIRealtimeWebRTCManager {
 
         case 'response.audio.done':
           // AI finished speaking
-          console.log('AI audio response completed')
           break
 
         case 'response.output_audio_transcript.delta':
@@ -503,28 +485,25 @@ export class OpenAIRealtimeWebRTCManager {
         case 'response.output_audio_transcript.done':
           // AI's speech transcript (complete) - GA API event name
           if (message.transcript) {
-            console.log('AI transcript:', message.transcript)
             this.config.onTranscriptUpdate?.(message.transcript, true)
           }
           break
 
         case 'response.done':
-          console.log('Response completed')
           break
 
         case 'response.cancelled':
-          console.log('Response was cancelled')
           break
 
-        case 'error':
-          console.error('OpenAI error:', message)
-          const errorMsg = message.error?.message || message.error?.type || 'Unknown error'
+        case 'error': {
+          const errorMsg = message.error?.message ?? message.error?.type ?? 'Unknown error'
           this.config.onError?.(new Error(errorMsg))
           break
+        }
 
         default:
-          // Log other message types for debugging
-          console.log('Unhandled message type:', message.type, message)
+          // Unhandled message types are ignored
+          break
       }
     } catch (error) {
       console.error('Failed to parse data channel message:', error)
@@ -543,17 +522,13 @@ export class OpenAIRealtimeWebRTCManager {
    * Handle data channel close
    */
   private handleDataChannelClose(): void {
-    console.log('Data channel closed')
     this.setConnectionState('disconnected')
 
     // Only attempt reconnect if disconnect was not intentional
     if (!this.intentionalDisconnect && this.reconnectAttempts < this.maxReconnectAttempts) {
       this.reconnectAttempts++
-      console.log(
-        `Attempting to reconnect (${this.reconnectAttempts}/${this.maxReconnectAttempts})...`
-      )
       setTimeout(() => {
-        this.connect().catch((error) => {
+        void this.connect().catch((error: unknown) => {
           console.error('Reconnection failed:', error)
         })
       }, 2000)
@@ -591,7 +566,9 @@ export class OpenAIRealtimeWebRTCManager {
     const binaryString = atob(base64)
     const bytes = new Uint8Array(binaryString.length)
     for (let i = 0; i < binaryString.length; i++) {
-      bytes[i] = binaryString.charCodeAt(i)
+      const charCode = binaryString.charCodeAt(i)
+      // eslint-disable-next-line security/detect-object-injection
+      bytes[i] = charCode
     }
     return bytes.buffer
   }

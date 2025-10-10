@@ -57,19 +57,6 @@ export function useVoiceChat({ selectedGame, onError }: UseVoiceChatOptions) {
   }, [])
 
   /**
-   * Handle audio response from OpenAI
-   */
-  const handleAudioResponse = useCallback((audioData: ArrayBuffer) => {
-    // Add to queue
-    audioQueueRef.current.push(audioData)
-    
-    // Start playing if not already playing
-    if (!isPlayingRef.current) {
-      playAudioQueue()
-    }
-  }, [])
-
-  /**
    * Play audio from queue
    */
   const playAudioQueue = useCallback(async () => {
@@ -82,7 +69,9 @@ export function useVoiceChat({ selectedGame, onError }: UseVoiceChatOptions) {
 
     // Initialize audio context if needed
     if (!audioContextRef.current) {
-      audioContextRef.current = new (window.AudioContext || (window as any).webkitAudioContext)({
+      // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
+      const AudioContextCtor = window.AudioContext ?? (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext
+      audioContextRef.current = new AudioContextCtor({
         sampleRate: 24000,
       })
     }
@@ -104,7 +93,7 @@ export function useVoiceChat({ selectedGame, onError }: UseVoiceChatOptions) {
       
       source.onended = () => {
         // Play next in queue
-        playAudioQueue()
+        void playAudioQueue()
       }
 
       source.start()
@@ -113,6 +102,19 @@ export function useVoiceChat({ selectedGame, onError }: UseVoiceChatOptions) {
       isPlayingRef.current = false
     }
   }, [])
+
+  /**
+   * Handle audio response from OpenAI
+   */
+  const handleAudioResponse = useCallback((audioData: ArrayBuffer) => {
+    // Add to queue
+    audioQueueRef.current.push(audioData)
+    
+    // Start playing if not already playing
+    if (!isPlayingRef.current) {
+      void playAudioQueue()
+    }
+  }, [playAudioQueue])
 
   /**
    * Handle errors
@@ -150,12 +152,10 @@ export function useVoiceChat({ selectedGame, onError }: UseVoiceChatOptions) {
       // Get ephemeral token from backend
       const session = await voiceSessionService.createVoiceSession(
         {
-          game: selectedGame?.gameName || null,
+          game: selectedGame?.gameName ?? null,
         },
         accessToken
       )
-      
-      console.log('Voice session created - expires:', new Date(session.expires_at * 1000).toISOString())
 
       // Create WebRTC manager
       realtimeManagerRef.current = new OpenAIRealtimeWebRTCManager({
@@ -210,7 +210,7 @@ export function useVoiceChat({ selectedGame, onError }: UseVoiceChatOptions) {
 
     // Close audio context
     if (audioContextRef.current) {
-      audioContextRef.current.close()
+      void audioContextRef.current.close()
       audioContextRef.current = null
     }
 
@@ -237,9 +237,9 @@ export function useVoiceChat({ selectedGame, onError }: UseVoiceChatOptions) {
         .then(() => {
           setState((prev) => ({ ...prev, isMuted: false }))
         })
-        .catch((error) => {
+        .catch((error: unknown) => {
           console.error('Failed to start audio capture:', error)
-          handleError(error)
+          handleError(error instanceof Error ? error : new Error('Failed to start audio capture'))
         })
     } else {
       // Mute - stop audio capture
@@ -287,7 +287,7 @@ export function useVoiceChat({ selectedGame, onError }: UseVoiceChatOptions) {
         realtimeManagerRef.current.disconnect()
       }
       if (audioContextRef.current) {
-        audioContextRef.current.close()
+        void audioContextRef.current.close()
       }
     }
   }, [])
@@ -325,13 +325,16 @@ function convertPCM16ToAudioBuffer(
       // Convert int16 to float32 and copy to AudioBuffer
       const channelData = audioBuffer.getChannelData(0)
       for (let i = 0; i < int16Array.length; i++) {
+        // eslint-disable-next-line security/detect-object-injection
+        const sample = int16Array[i]
         // Convert from int16 (-32768 to 32767) to float32 (-1.0 to 1.0)
-        channelData[i] = int16Array[i] / (int16Array[i] < 0 ? 32768 : 32767)
+        // eslint-disable-next-line security/detect-object-injection
+        channelData[i] = sample / (sample < 0 ? 32768 : 32767)
       }
 
       resolve(audioBuffer)
     } catch (error) {
-      reject(error)
+      reject(error instanceof Error ? error : new Error('Failed to convert PCM16 to AudioBuffer'))
     }
   })
 }
