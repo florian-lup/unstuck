@@ -13,7 +13,7 @@ interface NavigationBarProps {
   onHistoryClick?: () => void
   onSettingsClick?: () => void
   onInfoClick?: () => void
-  onGameSelect?: (game: Game) => void
+  onGameSelect?: (game: Game | null) => void
   selectedGame?: Game | null
   onDropdownOpenChange?: (open: boolean) => void
   updateReady?: boolean
@@ -67,7 +67,7 @@ export function NavigationBar({
     onInfoClick?.()
   }
 
-  const handleGameSelect = (game: Game) => {
+  const handleGameSelect = (game: Game | null) => {
     // Ensure window stays on top when dropdown is used
     window.electronAPI?.windowInteraction()
     onGameSelect?.(game)

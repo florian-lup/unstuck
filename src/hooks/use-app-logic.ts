@@ -572,7 +572,7 @@ export function useAppLogic() {
     }
   }
 
-  const handleGameSelect = (game: Game) => {
+  const handleGameSelect = (game: Game | null) => {
     setSelectedGame(game)
     // Handle game selection functionality here
     // TODO: Implement game-specific initialization

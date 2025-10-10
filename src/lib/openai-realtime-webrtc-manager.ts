@@ -33,8 +33,6 @@ export class OpenAIRealtimeWebRTCManager {
   private maxReconnectAttempts = 3
   private mediaStream: MediaStream | null = null
   private audioContext: AudioContext | null = null
-  private interruptionThreshold = 0.01
-  private interruptionEnabled = true
   private remoteAudioElement: HTMLAudioElement | null = null
   private intentionalDisconnect = false
 
@@ -339,17 +337,14 @@ export class OpenAIRealtimeWebRTCManager {
 
   /**
    * Configure interruption detection
+   * Note: Interruption detection is currently handled by OpenAI's server-side VAD
    */
-  setInterruptionConfig(config: {
+  setInterruptionConfig(_config: {
     enabled?: boolean
     threshold?: number
   }): void {
-    if (config.enabled !== undefined) {
-      this.interruptionEnabled = config.enabled
-    }
-    if (config.threshold !== undefined) {
-      this.interruptionThreshold = config.threshold
-    }
+    // Interruption is handled by OpenAI's server-side Voice Activity Detection (VAD)
+    // This method exists for API compatibility but doesn't modify local state
   }
 
   /**
